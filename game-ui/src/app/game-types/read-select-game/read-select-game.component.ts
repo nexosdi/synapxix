@@ -36,19 +36,61 @@ import { ReadSelectInteractiveContent } from '../../models/history.model';
     `
       .read-select {
         display: grid;
-        gap: 1rem;
+        gap: 1.75rem;
+        padding: 2rem 2.25rem;
+        background: linear-gradient(150deg, rgba(13, 193, 140, 0.18), rgba(255, 248, 153, 0.18));
+        border-radius: 1.6rem;
+        box-shadow: 0 20px 45px rgba(15, 70, 52, 0.18);
+        max-width: 600px;
+        margin: 0 auto;
+        color: #132a1d;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(20px);
+      }
+      header {
+        display: grid;
+        gap: 0.65rem;
+      }
+      header h2 {
+        margin: 0;
+        font-size: clamp(1.45rem, 2.2vw, 1.9rem);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      header p {
+        margin: 0;
+        font-size: 0.95rem;
+        color: rgba(19, 42, 29, 0.72);
       }
       .options {
         display: grid;
-        gap: 0.75rem;
+        gap: 0.9rem;
         list-style: none;
         padding: 0;
         margin: 0;
       }
       .option {
-        padding: 0.75rem 1rem;
-        background: rgba(255, 255, 255, 0.08);
-        border-radius: 0.5rem;
+        padding: 1rem 1.4rem;
+        background: #ffffff;
+        border-radius: 1.1rem;
+        border: 2px solid transparent;
+        box-shadow: 0 12px 28px rgba(12, 60, 38, 0.12);
+        font-size: 1.05rem;
+        font-weight: 600;
+        transition: transform 0.16s ease, box-shadow 0.16s ease,
+          border-color 0.16s ease;
+        cursor: pointer;
+      }
+      .option:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 16px 34px rgba(12, 60, 38, 0.18);
+        border-color: rgba(0, 200, 83, 0.85);
+      }
+      footer {
+        font-size: 0.9rem;
+        color: rgba(19, 42, 29, 0.68);
+        display: flex;
+        justify-content: flex-end;
       }
     `,
   ],

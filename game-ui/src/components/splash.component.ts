@@ -4,46 +4,19 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'dsl-splash',
   template: `
-    <div class="splash-container">
-      <button class="play-button" (click)="onPlayClick()">▶</button>
+    <div
+      class="flex min-h-screen items-center justify-center bg-cover bg-center bg-no-repeat"
+      style="background-image: url('/splash/background.jpg')"
+    >
+      <button
+        type="button"
+        class="h-20 w-20 rounded-full bg-white/80 text-3xl font-bold text-neutral-800 shadow-lg transition-transform duration-200 ease-out hover:scale-110 hover:shadow-xl active:scale-95 focus:outline-none focus-visible:ring focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        (click)="onPlayClick()"
+      >
+        ▶
+      </button>
     </div>
   `,
-  styles: [
-    `
-      .splash-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        background-image: url('/splash/background.jpg');
-        background-size: cover;
-        background-position: center;
-      }
-
-      .play-button {
-        background-color: rgba(255, 255, 255, 0.8);
-        border: none;
-        border-radius: 50%;
-        width: 80px;
-        height: 80px;
-        font-size: 24px;
-        font-weight: bold;
-        color: #333;
-        cursor: pointer;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      }
-
-      .play-button:hover {
-        transform: scale(1.1);
-        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
-      }
-
-      .play-button:active {
-        transform: scale(0.95);
-      }
-    `,
-  ],
 })
 export class SplashComponent {
   private router = inject(Router);

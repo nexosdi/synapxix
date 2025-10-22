@@ -1,4 +1,10 @@
-import { Component, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  ViewChild,
+  ViewContainerRef,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { resolveGameLoader } from '../app/games';
 import { HistoryService } from '../app/services/history.service';
@@ -13,11 +19,8 @@ export class GameRunnerComponent implements OnInit {
     static: true,
   })
   container!: ViewContainerRef;
-
-  constructor(
-    private readonly route: ActivatedRoute,
-    private readonly historyService: HistoryService
-  ) {}
+  private route = inject(ActivatedRoute);
+  private historyService = inject(HistoryService);
 
   async ngOnInit() {
     const contentId = this.route.snapshot.paramMap.get('gameCode');
@@ -34,7 +37,9 @@ export class GameRunnerComponent implements OnInit {
 
     const loader = resolveGameLoader(content.gameType);
     if (!loader) {
-      console.error(`No loader registered for game type "${content.gameType}".`);
+      console.error(
+        `No loader registered for game type "${content.gameType}".`
+      );
       return;
     }
 
