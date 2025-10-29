@@ -6,94 +6,45 @@ import { ReadSelectInteractiveContent } from '../../models/history.model';
   standalone: true,
   template: `
     @if (content(); as content) {
-      <section class="read-select">
-        <header>
-          <h2>{{ content.gameData.prompt }}</h2>
-          <p>
-            Min correct to pass:
-            <strong>{{ content.gameData.minCorrectToPass }}</strong>
+      <section
+        class="mx-auto flex max-w-2xl flex-col gap-8 rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/80 via-white to-sky-50/70 p-8 shadow-xl shadow-emerald-900/10 backdrop-blur"
+      >
+        <header class="space-y-2">
+          <p class="text-sm font-semibold uppercase tracking-[0.28em] text-emerald-500">
+            Read & Select
           </p>
-          @if (content.gameData.timeLimitSec) {
-            <p>Timer: {{ content.gameData.timeLimitSec }} seconds</p>
-          }
+          <h2 class="text-balance text-3xl font-bold text-slate-900">
+            {{ content.gameData.prompt }}
+          </h2>
+          <div class="text-sm text-slate-600">
+            <p class="font-medium">
+              Min correct to pass:
+              <span class="font-semibold text-emerald-600">
+                {{ content.gameData.minCorrectToPass }}
+              </span>
+            </p>
+            @if (content.gameData.timeLimitSec) {
+              <p>Timer: {{ content.gameData.timeLimitSec }} seconds</p>
+            }
+          </div>
         </header>
 
-        <ul class="options">
+        <ul class="grid gap-3 md:grid-cols-2">
           @for (option of options(); track option.text) {
-            <li class="option">
+            <li
+              class="flex cursor-pointer items-center justify-between rounded-2xl border border-slate-200 bg-white/95 px-5 py-4 text-lg font-medium text-slate-900 shadow-sm shadow-slate-900/5 transition hover:-translate-y-1 hover:border-emerald-400 hover:bg-emerald-50"
+            >
               {{ option.text }}
             </li>
           }
         </ul>
 
-        <footer>
-          <span>Locale: {{ content.gameData.locale }}</span>
+        <footer class="text-right text-sm text-slate-500">
+          Locale: {{ content.gameData.locale }}
         </footer>
       </section>
     }
   `,
-  styles: [
-    `
-      .read-select {
-        display: grid;
-        gap: 1.75rem;
-        padding: 2rem 2.25rem;
-        background: linear-gradient(150deg, rgba(13, 193, 140, 0.18), rgba(255, 248, 153, 0.18));
-        border-radius: 1.6rem;
-        box-shadow: 0 20px 45px rgba(15, 70, 52, 0.18);
-        max-width: 600px;
-        margin: 0 auto;
-        color: #132a1d;
-        border: 1px solid rgba(255, 255, 255, 0.25);
-        backdrop-filter: blur(20px);
-      }
-      header {
-        display: grid;
-        gap: 0.65rem;
-      }
-      header h2 {
-        margin: 0;
-        font-size: clamp(1.45rem, 2.2vw, 1.9rem);
-        font-weight: 700;
-        letter-spacing: -0.01em;
-      }
-      header p {
-        margin: 0;
-        font-size: 0.95rem;
-        color: rgba(19, 42, 29, 0.72);
-      }
-      .options {
-        display: grid;
-        gap: 0.9rem;
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-      .option {
-        padding: 1rem 1.4rem;
-        background: #ffffff;
-        border-radius: 1.1rem;
-        border: 2px solid transparent;
-        box-shadow: 0 12px 28px rgba(12, 60, 38, 0.12);
-        font-size: 1.05rem;
-        font-weight: 600;
-        transition: transform 0.16s ease, box-shadow 0.16s ease,
-          border-color 0.16s ease;
-        cursor: pointer;
-      }
-      .option:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 16px 34px rgba(12, 60, 38, 0.18);
-        border-color: rgba(0, 200, 83, 0.85);
-      }
-      footer {
-        font-size: 0.9rem;
-        color: rgba(19, 42, 29, 0.68);
-        display: flex;
-        justify-content: flex-end;
-      }
-    `,
-  ],
 })
 export class ReadSelectGameComponent {
   readonly content = input.required<ReadSelectInteractiveContent>();

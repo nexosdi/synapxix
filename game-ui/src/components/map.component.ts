@@ -8,91 +8,49 @@ import { GameType } from '../app/models/history.model';
   standalone: true,
   template: `
     @if (activeHistory(); as history) {
-      <div class="map-container">
-        <h2 class="title">{{ history.name }}</h2>
-        <p class="description">{{ history.description }}</p>
+      <div
+        class="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-sky-50 px-6 py-12"
+      >
+        <div class="mx-auto flex max-w-4xl flex-col gap-6">
+          <header class="space-y-2">
+            <p class="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-500">
+              Story Path
+            </p>
+            <h2 class="text-4xl font-bold text-emerald-900">
+              {{ history.name }}
+            </h2>
+            <p class="text-lg text-emerald-700/80">
+              {{ history.description }}
+            </p>
+          </header>
 
-        @for (content of journey(); track content.id) {
-          <div
-            class="map-item unlocked"
-            (click)="startGame(content.id)"
-          >
-            <div class="icon">{{ content.order }}</div>
-            <span>{{ content.label }}</span>
+          <div class="grid gap-4">
+            @for (content of journey(); track content.id) {
+              <button
+                type="button"
+                class="flex items-center justify-between rounded-3xl border border-transparent bg-white/95 px-6 py-4 text-left shadow-lg shadow-emerald-900/5 transition hover:-translate-y-1 hover:border-emerald-400 hover:bg-emerald-50 focus:outline-none focus-visible:ring focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-50"
+                (click)="startGame(content.id)"
+              >
+                <div class="flex items-center gap-4">
+                  <span
+                    class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-500 text-xl font-semibold text-white shadow-md shadow-emerald-900/20"
+                  >
+                    {{ content.order }}
+                  </span>
+                  <span class="text-lg font-semibold text-emerald-900">
+                    {{ content.label }}
+                  </span>
+                </div>
+                <span class="text-sm font-medium uppercase tracking-[0.24em] text-emerald-400">
+                  Play
+                </span>
+              </button>
+            }
           </div>
-        }
+        </div>
       </div>
     }
   `,
-  styles: [
-    `
-      .map-container {
-        background: linear-gradient(135deg, rgba(27, 211, 136, 0.18), rgba(81, 180, 255, 0.18));
-        padding: 3rem 2.5rem;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1.5rem;
-        color: #123824;
-        backdrop-filter: blur(18px);
-      }
-      .title {
-        margin: 0;
-        color: #0b3d2a;
-        font-size: clamp(1.8rem, 2.6vw, 2.4rem);
-        font-weight: 800;
-      }
-      .description {
-        margin: 0;
-        color: rgba(18, 56, 36, 0.75);
-        font-size: 1rem;
-        max-width: 38rem;
-      }
-      .map-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin: 0;
-        padding: 1rem 1.4rem;
-        border-radius: 1.25rem;
-        background: #ffffff;
-        box-shadow: 0 18px 42px rgba(16, 70, 48, 0.16);
-        border: 2px solid transparent;
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease,
-          border-color 0.2s ease;
-      }
-      .map-item:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 24px 48px rgba(16, 70, 48, 0.2);
-        border-color: rgba(17, 200, 112, 0.8);
-      }
-      .map-item span {
-        font-size: 1.05rem;
-        font-weight: 700;
-      }
-      .icon {
-        width: 3rem;
-        height: 3rem;
-        border-radius: 1rem;
-        background: linear-gradient(140deg, rgba(17, 200, 112, 0.92), rgba(125, 255, 185, 0.9));
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #ffffff;
-        font-weight: 700;
-        margin-right: 1rem;
-        box-shadow: 0 10px 20px rgba(17, 200, 112, 0.35);
-      }
-      .unlocked .icon {
-        background: linear-gradient(140deg, rgba(17, 200, 112, 0.92), rgba(125, 255, 185, 0.9));
-      }
-      .locked .icon {
-        background: linear-gradient(140deg, rgba(179, 179, 179, 0.85), rgba(215, 215, 215, 0.85));
-      }
-    `,
-  ],
 })
 export class MapComponent {
   private readonly router = inject(Router);

@@ -3,51 +3,29 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'dsl-menu',
   template: `
-    <div class="bottom-menu">
-      <button class="menu-btn">
-        <img src="assets/home.png" alt="Home" />
-      </button>
-      <button class="menu-btn">
-        <img src="assets/chest.png" alt="Chest" />
-      </button>
-      <button class="menu-btn">
-        <img src="assets/shield.png" alt="Shield" />
-      </button>
-      <button class="menu-btn">
-        <img src="assets/bell.png" alt="Alerts" />
-      </button>
-    </div>
+    <nav
+      class="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around border-t border-slate-200 bg-white/95 px-6 py-2 shadow-2xl shadow-slate-900/10 backdrop-blur"
+    >
+      @for (icon of icons; track icon.src) {
+        <button
+          type="button"
+          class="flex h-14 w-14 items-center justify-center rounded-2xl border border-transparent bg-slate-100 transition hover:-translate-y-1 hover:border-emerald-400 hover:bg-emerald-50 focus:outline-none focus-visible:ring focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        >
+          <img
+            class="h-9 w-9"
+            [src]="icon.src"
+            [alt]="icon.alt"
+          />
+        </button>
+      }
+    </nav>
   `,
-  styles: [
-    `
-      .bottom-menu {
-        position: fixed;
-        bottom: 0;
-        width: 100%;
-        display: flex;
-        justify-content: space-around;
-        padding: 8px 0;
-        background: #fff;
-        border-top: 2px solid #000;
-      }
-      .menu-btn {
-        background: linear-gradient(#fff, #ddd);
-        border: 1px solid #999;
-        border-radius: 8px;
-        box-shadow: 0 4px #999;
-        cursor: pointer;
-        transition: transform 0.1s, box-shadow 0.1s;
-      }
-      .menu-btn:active {
-        transform: translateY(4px);
-        box-shadow: 0 0 #999;
-      }
-      .menu-btn img {
-        width: 36px;
-        height: 36px;
-        padding: 4px;
-      }
-    `,
-  ],
 })
-export class MenuComponent {}
+export class MenuComponent {
+  readonly icons = [
+    { src: 'assets/home.png', alt: 'Home' },
+    { src: 'assets/chest.png', alt: 'Chest' },
+    { src: 'assets/shield.png', alt: 'Shield' },
+    { src: 'assets/bell.png', alt: 'Alerts' },
+  ];
+}

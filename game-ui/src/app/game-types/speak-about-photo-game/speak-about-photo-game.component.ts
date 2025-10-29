@@ -6,96 +6,60 @@ import { SpeakAboutPhotoInteractiveContent } from '../../models/history.model';
   standalone: true,
   template: `
     @if (content(); as content) {
-      <section class="speak-photo">
-        <header>
-          <h2>{{ content.gameData.prompt }}</h2>
+      <section
+        class="mx-auto flex max-w-3xl flex-col gap-8 rounded-3xl border border-sky-100 bg-gradient-to-br from-sky-50/80 via-white to-amber-50/80 p-8 shadow-2xl shadow-sky-900/10 backdrop-blur"
+      >
+        <header class="space-y-2">
+          <p class="text-sm font-semibold uppercase tracking-[0.3em] text-sky-500">
+            Speak About the Photo
+          </p>
+          <h2 class="text-balance text-3xl font-bold text-slate-900">
+            {{ content.gameData.prompt }}
+          </h2>
         </header>
 
         @if (content.gameData.imageUrl) {
-          <img
-            [src]="content.gameData.imageUrl"
-            alt="Describe this scene"
-            class="photo"
-          />
+          <figure class="overflow-hidden rounded-[1.5rem] border border-white/70 shadow-xl shadow-sky-900/20">
+            <img
+              [src]="content.gameData.imageUrl"
+              alt="Describe this scene"
+              class="h-full w-full object-cover"
+            />
+          </figure>
         }
 
-        <p>
-          Mention at least {{ content.gameData.scoring.keywordsRequired }}
-          of the key ideas:
-        </p>
+        <div class="space-y-3">
+          <p class="text-base font-medium text-slate-600">
+            Mention at least
+            <span class="font-semibold text-emerald-600">
+              {{ content.gameData.scoring.keywordsRequired }}
+            </span>
+            key idea(s):
+          </p>
 
-        <ul>
-          @for (
-            keyword of content.gameData.targetKeywords;
-            track keyword
-          ) {
-            <li>
-              {{ keyword }}
-            </li>
-          }
-        </ul>
+          <ul class="grid gap-2 md:grid-cols-2">
+            @for (keyword of content.gameData.targetKeywords; track keyword) {
+              <li
+                class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white/95 px-5 py-3 font-semibold text-slate-800 shadow-sm shadow-slate-900/5"
+              >
+                {{ keyword }}
+                <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-emerald-600">
+                  Key
+                </span>
+              </li>
+            }
+          </ul>
+        </div>
 
-        <footer>
-          Recording window:
-          {{ content.gameData.recording.minDurationSec }}-{{ content.gameData.recording.maxDurationSec }}s
+        <footer class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white/90 px-5 py-4 text-sm text-slate-600 shadow-inner shadow-slate-900/5">
+          <span>Recording window:</span>
+          <strong class="text-base text-sky-600">
+            {{ content.gameData.recording.minDurationSec }}-{{ content.gameData.recording.maxDurationSec }}s
+          </strong>
         </footer>
       </section>
     }
   `,
-  styles: [
-    `
-      .speak-photo {
-        display: grid;
-        gap: 1.5rem;
-        padding: 2.25rem;
-        background: linear-gradient(150deg, rgba(119, 210, 255, 0.22), rgba(255, 182, 122, 0.2));
-        border-radius: 1.7rem;
-        box-shadow: 0 24px 52px rgba(50, 80, 118, 0.2);
-        max-width: 600px;
-        margin: 0 auto;
-        color: #16304a;
-        border: 1px solid rgba(255, 255, 255, 0.25);
-        backdrop-filter: blur(18px);
-      }
-      header h2 {
-        margin: 0;
-        font-size: clamp(1.45rem, 2.2vw, 1.95rem);
-        font-weight: 700;
-      }
-      .photo {
-        width: 100%;
-        border-radius: 1.2rem;
-        object-fit: cover;
-        box-shadow: 0 18px 40px rgba(22, 48, 74, 0.22);
-        border: 3px solid rgba(255, 255, 255, 0.7);
-      }
-      p {
-        margin: 0;
-        font-size: 1rem;
-        color: rgba(22, 48, 74, 0.72);
-      }
-      ul {
-        margin: 0;
-        padding-left: 1.4rem;
-        display: grid;
-        gap: 0.6rem;
-      }
-      li {
-        background: rgba(255, 255, 255, 0.78);
-        border-radius: 0.9rem;
-        padding: 0.65rem 0.9rem;
-        font-weight: 600;
-        color: #16304a;
-        box-shadow: 0 12px 24px rgba(22, 48, 74, 0.16);
-      }
-      footer {
-        font-size: 0.9rem;
-        color: rgba(22, 48, 74, 0.68);
-        display: flex;
-        justify-content: flex-end;
-      }
-    `,
-  ],
 })
 export class SpeakAboutPhotoGameComponent {
   readonly content = input.required<SpeakAboutPhotoInteractiveContent>();

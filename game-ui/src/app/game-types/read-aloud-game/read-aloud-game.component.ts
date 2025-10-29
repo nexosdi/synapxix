@@ -6,83 +6,50 @@ import { ReadAloudInteractiveContent } from '../../models/history.model';
   standalone: true,
   template: `
     @if (content(); as content) {
-      <section class="read-aloud">
-        <header>
-          <h2>Read Aloud</h2>
-          <p>{{ content.gameData.text }}</p>
+      <section
+        class="mx-auto flex max-w-xl flex-col gap-6 rounded-3xl border border-fuchsia-100 bg-gradient-to-br from-fuchsia-50/80 via-white to-sky-50/70 p-8 shadow-xl shadow-fuchsia-900/10 backdrop-blur"
+      >
+        <header class="space-y-2">
+          <p class="text-sm font-semibold uppercase tracking-[0.28em] text-fuchsia-500">
+            Read Aloud
+          </p>
+          <h2 class="text-2xl font-bold text-fuchsia-900">
+            Speak with confidence
+          </h2>
+          <p class="rounded-2xl border border-fuchsia-100 bg-white/80 px-5 py-4 text-base font-medium text-fuchsia-900 shadow-inner shadow-fuchsia-900/5">
+            {{ content.gameData.text }}
+          </p>
         </header>
 
-        <ul>
-          <li>
+        <ul class="grid gap-3 rounded-2xl border border-fuchsia-100 bg-white/90 px-5 py-4 text-sm text-fuchsia-900 shadow-inner shadow-fuchsia-900/5">
+          <li class="flex items-center justify-between">
             Recording window:
-            {{ content.gameData.recording.minDurationSec }}-{{ content.gameData.recording.maxDurationSec }}s
+            <strong class="text-base text-fuchsia-600">
+              {{ content.gameData.recording.minDurationSec }}-{{ content.gameData.recording.maxDurationSec }}s
+            </strong>
           </li>
-          <li>
-            Pronunciation target: {{ content.gameData.scoring.minPronScore }}%
+          <li class="flex items-center justify-between">
+            Pronunciation target:
+            <strong class="text-base text-fuchsia-600">
+              {{ content.gameData.scoring.minPronScore }}%
+            </strong>
           </li>
-          <li>
-            Completeness target: {{ content.gameData.scoring.minCompleteness }}%
+          <li class="flex items-center justify-between">
+            Completeness target:
+            <strong class="text-base text-fuchsia-600">
+              {{ content.gameData.scoring.minCompleteness }}%
+            </strong>
           </li>
         </ul>
 
         @if (content.gameData.media) {
-          <footer>
+          <footer class="rounded-2xl border border-fuchsia-100 bg-fuchsia-50 px-4 py-3 text-sm text-fuchsia-700">
             Media asset: {{ content.gameData.media }}
           </footer>
         }
       </section>
     }
   `,
-  styles: [
-    `
-      .read-aloud {
-        display: grid;
-        gap: 1.4rem;
-        padding: 2rem;
-        background: linear-gradient(145deg, rgba(255, 193, 227, 0.22), rgba(142, 196, 255, 0.2));
-        border-radius: 1.7rem;
-        box-shadow: 0 22px 50px rgba(96, 54, 104, 0.18);
-        max-width: 560px;
-        margin: 0 auto;
-        color: #301436;
-        border: 1px solid rgba(255, 255, 255, 0.28);
-        backdrop-filter: blur(18px);
-      }
-      header {
-        display: grid;
-        gap: 0.5rem;
-      }
-      header h2 {
-        margin: 0;
-        font-size: clamp(1.4rem, 2.1vw, 1.85rem);
-        font-weight: 700;
-      }
-      header p {
-        margin: 0;
-        color: rgba(48, 20, 54, 0.85);
-        font-size: 1rem;
-        line-height: 1.45;
-      }
-      ul {
-        margin: 0;
-        padding-left: 1.3rem;
-        color: rgba(48, 20, 54, 0.72);
-        display: grid;
-        gap: 0.45rem;
-      }
-      footer {
-        margin-top: 0.5rem;
-        font-size: 0.85rem;
-        color: rgba(48, 20, 54, 0.7);
-        background: rgba(255, 255, 255, 0.65);
-        padding: 0.75rem 1rem;
-        border-radius: 0.8rem;
-        display: inline-flex;
-        gap: 0.4rem;
-        align-items: baseline;
-      }
-    `,
-  ],
 })
 export class ReadAloudGameComponent {
   readonly content = input.required<ReadAloudInteractiveContent>();
