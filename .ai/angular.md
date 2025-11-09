@@ -11172,6 +11172,9 @@ The second property, `component`, is a string that specifies what component your
 
     {path: 'crisis-list', component: CrisisListComponent},
     {path: 'heroes-list', component: HeroesListComponent},
+
+    ```
+
     ```
 
 This routes list is an array of JavaScript objects, with each object defining the properties of a route.
@@ -11189,6 +11192,9 @@ You import this provider function from `@angular/router`.
 
     import { provideRouter } from '@angular/router';
     import { routes } from './app.routes';
+
+    ```
+
     ```
 
 1.  Update the providers in the `appConfig`:
@@ -11196,6 +11202,9 @@ You import this provider function from `@angular/router`.
         ```ts
 
     providers: [provideRouter(routes)]
+
+    ```
+
     ```
 
 For `NgModule` based applications, put the `provideRouter` in the `providers` list of the `AppModule`, or whichever module is passed to `bootstrapModule` in the application.
@@ -11224,6 +11233,9 @@ To implement this functionality, you add the `router-outlet` directive to your t
         ```ts
 
     imports: [RouterOutlet],
+
+    ```
+
     ```
 
 View your updated application in your browser.
@@ -11296,6 +11308,7 @@ In this step of the tutorial, you add a route that redirects the user to display
         ```ts
 
     {path: '', redirectTo: '/heroes-list', pathMatch: 'full'},
+
     ```
 
         Notice that this new route uses an empty string as its path.
@@ -11305,6 +11318,7 @@ In this step of the tutorial, you add a route that redirects the user to display
         |:---        |:---    |
         | `redirectTo` | This property instructs Angular to redirect from an empty path to the `heroes-list` path.                                                                                                                                                       |
         | `pathMatch`  | This property instructs Angular on how much of the URL to match. For this tutorial, you should set this property to `full`. This strategy is recommended when you have an empty string for a path. For more information about this property, see the [Route API documentation](api/router/Route). |
+    ```
 
 Now when you open your application, it displays the `heroes-list` component by default.
 
