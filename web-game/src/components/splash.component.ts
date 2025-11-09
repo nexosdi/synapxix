@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { HISTORY_MOCK } from '../app/history-mock';
+import { HISTORY_MOCK } from '@nexosdi.synapxix/core';
 
 @Component({
   selector: 'dsl-splash',

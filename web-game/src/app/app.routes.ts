@@ -1,9 +1,11 @@
 import { Routes } from '@angular/router';
-import { GameRunnerComponent } from '../components/game-runner.component';
+import {
+  GameRunnerComponent,
+  HistoryService,
+  historyRouteResolver,
+} from '@nexosdi.synapxix/core';
 import { MapComponent } from '../components/map.component';
 import { SplashComponent } from '../components/splash.component';
-import { historyRouteResolver } from './services/history-route.resolver';
-import { HistoryService } from './services/history.service';
 
 export const routes: Routes = [
   {

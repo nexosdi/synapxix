@@ -9,12 +9,13 @@ import {
   inject,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { resolveGameLoader } from '../app/games';
-import { HistoryService } from '../app/services/history.service';
-import { InteractiveContent } from '../app/models/history.model';
+import { resolveGameLoader } from '../game-registry';
+import { HistoryService } from '../services/history.service';
+import { InteractiveContent } from '../models/history.model';
 
 @Component({
   selector: 'app-game-runner',
+  standalone: true,
   template: `<ng-container #dynamicComponentContainer></ng-container>`,
 })
 export class GameRunnerComponent implements OnInit, OnDestroy {
