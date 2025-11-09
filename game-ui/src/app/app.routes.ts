@@ -1,7 +1,9 @@
 import { Routes } from '@angular/router';
+import { GameRunnerComponent } from '../components/game-runner.component';
 import { MapComponent } from '../components/map.component';
 import { SplashComponent } from '../components/splash.component';
-import { GameRunnerComponent } from '../components/game-runner.component';
+import { historyRouteResolver } from './services/history-route.resolver';
+import { HistoryService } from './services/history.service';
 
 export const routes: Routes = [
   {
@@ -9,11 +11,29 @@ export const routes: Routes = [
     component: SplashComponent,
   },
   {
-    path: 'map',
-    component: MapComponent,
+    path: 'history/:historyId',
+    providers: [HistoryService],
+    resolve: {
+      historyReady: historyRouteResolver,
+    },
+    children: [
+      {
+        path: '',
+        redirectTo: 'map',
+        pathMatch: 'full',
+      },
+      {
+        path: 'map',
+        component: MapComponent,
+      },
+      {
+        path: 'game',
+        component: GameRunnerComponent,
+      },
+    ],
   },
   {
-    path: 'game/:gameCode',
-    component: GameRunnerComponent,
+    path: '**',
+    redirectTo: '',
   },
 ];

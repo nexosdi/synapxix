@@ -1,11 +1,14 @@
 import { Component, computed, input } from '@angular/core';
-import { ReadSelectInteractiveContent } from '../../models/history.model';
+import {
+  ReadSelectInteractiveContent,
+  toReadSelectGameModel,
+} from './read-select-game.model';
 
 @Component({
   selector: 'app-read-select-game',
   standalone: true,
   template: `
-    @if (content(); as content) {
+    @if (viewModel(); as view) {
       <section
         class="mx-auto flex max-w-2xl flex-col gap-8 rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50/80 via-white to-sky-50/70 p-8 shadow-xl shadow-emerald-900/10 backdrop-blur"
       >
@@ -14,17 +17,17 @@ import { ReadSelectInteractiveContent } from '../../models/history.model';
             Read & Select
           </p>
           <h2 class="text-balance text-3xl font-bold text-slate-900">
-            {{ content.gameData.prompt }}
+            {{ view.prompt }}
           </h2>
           <div class="text-sm text-slate-600">
             <p class="font-medium">
               Min correct to pass:
               <span class="font-semibold text-emerald-600">
-                {{ content.gameData.minCorrectToPass }}
+                {{ view.minCorrectToPass }}
               </span>
             </p>
-            @if (content.gameData.timeLimitSec) {
-              <p>Timer: {{ content.gameData.timeLimitSec }} seconds</p>
+            @if (view.timeLimitSec) {
+              <p>Timer: {{ view.timeLimitSec }} seconds</p>
             }
           </div>
         </header>
@@ -40,7 +43,7 @@ import { ReadSelectInteractiveContent } from '../../models/history.model';
         </ul>
 
         <footer class="text-right text-sm text-slate-500">
-          Locale: {{ content.gameData.locale }}
+          Locale: {{ view.locale }}
         </footer>
       </section>
     }
@@ -48,6 +51,7 @@ import { ReadSelectInteractiveContent } from '../../models/history.model';
 })
 export class ReadSelectGameComponent {
   readonly content = input.required<ReadSelectInteractiveContent>();
+  readonly viewModel = computed(() => toReadSelectGameModel(this.content()));
 
-  readonly options = computed(() => this.content().gameData.options);
+  readonly options = computed(() => this.viewModel().options);
 }

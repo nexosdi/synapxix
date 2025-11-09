@@ -1,11 +1,14 @@
-import { Component, input } from '@angular/core';
-import { FillInTheBlanksInteractiveContent } from '../../models/history.model';
+import { Component, computed, input } from '@angular/core';
+import {
+  FillInTheBlanksInteractiveContent,
+  toFillInTheBlanksGameModel,
+} from './fill-in-the-blanks-game.model';
 
 @Component({
   selector: 'app-fill-in-the-blanks-game',
   standalone: true,
   template: `
-    @if (content(); as content) {
+    @if (viewModel(); as view) {
       <section
         class="mx-auto flex max-w-3xl flex-col gap-8 rounded-3xl border border-amber-100 bg-gradient-to-br from-amber-50/80 via-white to-sky-50/70 p-8 shadow-xl shadow-amber-900/10 backdrop-blur"
       >
@@ -17,15 +20,12 @@ import { FillInTheBlanksInteractiveContent } from '../../models/history.model';
             Complete the sentence
           </h2>
           <p class="rounded-2xl border border-amber-100 bg-white/70 px-5 py-4 text-lg font-semibold text-slate-800 shadow-inner shadow-amber-900/5">
-            {{ content.gameData.sentence }}
+            {{ view.sentence }}
           </p>
         </header>
 
         <ol class="space-y-4">
-          @for (
-            blank of content.gameData.blanks;
-            track blank.index
-          ) {
+          @for (blank of view.blanks; track blank.index) {
             <li class="rounded-2xl border border-slate-200 bg-white/95 px-5 py-4 shadow-sm shadow-slate-900/5">
               <p class="mb-3 text-sm font-medium text-slate-500">
                 Blank #{{ blank.index + 1 }} — select the correct answer:
@@ -48,4 +48,7 @@ import { FillInTheBlanksInteractiveContent } from '../../models/history.model';
 })
 export class FillInTheBlanksGameComponent {
   readonly content = input.required<FillInTheBlanksInteractiveContent>();
+  readonly viewModel = computed(() =>
+    toFillInTheBlanksGameModel(this.content())
+  );
 }

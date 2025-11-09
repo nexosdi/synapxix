@@ -1,11 +1,14 @@
-import { Component, input } from '@angular/core';
-import { ReadAloudInteractiveContent } from '../../models/history.model';
+import { Component, computed, input } from '@angular/core';
+import {
+  ReadAloudInteractiveContent,
+  toReadAloudGameModel,
+} from './read-aloud-game.model';
 
 @Component({
   selector: 'app-read-aloud-game',
   standalone: true,
   template: `
-    @if (content(); as content) {
+    @if (viewModel(); as view) {
       <section
         class="mx-auto flex max-w-xl flex-col gap-6 rounded-3xl border border-fuchsia-100 bg-gradient-to-br from-fuchsia-50/80 via-white to-sky-50/70 p-8 shadow-xl shadow-fuchsia-900/10 backdrop-blur"
       >
@@ -17,7 +20,7 @@ import { ReadAloudInteractiveContent } from '../../models/history.model';
             Speak with confidence
           </h2>
           <p class="rounded-2xl border border-fuchsia-100 bg-white/80 px-5 py-4 text-base font-medium text-fuchsia-900 shadow-inner shadow-fuchsia-900/5">
-            {{ content.gameData.text }}
+            {{ view.text }}
           </p>
         </header>
 
@@ -25,26 +28,26 @@ import { ReadAloudInteractiveContent } from '../../models/history.model';
           <li class="flex items-center justify-between">
             Recording window:
             <strong class="text-base text-fuchsia-600">
-              {{ content.gameData.recording.minDurationSec }}-{{ content.gameData.recording.maxDurationSec }}s
+              {{ view.recording.minDurationSec }}-{{ view.recording.maxDurationSec }}s
             </strong>
           </li>
           <li class="flex items-center justify-between">
             Pronunciation target:
             <strong class="text-base text-fuchsia-600">
-              {{ content.gameData.scoring.minPronScore }}%
+              {{ view.scoring.minPronScore }}%
             </strong>
           </li>
           <li class="flex items-center justify-between">
             Completeness target:
             <strong class="text-base text-fuchsia-600">
-              {{ content.gameData.scoring.minCompleteness }}%
+              {{ view.scoring.minCompleteness }}%
             </strong>
           </li>
         </ul>
 
-        @if (content.gameData.media) {
+        @if (view.media) {
           <footer class="rounded-2xl border border-fuchsia-100 bg-fuchsia-50 px-4 py-3 text-sm text-fuchsia-700">
-            Media asset: {{ content.gameData.media }}
+            Media asset: {{ view.media }}
           </footer>
         }
       </section>
@@ -53,4 +56,5 @@ import { ReadAloudInteractiveContent } from '../../models/history.model';
 })
 export class ReadAloudGameComponent {
   readonly content = input.required<ReadAloudInteractiveContent>();
+  readonly viewModel = computed(() => toReadAloudGameModel(this.content()));
 }

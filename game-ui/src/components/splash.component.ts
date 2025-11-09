@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { HISTORY_MOCK } from '../app/history-mock';
 
 @Component({
   selector: 'dsl-splash',
@@ -22,6 +23,6 @@ export class SplashComponent {
   private router = inject(Router);
 
   onPlayClick(): void {
-    this.router.navigate(['/map']);
+    this.router.navigate(['/history', HISTORY_MOCK.id, 'map']);
   }
 }

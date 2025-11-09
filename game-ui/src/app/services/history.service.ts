@@ -1,204 +1,118 @@
 import { Injectable, computed, signal } from '@angular/core';
+import { HISTORY_MOCK } from '../history-mock';
 import {
+  GameType,
   History,
   InteractiveContent,
-  GameType,
 } from '../models/history.model';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable()
 export class HistoryService {
-  private readonly historiesSignal = signal<History[]>([this.createDefaultHistory()]);
-  private readonly activeHistoryName = signal<string | null>(
-    this.historiesSignal()[0]?.name ?? null
-  );
+  private readonly historyRegistry = new Map<string, History>([
+    [HISTORY_MOCK.id, HISTORY_MOCK],
+  ]);
+  private readonly historiesSignal = signal<History[]>([]);
+  private readonly activeHistoryId = signal<string | null>(null);
+  private readonly journeyStarted = signal(false);
+  private readonly currentContentIndex = signal(0);
 
   readonly histories = this.historiesSignal.asReadonly();
+
   readonly activeHistory = computed<History | null>(() => {
-    const name = this.activeHistoryName();
-    return name
-      ? this.historiesSignal().find((history) => history.name === name) ?? null
-      : null;
+    const id = this.activeHistoryId();
+    if (!id) {
+      return null;
+    }
+    return this.historiesSignal().find((history) => history.id === id) ?? null;
   });
 
-  selectHistory(name: string): void {
-    if (this.historiesSignal().some((history) => history.name === name)) {
-      this.activeHistoryName.set(name);
+  readonly currentContent = computed<InteractiveContent | null>(() => {
+    if (!this.journeyStarted()) {
+      return null;
     }
+    const history = this.activeHistory();
+    if (!history) {
+      return null;
+    }
+    const index = this.currentContentIndex();
+    return history.contentMap[index] ?? null;
+  });
+
+  readonly isJourneyComplete = computed<boolean>(() => {
+    const history = this.activeHistory();
+    if (!history || !this.journeyStarted()) {
+      return false;
+    }
+    return this.currentContentIndex() >= history.contentMap.length;
+  });
+
+  readonly hasNextContent = computed<boolean>(() => {
+    const history = this.activeHistory();
+    if (!history || !this.journeyStarted()) {
+      return false;
+    }
+    return this.currentContentIndex() < history.contentMap.length - 1;
+  });
+
+  loadHistory(historyId: string): boolean {
+    const history = this.historyRegistry.get(historyId);
+    if (!history) {
+      console.warn(
+        `History "${historyId}" not found. Falling back to mock history "${HISTORY_MOCK.id}".`
+      );
+      return false;
+    }
+    this.historiesSignal.set([history]);
+    this.activeHistoryId.set(history.id);
+    this.resetJourney();
+    return true;
   }
 
-  upsertHistory(history: History): void {
-    const histories = this.historiesSignal();
-    const existingIndex = histories.findIndex(
-      (item) => item.name === history.name
-    );
-    if (existingIndex >= 0) {
-      histories.splice(existingIndex, 1, history);
-    } else {
-      histories.push(history);
+  beginJourney(): InteractiveContent | null {
+    if (!this.activeHistory()) {
+      console.warn('No active history is loaded.');
+      return null;
     }
-    this.historiesSignal.set([...histories]);
-    this.activeHistoryName.set(history.name);
+    this.journeyStarted.set(true);
+    this.currentContentIndex.set(0);
+    return this.currentContent();
   }
 
-  getInteractiveContentById(id: string): InteractiveContent | null {
-    for (const history of this.historiesSignal()) {
-      const content = history.contentMap.find((item) => item.id === id);
-      if (content) {
-        return content;
-      }
+  advanceToNext(): InteractiveContent | null {
+    const history = this.activeHistory();
+    if (!history || !this.journeyStarted()) {
+      return null;
     }
-    return null;
+    const nextIndex = this.currentContentIndex() + 1;
+    if (nextIndex >= history.contentMap.length) {
+      this.currentContentIndex.set(history.contentMap.length);
+      return null;
+    }
+    this.currentContentIndex.set(nextIndex);
+    return history.contentMap[nextIndex];
+  }
+
+  resetJourney(): void {
+    this.journeyStarted.set(false);
+    this.currentContentIndex.set(0);
+  }
+
+  getCurrentContentIndex(): number {
+    return this.currentContentIndex();
+  }
+
+  getTotalContent(): number {
+    const history = this.activeHistory();
+    return history?.contentMap.length ?? 0;
   }
 
   getInteractiveContentByType(
     gameType: GameType
   ): InteractiveContent[] {
-    return this.historiesSignal().flatMap((history) =>
-      history.contentMap.filter((item) => item.gameType === gameType)
-    );
-  }
-
-  private createDefaultHistory(): History {
-    const contentMap: InteractiveContent[] = [
-      {
-        id: 'avatar-journey-1',
-        gameType: 'avatar',
-        gameData: {
-          legend: 'Choose a guide to help you explore the language lab.',
-          options: [
-            {
-              id: 'astro-mentor',
-              label: 'Astro Mentor',
-              description: 'Knows every word in the galaxy.',
-              isCorrect: true,
-            },
-            {
-              id: 'chef-linguini',
-              label: 'Chef Linguini',
-              description: 'Seasoned with stories, but not the right fit this time.',
-              isCorrect: false,
-            },
-            {
-              id: 'professor-parrot',
-              label: 'Professor Parrot',
-              description: 'Repeats everything you say!',
-              isCorrect: false,
-            },
-          ],
-          possibleAnswers: ['Astro Mentor'],
-        },
-      },
-      {
-        id: 'read-select-forest-1',
-        gameType: 'read-select',
-        gameData: {
-          prompt: 'Tap every real word you can find before the vines grow back.',
-          options: [
-            { text: 'river', isReal: true },
-            { text: 'glim', isReal: false },
-            { text: 'bright', isReal: true },
-            { text: 'snorf', isReal: false },
-          ],
-          minCorrectToPass: 2,
-          timeLimitSec: 45,
-          backgroundUrl: 'assets/backgrounds/forest.jpg',
-          characterMedia: 'assets/characters/guide-fox.png',
-          locale: 'en-US',
-        },
-      },
-      {
-        id: 'listen-type-bell-1',
-        gameType: 'listen-type',
-        gameData: {
-          audioUrl: 'assets/audio/bell_chime.mp3',
-          answer: 'Silver bells are ringing.',
-          tolerance: {
-            caseInsensitive: true,
-            allowedTypos: 2,
-            punctuationIgnored: true,
-          },
-          timeLimitSec: 60,
-          hint: 'It starts with a color.',
-          backgroundUrl: 'assets/backgrounds/bell-tower.jpg',
-          characterMedia: 'assets/characters/owl-guide.png',
-          locale: 'en-US',
-        },
-      },
-      {
-        id: 'fill-blanks-story-1',
-        gameType: 'fill-in-the-blanks',
-        gameData: {
-          sentence: 'The ___ fox jumps over the ___ dog.',
-          blanks: [
-            {
-              index: 0,
-              choices: [
-                { label: 'quick', isCorrect: true },
-                { label: 'slow', isCorrect: false },
-              ],
-            },
-            {
-              index: 1,
-              choices: [
-                { label: 'lazy', isCorrect: true },
-                { label: 'busy', isCorrect: false },
-              ],
-            },
-          ],
-          shuffleChoices: true,
-          timeLimitSec: 40,
-          media: 'assets/backgrounds/park.jpg',
-          locale: 'en-US',
-        },
-      },
-      {
-        id: 'read-aloud-echo-1',
-        gameType: 'read-aloud',
-        gameData: {
-          text: 'Practice makes progress, so read this line with confidence.',
-          recording: {
-            minDurationSec: 3,
-            maxDurationSec: 15,
-          },
-          scoring: {
-            minPronScore: 75,
-            minCompleteness: 80,
-          },
-          media: 'assets/backgrounds/stage.jpg',
-          locale: 'en-US',
-        },
-      },
-      {
-        id: 'speak-photo-garden-1',
-        gameType: 'speak-about-photo',
-        gameData: {
-          imageUrl: 'assets/images/garden.jpg',
-          prompt: 'Describe the garden in one or two sentences.',
-          targetKeywords: ['flowers', 'sunlight', 'bench'],
-          recording: {
-            minDurationSec: 5,
-            maxDurationSec: 20,
-          },
-          scoring: {
-            keywordsRequired: 2,
-            fluencyHint: 'Keep a steady pace and mention key details.',
-          },
-          media: 'assets/backgrounds/garden-frame.png',
-          locale: 'en-US',
-        },
-      },
-    ];
-
-    return {
-      name: 'Discovery Trail',
-      description:
-        'A guided journey through foundational literacy and speaking missions.',
-      originalContent:
-        'Follow the Discovery Trail to meet new guides, read vibrant prompts, and speak with confidence.',
-      contentMap,
-      path: contentMap.map((item) => item.id),
-    };
+    const history = this.activeHistory();
+    if (!history) {
+      return [];
+    }
+    return history.contentMap.filter((item) => item.gameType === gameType);
   }
 }

@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HistoryService } from '../app/services/history.service';
 import { GameType } from '../app/models/history.model';
 
@@ -25,15 +25,18 @@ import { GameType } from '../app/models/history.model';
           </header>
 
           <div class="grid gap-4">
-            @for (content of journey(); track content.id) {
-              <button
-                type="button"
-                class="flex items-center justify-between rounded-3xl border border-transparent bg-white/95 px-6 py-4 text-left shadow-lg shadow-emerald-900/5 transition hover:-translate-y-1 hover:border-emerald-400 hover:bg-emerald-50 focus:outline-none focus-visible:ring focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-50"
-                (click)="startGame(content.id)"
-              >
-                <div class="flex items-center gap-4">
-                  <span
-                    class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-500 text-xl font-semibold text-white shadow-md shadow-emerald-900/20"
+          @for (content of journey(); track content.id) {
+            <button
+              type="button"
+              class="flex items-center justify-between rounded-3xl border border-transparent bg-white/95 px-6 py-4 text-left shadow-lg shadow-emerald-900/5 transition hover:-translate-y-1 hover:border-emerald-400 hover:bg-emerald-50 focus:outline-none focus-visible:ring focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-50"
+              [disabled]="!content.isStartable"
+              [class.opacity-60]="!content.isStartable"
+              [class.cursor-not-allowed]="!content.isStartable"
+              (click)="startGame()"
+            >
+              <div class="flex items-center gap-4">
+                <span
+                  class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-500 text-xl font-semibold text-white shadow-md shadow-emerald-900/20"
                   >
                     {{ content.order }}
                   </span>
@@ -54,6 +57,7 @@ import { GameType } from '../app/models/history.model';
 })
 export class MapComponent {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly historyService = inject(HistoryService);
   private readonly labelMap: Record<GameType, string> = {
     avatar: 'Avatar',
@@ -71,19 +75,24 @@ export class MapComponent {
     if (!history) {
       return [];
     }
-    return history.path
-      .map((id, index) => ({
-        id,
-        order: index + 1,
-        label:
-          this.toDisplayLabel(
-            history.contentMap.find((content) => content.id === id)?.gameType
-          ) ?? `Step ${index + 1}`,
-      }));
+    return history.path.map((id, index) => ({
+      id,
+      order: index + 1,
+      label:
+        this.toDisplayLabel(
+          history.contentMap.find((content) => content.id === id)?.gameType
+        ) ?? `Step ${index + 1}`,
+      isStartable: index === 0,
+    }));
   });
 
-  startGame(gameCode: string) {
-    this.router.navigate(['/game', gameCode]);
+  startGame() {
+    const initial = this.historyService.beginJourney();
+    if (!initial) {
+      console.error('Unable to start journey. History not loaded.');
+      return;
+    }
+    this.router.navigate(['../game'], { relativeTo: this.route });
   }
 
   private toDisplayLabel(gameType?: GameType): string | null {

@@ -1,11 +1,14 @@
 import { Component, computed, input } from '@angular/core';
-import { AvatarInteractiveContent } from '../../models/history.model';
+import {
+  AvatarInteractiveContent,
+  toAvatarGameModel,
+} from './avatar-game.model';
 
 @Component({
   selector: 'app-avatar-game',
   standalone: true,
   template: `
-    @if (content(); as content) {
+    @if (viewModel(); as view) {
       <section
         class="mx-auto flex max-w-xl flex-col gap-8 rounded-3xl border border-white/10 bg-gradient-to-br from-sky-100/80 via-emerald-50/70 to-white/70 p-8 shadow-2xl shadow-sky-900/10 backdrop-blur"
       >
@@ -14,7 +17,7 @@ import { AvatarInteractiveContent } from '../../models/history.model';
             Choose Your Guide
           </p>
           <h2 class="text-balance text-3xl font-bold text-slate-900">
-            {{ content.gameData.legend }}
+            {{ view.legend }}
           </h2>
           <p class="text-sm text-slate-600">
             Each companion unlocks unique boosts for the journey.
@@ -22,7 +25,7 @@ import { AvatarInteractiveContent } from '../../models/history.model';
         </header>
 
         <ul class="grid gap-4">
-          @for (option of content.gameData.options; track option.id) {
+          @for (option of view.options; track option.id) {
             <li
               class="group relative flex cursor-pointer flex-col gap-2 rounded-2xl border-2 border-transparent bg-white/90 p-5 shadow-md shadow-slate-900/10 transition hover:-translate-y-1 hover:border-emerald-400 hover:shadow-xl"
               [class.border-emerald-400]="option.isCorrect"
@@ -56,8 +59,9 @@ import { AvatarInteractiveContent } from '../../models/history.model';
 })
 export class AvatarGameComponent {
   readonly content = input.required<AvatarInteractiveContent>();
+  readonly viewModel = computed(() => toAvatarGameModel(this.content()));
 
   readonly possibleAnswers = computed(
-    () => this.content().gameData.possibleAnswers
+    () => this.viewModel().possibleAnswers
   );
 }
