@@ -65,7 +65,9 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
   private async renderContent(content: InteractiveContent): Promise<void> {
     const loader = resolveGameLoader(content.gameType);
     if (!loader) {
-      console.error(`No loader registered for game type "${content.gameType}".`);
+      console.error(
+        `No loader registered for game type "${content.gameType}".`
+      );
       return;
     }
 

@@ -1,27 +1,27 @@
 {
-  "name": "game-ui",
+  "name": "web-game",
   "$schema": "../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "prefix": "app",
-  "sourceRoot": "game-ui/src",
+  "sourceRoot": "web-game/src",
   "tags": [],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/game-ui",
-        "browser": "game-ui/src/main.ts",
+        "outputPath": "dist/web-game",
+        "browser": "web-game/src/main.ts",
         "polyfills": ["zone.js"],
-        "tsConfig": "game-ui/tsconfig.app.json",
+        "tsConfig": "web-game/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
           {
             "glob": "**/*",
-            "input": "game-ui/public"
+            "input": "web-game/public"
           }
         ],
-        "styles": ["game-ui/src/styles.scss"]
+        "styles": ["web-game/src/styles.scss"]
       },
       "configurations": {
         "production": {
@@ -51,15 +51,15 @@
       "continuous": true,
       "executor": "@angular/build:dev-server",
       "options": {
-        "buildTarget": "game-ui:build:development",
+        "buildTarget": "web-game:build:development",
         "port": 4300
       },
       "configurations": {
         "production": {
-          "buildTarget": "game-ui:build:production"
+          "buildTarget": "web-game:build:production"
         },
         "development": {
-          "buildTarget": "game-ui:build:development",
+          "buildTarget": "web-game:build:development",
           "port": 4300
         }
       },
@@ -68,7 +68,7 @@
     "extract-i18n": {
       "executor": "@angular/build:extract-i18n",
       "options": {
-        "buildTarget": "game-ui:build"
+        "buildTarget": "web-game:build"
       }
     },
     "lint": {
@@ -78,8 +78,8 @@
       "continuous": true,
       "executor": "@nx/web:file-server",
       "options": {
-        "buildTarget": "game-ui:build",
-        "staticFilePath": "dist/game-ui/browser",
+        "buildTarget": "web-game:build",
+        "staticFilePath": "dist/web-game/browser",
         "spa": true
       }
     }

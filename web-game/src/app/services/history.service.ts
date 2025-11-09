@@ -1,10 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { HISTORY_MOCK } from '../history-mock';
-import {
-  GameType,
-  History,
-  InteractiveContent,
-} from '../models/history.model';
+import { GameType, History, InteractiveContent } from '../models/history.model';
 
 @Injectable()
 export class HistoryService {
@@ -106,9 +102,7 @@ export class HistoryService {
     return history?.contentMap.length ?? 0;
   }
 
-  getInteractiveContentByType(
-    gameType: GameType
-  ): InteractiveContent[] {
+  getInteractiveContentByType(gameType: GameType): InteractiveContent[] {
     const history = this.activeHistory();
     if (!history) {
       return [];
