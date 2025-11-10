@@ -4,7 +4,10 @@
     "titleBar.activeBackground": "#1e8fff56",
     "titleBar.inactiveBackground": "#187ccd77"
   },
-  "explorer.excludeGitIgnore": true,
+  "explorer.excludeGitIgnore": false,
+  "files.include": {
+    "auth0.config.ts": true
+  },
   "files.exclude": {
     ".nx": true,
     ".github": true,
@@ -17,7 +20,11 @@
     "postcss.config.js": true,
     "tsconfig.base.json": true,
     "jest.preset.js": true,
-    "jest.config.ts": true
+    "jest.config.ts": true,
+    "dist": true,
+    "node_modules": true,
+    "tmp": true,
+    ".angular": true
   },
   "cSpell.words": [
     "intrapersonal",
