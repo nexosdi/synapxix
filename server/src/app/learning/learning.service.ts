@@ -1,6 +1,5 @@
 import Cypher, { Clause } from '@neo4j/cypher-builder';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import neo4j, { Driver, QueryResult } from 'neo4j-driver';
 import {
   CreateTopicDto,
   CreateUserDto,
@@ -8,7 +7,8 @@ import {
   MethodFeedbackDto,
   ReinforceTopicDto,
   SetPreferencesDto,
-} from './dto';
+} from '@nexosdi.synapxix/learning/shared';
+import neo4j, { Driver, QueryResult } from 'neo4j-driver';
 
 export const NEO4J_DRIVER = Symbol('NEO4J_DRIVER');
 

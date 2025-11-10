@@ -1,11 +1,11 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '@auth0/auth0-angular';
-import { HISTORY_MOCK } from '@nexosdi.synapxix/core';
+import { HISTORY_MOCK } from '@nexosdi.synapxix/game-engine/core';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  selector: 'dsl-splash',
+  selector: 'synapxix-splash',
   template: `
     <div
       class="flex min-h-screen items-center justify-center bg-cover bg-center bg-no-repeat"
@@ -27,9 +27,7 @@ export class SplashComponent {
 
   async onPlayClick(): Promise<void> {
     const target = `/history/${HISTORY_MOCK.id}/map`;
-    const isAuthenticated = await firstValueFrom(
-      this.auth.isAuthenticated$
-    );
+    const isAuthenticated = await firstValueFrom(this.auth.isAuthenticated$);
 
     if (!isAuthenticated) {
       await firstValueFrom(

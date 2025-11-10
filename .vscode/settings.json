@@ -19,5 +19,12 @@
     "jest.preset.js": true,
     "jest.config.ts": true
   },
-  "cSpell.words": ["intrapersonal", "keyup", "Kolb", "Nexos", "Synapxix"]
+  "cSpell.words": [
+    "intrapersonal",
+    "keyup",
+    "Kolb",
+    "Nexos",
+    "nexosdi",
+    "Synapxix"
+  ]
 }

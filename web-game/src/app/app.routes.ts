@@ -4,7 +4,7 @@ import {
   GameRunnerComponent,
   HistoryService,
   historyRouteResolver,
-} from '@nexosdi.synapxix/core';
+} from '@nexosdi.synapxix/game-engine/core';
 import { MapComponent } from '../components/map.component';
 import { SplashComponent } from '../components/splash.component';
 

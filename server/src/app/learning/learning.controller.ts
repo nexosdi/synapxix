@@ -14,9 +14,9 @@ import {
   MethodFeedbackDto,
   ReinforceTopicDto,
   SetPreferencesDto,
-} from './dto';
-import { LearningService } from './learning.service';
+} from '@nexosdi.synapxix/learning/shared';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { LearningService } from './learning.service';
 
 @Controller('learning')
 @UseGuards(JwtAuthGuard)

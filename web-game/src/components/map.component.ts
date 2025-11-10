@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { GameType, HistoryService } from '@nexosdi.synapxix/core';
+import { GameType, HistoryService } from '@nexosdi.synapxix/game-engine/core';
 
 @Component({
   selector: 'app-map',

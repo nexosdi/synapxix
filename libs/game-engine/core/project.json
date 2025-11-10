@@ -1,5 +1,5 @@
 {
-  "name": "core",
+  "name": "game-engine/core",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/game-engine/core/src",
   "prefix": "lib",
