@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { AuthGuard } from '@auth0/auth0-angular';
 import {
   GameRunnerComponent,
   HistoryService,
@@ -15,6 +16,7 @@ export const routes: Routes = [
   {
     path: 'history/:historyId',
     providers: [HistoryService],
+    canActivate: [AuthGuard],
     resolve: {
       historyReady: historyRouteResolver,
     },

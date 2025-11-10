@@ -2,7 +2,7 @@
   "name": "web-game",
   "$schema": "../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "prefix": "app",
+  "prefix": "synapxix",
   "sourceRoot": "web-game/src",
   "tags": [],
   "targets": {

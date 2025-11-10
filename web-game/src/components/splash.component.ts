@@ -1,6 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from '@auth0/auth0-angular';
 import { HISTORY_MOCK } from '@nexosdi.synapxix/core';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'dsl-splash',
@@ -21,8 +23,23 @@ import { HISTORY_MOCK } from '@nexosdi.synapxix/core';
 })
 export class SplashComponent {
   private router = inject(Router);
+  private auth = inject(AuthService);
 
-  onPlayClick(): void {
-    this.router.navigate(['/history', HISTORY_MOCK.id, 'map']);
+  async onPlayClick(): Promise<void> {
+    const target = `/history/${HISTORY_MOCK.id}/map`;
+    const isAuthenticated = await firstValueFrom(
+      this.auth.isAuthenticated$
+    );
+
+    if (!isAuthenticated) {
+      await firstValueFrom(
+        this.auth.loginWithRedirect({
+          appState: { target },
+        })
+      );
+      return;
+    }
+
+    this.router.navigateByUrl(target);
   }
 }
