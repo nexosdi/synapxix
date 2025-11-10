@@ -5,7 +5,7 @@ import {
 } from './fill-in-the-blanks-game.model';
 
 @Component({
-  selector: 'app-fill-in-the-blanks-game',
+  selector: 'lib-fill-in-the-blanks-game',
   standalone: true,
   template: `
     @if (viewModel(); as view) {

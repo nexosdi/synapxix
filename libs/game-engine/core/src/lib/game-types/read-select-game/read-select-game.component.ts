@@ -5,7 +5,7 @@ import {
 } from './read-select-game.model';
 
 @Component({
-  selector: 'app-read-select-game',
+  selector: 'lib-read-select-game',
   standalone: true,
   template: `
     @if (viewModel(); as view) {

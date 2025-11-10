@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'dsl-menu',
+  selector: 'app-menu',
   template: `
     <nav
       class="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around border-t border-slate-200 bg-white/95 px-6 py-2 shadow-2xl shadow-slate-900/10 backdrop-blur"

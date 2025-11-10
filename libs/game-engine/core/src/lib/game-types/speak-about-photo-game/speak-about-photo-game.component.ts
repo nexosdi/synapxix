@@ -5,7 +5,7 @@ import {
 } from './speak-about-photo-game.model';
 
 @Component({
-  selector: 'app-speak-about-photo-game',
+  selector: 'lib-speak-about-photo-game',
   standalone: true,
   template: `
     @if (viewModel(); as view) {

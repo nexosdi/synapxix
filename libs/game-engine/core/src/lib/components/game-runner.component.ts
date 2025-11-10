@@ -14,7 +14,7 @@ import { HistoryService } from '../services/history.service';
 import { InteractiveContent } from '../models/history.model';
 
 @Component({
-  selector: 'app-game-runner',
+  selector: 'lib-game-runner',
   standalone: true,
   template: `<ng-container #dynamicComponentContainer></ng-container>`,
 })

@@ -5,7 +5,7 @@ import {
 } from './listen-type-game.model';
 
 @Component({
-  selector: 'app-listen-type-game',
+  selector: 'lib-listen-type-game',
   standalone: true,
   template: `
     @if (viewModel(); as view) {

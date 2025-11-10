@@ -5,7 +5,7 @@ import {
 } from './avatar-game.model';
 
 @Component({
-  selector: 'app-avatar-game',
+  selector: 'lib-avatar-game',
   standalone: true,
   template: `
     @if (viewModel(); as view) {

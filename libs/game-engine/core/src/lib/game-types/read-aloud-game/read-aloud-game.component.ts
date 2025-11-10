@@ -5,7 +5,7 @@ import {
 } from './read-aloud-game.model';
 
 @Component({
-  selector: 'app-read-aloud-game',
+  selector: 'lib-read-aloud-game',
   standalone: true,
   template: `
     @if (viewModel(); as view) {
