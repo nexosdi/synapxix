@@ -5,7 +5,7 @@ import { HISTORY_MOCK } from '@nexosdi.synapxix/game-engine/core';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
-  selector: 'synapxix-splash',
+  selector: 'app-splash',
   template: `
     <div
       class="flex min-h-screen items-center justify-center bg-cover bg-center bg-no-repeat"
