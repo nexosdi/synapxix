@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -euo pipefail
+
+if git diff --cached --name-only | grep -q '^auth0.config.ts$'; then
+  cat <<'EOF'
+❌ Commit blocked: auth0.config.ts contains tenant secrets and must not be checked in.
+Please remove it from the commit or stash/reset the file before retrying.
+EOF
+  exit 1
+fi

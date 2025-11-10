@@ -1,0 +1,37 @@
+{
+  "window.title": "nexosdi.synapxix ⭐️",
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#1e8fff56",
+    "titleBar.inactiveBackground": "#187ccd77"
+  },
+  "explorer.excludeGitIgnore": false,
+  "files.include": {
+    "auth0.config.ts": true
+  },
+  "files.exclude": {
+    ".nx": true,
+    ".github": true,
+    "package-lock.json": true,
+    "LICENSE": true,
+    ".prettierrc": true,
+    ".prettierignore": true,
+    ".gitignore": true,
+    "eslint.config.mjs": true,
+    "postcss.config.js": true,
+    "tsconfig.base.json": true,
+    "jest.preset.js": true,
+    "jest.config.ts": true,
+    "dist": true,
+    "node_modules": true,
+    "tmp": true,
+    ".angular": true
+  },
+  "cSpell.words": [
+    "intrapersonal",
+    "keyup",
+    "Kolb",
+    "Nexos",
+    "nexosdi",
+    "Synapxix"
+  ]
+}

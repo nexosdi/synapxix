@@ -25,13 +25,12 @@ jobs:
       # Uncomment this line to enable task distribution
       # - run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="build"
 
-      # Cache node_modules
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 22.12.0
+          cache: npm
 
-      - run: npm ci --legacy-peer-deps
+      - run: npm ci
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: npx nx-cloud record -- echo Hello World
