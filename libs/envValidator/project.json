@@ -1,0 +1,9 @@
+{
+  "name": "envValidator",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/envValidator/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project envValidator --web",
+  "targets": {}
+}

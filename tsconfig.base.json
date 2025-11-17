@@ -19,7 +19,12 @@
         "libs/game-engine/core/src/index.ts"
       ],
       "@nexosdi.synapxix/auth0-config": ["auth0.config.ts"],
-      "@nexosdi.synapxix/learning/shared": ["libs/learning/shared/src/index.ts"]
+      "@nexosdi.synapxix/learning/shared": [
+        "libs/learning/shared/src/index.ts"
+      ],
+      "@nexosdi.synapxix/prisma": ["libs/prisma/src/index.ts"],
+      "@nexosdi.synapxix/baseRepository": ["libs/baseRepository/src/index.ts"],
+      "@nexosdi.synapxix/envValidator": ["libs/envValidator/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
