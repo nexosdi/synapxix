@@ -1,0 +1,387 @@
+/* Reset y Variables */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #2563eb;
+    --primary-hover: #1d4ed8;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --border-color: #d1d5db;
+    --bg-light: #f9fafb;
+    --bg-white: #ffffff;
+    --error-color: #dc2626;
+    --success-color: #16a34a;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* Container Principal */
+.kc-container {
+    display: flex;
+    width: 100%;
+    max-width: 1100px;
+    background: var(--bg-white);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    min-height: 600px;
+}
+
+/* Panel Izquierdo - Logo */
+.kc-left-panel {
+    flex: 0 0 35%;
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.kc-logo-container {
+    text-align: center;
+    width: 100%;
+}
+
+.kc-logo {
+    max-width: 200px;
+    max-height: 200px;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+.kc-logo-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 180px;
+    height: 180px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.1);
+    border: 3px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+}
+
+.kc-logo-text {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 2px;
+}
+
+/* Panel Derecho - Formulario */
+.kc-right-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    background: var(--bg-white);
+}
+
+.kc-form-container {
+    width: 100%;
+    max-width: 420px;
+}
+
+/* Header */
+.kc-header {
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+.kc-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.kc-subtitle {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
+/* Alerts */
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+
+.alert-error {
+    background-color: #fee2e2;
+    color: var(--error-color);
+    border: 1px solid #fecaca;
+}
+
+.alert-success {
+    background-color: #dcfce7;
+    color: var(--success-color);
+    border: 1px solid #bbf7d0;
+}
+
+.alert-warning {
+    background-color: #fef3c7;
+    color: #d97706;
+    border: 1px solid #fde68a;
+}
+
+.alert-info {
+    background-color: #dbeafe;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+}
+
+/* Form Groups */
+.kc-form-group {
+    margin-bottom: 20px;
+}
+
+.kc-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.kc-label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.kc-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.kc-input {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-white);
+    color: var(--text-primary);
+    transition: all 0.2s;
+}
+
+.kc-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.kc-input::placeholder {
+    color: #9ca3af;
+}
+
+/* Password Wrapper */
+.kc-password-wrapper {
+    position: relative;
+}
+
+.kc-password-wrapper .kc-input {
+    padding-right: 45px;
+}
+
+.kc-password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--text-secondary);
+    transition: color 0.2s;
+}
+
+.kc-password-toggle:hover {
+    color: var(--text-primary);
+}
+
+.eye-icon {
+    display: block;
+    stroke-width: 2;
+}
+
+/* Checkbox */
+.kc-checkbox-group {
+    margin: 16px 0;
+}
+
+.kc-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.kc-checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* Buttons */
+.kc-button {
+    width: 100%;
+    padding: 14px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.kc-button-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.kc-button-primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.kc-button-primary:active {
+    transform: translateY(0);
+}
+
+/* Links */
+.kc-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.kc-link:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+/* Divider */
+.kc-divider {
+    display: flex;
+    align-items: center;
+    margin: 28px 0;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.kc-divider::before,
+.kc-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+}
+
+.kc-divider span {
+    padding: 0 16px;
+}
+
+/* Social Providers */
+.kc-social-providers {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.kc-social-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-white);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.kc-social-button:hover {
+    background: var(--bg-light);
+    border-color: var(--text-secondary);
+}
+
+/* Register Link */
+.kc-register-link {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.kc-register-link a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.kc-register-link a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .kc-container {
+        flex-direction: column;
+        max-width: 500px;
+    }
+
+    .kc-left-panel {
+        flex: 0 0 auto;
+        padding: 30px 20px;
+    }
+
+    .kc-logo-placeholder {
+        width: 120px;
+        height: 120px;
+    }
+
+    .kc-logo-text {
+        font-size: 1.8rem;
+    }
+
+    .kc-right-panel {
+        padding: 40px 30px;
+    }
+
+    .kc-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .kc-title {
+        font-size: 1.75rem;
+    }
+}
