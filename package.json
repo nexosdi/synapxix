@@ -7,8 +7,12 @@
     "node": ">=22.12.0",
     "npm": ">=10"
   },
-  "scripts": {},
   "private": true,
+
+  "scripts": {
+    "prisma:seed": "ts-node libs/prisma/seed.ts"
+  },
+
   "dependencies": {
     "@angular/common": "20.3.9",
     "@angular/compiler": "20.3.9",
@@ -36,6 +40,7 @@
     "three": "^0.180.0",
     "zone.js": "~0.15.0"
   },
+
   "devDependencies": {
     "@angular-devkit/core": "20.3.9",
     "@angular-devkit/schematics": "20.3.9",
