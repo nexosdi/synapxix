@@ -8,6 +8,12 @@ out-tsc
 # dependencies
 node_modules
 
+# Environment variables (contains sensitive data)
+.env 
+.env.local
+.env.*.local
+
+
 # IDEs and editors
 /.idea
 .project
@@ -45,4 +51,6 @@ Thumbs.db
 
 .angular
 auth0.config.ts
-auth0.config.ts
+
+# Docker
+postgres-backup.tar.gz

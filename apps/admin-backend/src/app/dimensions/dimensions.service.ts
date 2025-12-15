@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../shared/data-access/prisma.service';
+import { PrismaService } from '@nexosdi.synapxix/prisma';
 import { PaginationDto } from '../../../shared/data-access/dto/pagination.dto';
 import { PaginatedResponseDto } from '../../../shared/data-access/dto/base-response.dto';
 import { CreateDimensionDto } from './dto/create-dimension.dto';

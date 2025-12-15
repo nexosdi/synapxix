@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CategoriesController } from './categories.controller';
-import { PrismaService } from '../../../shared/data-access/prisma.service';
+import { PrismaService } from '@nexosdi.synapxix/prisma';
 
 @Module({
   controllers: [CategoriesController],

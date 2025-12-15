@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../shared/data-access/prisma.service';
+import { PrismaService } from '@nexosdi.synapxix/prisma';
 import { CreateContentDto } from './dto/create-content.dto';
 import { PaginationDto } from '../../../shared/data-access/dto/pagination.dto';
 import { PaginatedResponseDto } from '../../../shared/data-access/dto/base-response.dto';
@@ -49,7 +49,7 @@ export class ContentService {
 
     async update(id: number, updateContentDto: UpdateContentDto) {
         try {
-            await this.findOne(id); // Ensure the content exists
+            await this.findOne(id);
             return await this.prisma.content.update({
                 where: { id },
                 data: updateContentDto,
@@ -62,7 +62,7 @@ export class ContentService {
 
     async remove(id: number) {
         try {
-            await this.findOne(id); // Ensure the content exists
+            await this.findOne(id);
             return await this.prisma.content.delete({
                 where: { id },
             });
@@ -72,7 +72,6 @@ export class ContentService {
         }
     }
 
-    // search by title or description
     async search(query: string, paginationDto: PaginationDto) {
         const { skip, limit, page } = paginationDto;
 

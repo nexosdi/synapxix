@@ -43,8 +43,8 @@
                                     <div class="flex flex-col gap-6">
                                         <#if user.editUsernameAllowed>
                                             <label class="flex flex-col">
-                                                <p class="pb-2 text-sm font-medium leading-normal text-slate-800 dark:text-slate-200">Usuario *</p>
-                                                <input required type="text" id="username" name="username" value="${(user.username!'')}" class="form-input flex h-12 w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg border border-slate-300 dark:border-slate-700 bg-background-light dark:bg-background-dark px-3 py-2 text-base font-normal leading-normal text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-primary focus:outline-0 focus:ring-2 focus:ring-primary/20" placeholder="Elige un nombre de usuario" aria-invalid="<#if messagesPerField.existsError('username')>true</#if>" />
+                                                <p class="pb-2 text-sm font-medium leading-normal text-slate-800 dark:text-slate-200">Nombre de Usuario *</p>
+                                                <input required type="text" id="username" name="username" value="${(user.username!'')}" class="form-input flex h-12 w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg border border-slate-300 dark:border-slate-700 bg-background-light dark:bg-background-dark px-3 py-2 text-base font-normal leading-normal text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-primary focus:outline-0 focus:ring-2 focus:ring-primary/20" placeholder="Elige un nombre de usuario único" aria-invalid="<#if messagesPerField.existsError('username')>true</#if>" />
                                                 <#if messagesPerField.existsError('username')>
                                                     <span class="text-sm text-red-600 dark:text-red-400 mt-1">${kcSanitize(messagesPerField.get('username'))?no_esc}</span>
                                                 </#if>
@@ -52,11 +52,9 @@
                                         </#if>
 
                                         <label class="flex flex-col">
-                                            <p class="pb-2 text-sm font-medium leading-normal text-slate-800 dark:text-slate-200">Correo Electrónico *</p>
-                                            <input required type="email" id="email" name="email" value="${(user.email!'')}" class="form-input flex h-12 w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg border border-slate-300 dark:border-slate-700 bg-background-light dark:bg-background-dark px-3 py-2 text-base font-normal leading-normal text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-primary focus:outline-0 focus:ring-2 focus:ring-primary/20" placeholder="tu@ejemplo.com" aria-invalid="<#if messagesPerField.existsError('email')>true</#if>" />
-                                            <#if messagesPerField.existsError('email')>
-                                                <span class="text-sm text-red-600 dark:text-red-400 mt-1">${kcSanitize(messagesPerField.get('email'))?no_esc}</span>
-                                            </#if>
+                                            <p class="pb-2 text-sm font-medium leading-normal text-slate-800 dark:text-slate-200">Correo Electrónico</p>
+                                            <input readonly type="email" id="email" name="email" value="${(user.email!'')}" class="form-input flex h-12 w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3 py-2 text-base font-normal leading-normal text-slate-600 dark:text-slate-400 cursor-not-allowed" />
+                                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Este correo proviene de tu cuenta de Google y no puede ser modificado.</p>
                                         </label>
 
                                         <div class="flex flex-col gap-4 md:flex-row">

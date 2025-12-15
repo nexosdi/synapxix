@@ -6,18 +6,22 @@
   </div>
 
   <!-- Mole Game Element -->
-  <div class="mole" 
-       *ngIf="moleVisible && !loading"
-       [style.top.%]="molePosition.top"
-       [style.left.%]="molePosition.left"
-       (click)="catchMole()">
+  <div
+    class="mole"
+    *ngIf="moleVisible && !loading"
+    [style.top.%]="molePosition.top"
+    [style.left.%]="molePosition.left"
+    (click)="catchMole()"
+  >
     {{ moleEmoji }}
   </div>
 
-  <div class="points-animation"
-       *ngIf="showPointsAnimation"
-       [style.top.%]="pointsAnimationPosition.top"
-       [style.left.%]="pointsAnimationPosition.left">
+  <div
+    class="points-animation"
+    *ngIf="showPointsAnimation"
+    [style.top.%]="pointsAnimationPosition.top"
+    [style.left.%]="pointsAnimationPosition.left"
+  >
     +10
   </div>
 
@@ -27,9 +31,7 @@
     <p class="loading-text">Cargando tu aventura...</p>
   </div>
 
- 
   <div *ngIf="!loading">
-  
     <header class="dashboard-header">
       <div class="header-left">
         <div class="logo-small">S</div>
@@ -38,6 +40,7 @@
       <div class="user-section">
         <div class="user-avatar">{{ getUserInitial() }}</div>
         <span class="user-name">{{ username }}</span>
+
         <button class="logout-btn" (click)="logout()">Salir</button>
       </div>
     </header>

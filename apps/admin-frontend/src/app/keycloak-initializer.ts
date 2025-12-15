@@ -3,7 +3,6 @@ import { KeycloakService } from 'keycloak-angular';
 export function initializeKeycloak(keycloak: KeycloakService) {
   return async () => {
     try {
-      console.log('[Keycloak Init] Starting initialization...');
       
       await keycloak.init({
         config: {
@@ -19,7 +18,6 @@ export function initializeKeycloak(keycloak: KeycloakService) {
       });
       
       const isLogged = await keycloak.isLoggedIn();
-      console.log('[Keycloak Init] Complete. Logged in:', isLogged);
       
     } catch (err) {
       console.error('[Keycloak Init] Error:', err);

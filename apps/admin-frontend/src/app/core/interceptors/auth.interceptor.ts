@@ -7,7 +7,7 @@ import {
   HttpErrorResponse,
 } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, switchMap } from 'rxjs/operators';
 import { KeycloakService } from 'keycloak-angular';
 import { Router } from '@angular/router';
 
@@ -28,20 +28,30 @@ export class AuthInterceptor implements HttpInterceptor {
     req: HttpRequest<any>,
     next: HttpHandler
   ): Observable<HttpEvent<any>> {
-    // 1. Obtener el token de Keycloak
-    const token = this.keycloakService.getToken();
-
-    // 2. Si hay token, añadirlo al header Authorization
-    if (token) {
-      req = req.clone({
-        setHeaders: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-    }
-
-    // 3. Pasar la petición al siguiente interceptor o al servidor
-    return next.handle(req).pipe(
+    // 1. Convertir la promesa del token a Observable
+    return new Observable<string>(observer => {
+      this.keycloakService.getToken()
+        .then(token => {
+          observer.next(token);
+          observer.complete();
+        })
+        .catch(err => {
+          observer.error(err);
+        });
+    }).pipe(
+      switchMap(token => {
+        // 2. Si hay token, añadirlo al header Authorization
+        if (token) {
+          req = req.clone({
+            setHeaders: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+        }
+        
+        // 3. Pasar la petición al siguiente interceptor
+        return next.handle(req);
+      }),
       catchError((error: HttpErrorResponse) => {
         // 4. Manejar errores de autenticación
         if (error.status === 401) {
@@ -52,7 +62,6 @@ export class AuthInterceptor implements HttpInterceptor {
 
         if (error.status === 403) {
           console.error('❌ Acceso denegado: no tienes permisos para esta acción');
-          // Opcional: mostrar mensaje al usuario
         }
 
         return throwError(() => error);

@@ -1,46 +1,33 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CategoriesModule } from './categories/categories.module';
 import { ContentModule } from './content/content.module';
 import { DimensionsModule } from './dimensions/dimensions.module';
-import { PrismaModule } from '../../shared/data-access/prisma.module';
-import { PrismaService } from '../../shared/data-access/prisma.service';
-import {
-  KeycloakConnectModule,
-  ResourceGuard,
-  RoleGuard,
-  AuthGuard,
-} from 'nest-keycloak-connect';
-import { APP_GUARD } from '@nestjs/core';
+import { PrismaModule } from '@nexosdi.synapxix/prisma';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
-
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    KeycloakConnectModule.registerAsync({
-      useFactory: (configService: ConfigService) => ({
-        authServerUrl: configService.get<string>('KEYCLOAK_AUTH_SERVER_URL'),
-        realm: configService.get<string>('KEYCLOAK_REALM'),
-        clientId: configService.get<string>('KEYCLOAK_CLIENT_ID'),
-        secret: configService.get<string>('KEYCLOAK_SECRET'),
-      }),
-      inject: [ConfigService],
-    }),
+    AuthModule,
     PrismaModule,
     CategoriesModule,
     ContentModule,
-    DimensionsModule],
+    DimensionsModule,
+  ],
   controllers: [AppController],
   providers: [
     AppService,
-    { provide: APP_GUARD, useClass: AuthGuard },
-    { provide: APP_GUARD, useClass: ResourceGuard },
-    { provide: APP_GUARD, useClass: RoleGuard },
-    PrismaService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
   ],
 })
 export class AppModule { }

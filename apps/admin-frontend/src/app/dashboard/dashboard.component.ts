@@ -77,7 +77,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private router: Router,
     private cdr: ChangeDetectorRef
   ) {
-    console.log('[Dashboard] Constructor called');
     // Cargar puntuación guardada del localStorage
     const savedScore = localStorage.getItem('synapsis_game_score');
     if (savedScore) {
@@ -86,11 +85,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit() {
-    console.log('[Dashboard] ngOnInit started');
     try {
-      console.log('[Dashboard] Checking if logged in...');
       const isLogged = await this.keycloakService.isLoggedIn();
-      console.log('[Dashboard] Is logged in:', isLogged);
       
       if (!isLogged) {
         console.log('[Dashboard] Not logged in, redirecting to login');
@@ -98,21 +94,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
         return;
       }
 
-      console.log('[Dashboard] Loading user profile...');
       await this.keycloakService.loadUserProfile();
-      console.log('[Dashboard] User profile loaded');
       
       this.username = this.keycloakService.getUsername() || 'Usuario';
-      console.log('[Dashboard] Username:', this.username);
       
       this.loading = false;
-      console.log('[Dashboard] Loading complete');
       
       // Iniciar el mini-juego
       this.startMoleGame();
       
       this.cdr.detectChanges();
-      console.log('[Dashboard] Change detection triggered');
     } catch (err) {
       console.error('[Dashboard] Error:', err);
       this.username = 'Error al cargar usuario';
@@ -129,7 +120,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   logout() {
-    console.log('[Dashboard] Logging out');
     this.keycloakService.logout(window.location.origin);
   }
 
@@ -185,4 +175,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       console.log('¡Atrapaste al topo! Puntos:', this.gameScore);
     }
   }
+
+
 }

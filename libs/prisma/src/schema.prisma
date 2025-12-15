@@ -7,9 +7,83 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+model Category {
+  id Int @id @default(autoincrement())
+  name String
+  description String?
+
+  // Relations
+  contents Content[]
+}
+
+model Content {
+  id Int @id @default(autoincrement())
+  title String
+  description String?
+
+  // Relations
+  categoryId Int?
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model Dimension {
+  id Int @id @default(autoincrement())
+  name String
+}
+
+// === SISTEMA DE USUARIOS Y ROLES ===
+
+// Usuario base - conecta con Keycloak
 model User {
-    id            String    @id @default(cuid())
-    name          String?
-    email         String?   @unique
-    emailVerified DateTime?
+  id            String   @id @default(uuid())
+  keycloakId    String   @unique // ID del usuario en Keycloak
+  email         String   @unique
+  name          String
+  role          UserRole
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relaciones: un usuario puede tener UN perfil específico según su rol
+  tutorProfile  Tutor?
+  ninoProfile   Nino?
+}
+
+// Enum para los roles
+enum UserRole {
+  NINO
+  TUTOR
+  ADMIN
+}
+
+// Perfil de Tutor - información adicional para tutores
+model Tutor {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  telefono  String?
+  
+  // Un tutor puede tener múltiples niños
+  ninos     Nino[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Perfil de Niño - información adicional para niños
+model Nino {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  edad      Int?
+  grado     String?
+  avatar    String?  // URL o identificador del avatar
+  
+  // Un niño puede pertenecer a un tutor (opcional)
+  tutorId   String?
+  tutor     Tutor?   @relation(fields: [tutorId], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
