@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client-js" 
-  output   = "../../../generated/prisma"
+  provider        = "prisma-client-js"
+  output          = "../generated/prisma"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
@@ -10,10 +11,10 @@ datasource db {
 }
 
 model Institution {
-  institution_id Int          @id @default(autoincrement())
-  name           String?      @db.VarChar(150)
+  institution_id String      @id @default(uuid()) @db.Uuid
+  name           String?     @db.VarChar(150)
   description    String?
-  created_at     DateTime     @default(now())
+  created_at     DateTime    @default(now())
   structures     Structure[]
 
   @@map("institution")
@@ -21,10 +22,10 @@ model Institution {
 }
 
 model Structure {
-  structure_id   Int             @id @default(autoincrement())
-  institution_id Int
+  structure_id   String          @id @default(uuid()) @db.Uuid
+  institution_id String          @db.Uuid // Corregido
   name           String          @db.VarChar(150)
-  parent_id      Int?
+  parent_id      String?         @db.Uuid
   description    String?
   created_at     DateTime        @default(now())
   userStructures UserStructure[]
@@ -37,42 +38,31 @@ model Structure {
 }
 
 model app_user {
-  user_id           Int                     @id @default(autoincrement())
-  username          String                  @db.VarChar(150)
-  email             String                  @db.VarChar(150)
-  password_hash     String
-  firstname         String                  @db.VarChar(150)
-  lastname          String                  @db.VarChar(150)
-  role              String                  @default("user") @db.VarChar(150)
-  created_at        DateTime                @default(now())
-  active            Boolean                 @default(true)
-  auditLogs         AuditLog[]
-  sessions          Session[]
-  linksFrom         UserLink[]              @relation("UserLinkFrom")
-  linksTo           UserLink[]              @relation("UserLinkTo")
-  userStructures    UserStructure[]
-  notifications     Notification[]
-  contentProgress   UserContentProgress[]
-  archetypeProgress UserArchetypeProgress[]
+  user_id         String                @id @default(uuid()) @db.Uuid
+  username        String                @db.VarChar(150)
+  email           String                @db.VarChar(150)
+  firstname       String                @db.VarChar(150)
+  lastname        String                @db.VarChar(150)
+  role            String                @default("user") @db.VarChar(150)
+  created_at      DateTime              @default(now())
+  active          Boolean               @default(true)
+  auditLogs       AuditLog[]
+  sessions        Session[]
+  linksFrom       UserLink[]            @relation("UserLinkFrom")
+  linksTo         UserLink[]            @relation("UserLinkTo")
+  userStructures  UserStructure[]
+  notifications   Notification[]
+  contentProgress UserContentProgress[]
 
   @@map("app_user")
   @@schema("auth")
 }
 
-enum Role {
-  Manager
-  Teacher
-  Tutor
-  Student
-
-  @@schema("auth") // Corregido: Ubicación dentro del bloque enum
-}
-
 model UserLink {
-  link_id      Int       @id @default(autoincrement())
-  id_user_from Int?
-  id_user_to   Int?
-  link_type    Role
+  link_id      String    @id @default(uuid()) @db.Uuid
+  id_user_from String?   @db.Uuid // Corregido
+  id_user_to   String?   @db.Uuid // Corregido
+  link_type    linkType
   created_at   DateTime  @default(now())
   userFrom     app_user? @relation("UserLinkFrom", fields: [id_user_from], references: [user_id])
   userTo       app_user? @relation("UserLinkTo", fields: [id_user_to], references: [user_id])
@@ -83,8 +73,8 @@ model UserLink {
 }
 
 model UserStructure {
-  user_id      Int
-  structure_id Int
+  user_id      String    @db.Uuid // Corregido
+  structure_id String    @db.Uuid // Corregido
   structure    Structure @relation(fields: [structure_id], references: [structure_id])
   user         app_user  @relation(fields: [user_id], references: [user_id])
 
@@ -94,8 +84,8 @@ model UserStructure {
 }
 
 model Session {
-  session_id Int       @id @default(autoincrement())
-  user_id    Int?
+  session_id String    @id @default(uuid()) @db.Uuid
+  user_id    String?   @db.Uuid // Corregido
   token      String
   created_at DateTime  @default(now())
   expires_at DateTime
@@ -106,7 +96,7 @@ model Session {
 }
 
 model Dimension {
-  dimension_id Int         @id @default(autoincrement())
+  dimension_id String      @id @default(uuid()) @db.Uuid
   name         String      @db.VarChar(150)
   description  String?
   archetypes   Archetype[] @relation("ArchetypeToDimension")
@@ -116,39 +106,24 @@ model Dimension {
 }
 
 model Archetype {
-  archetype_id Int                     @id @default(autoincrement())
-  dimension_id Int?
-  name         String                  @db.VarChar(150)
+  archetype_id String     @id @default(uuid()) @db.Uuid
+  dimension_id String?    @db.Uuid // Corregido
+  name         String     @db.VarChar(150)
   description  String?
-  dimension    Dimension?              @relation("ArchetypeToDimension", fields: [dimension_id], references: [dimension_id])
-  userProgress UserArchetypeProgress[]
+  dimension    Dimension? @relation("ArchetypeToDimension", fields: [dimension_id], references: [dimension_id])
 
   @@map("archetype")
   @@schema("psychometrics")
 }
 
-model UserArchetypeProgress {
-  progress_id  Int        @id @default(autoincrement())
-  user_id      Int?
-  archetype_id Int?
-  score        Float?     @default(0)
-  last_update  DateTime   @default(now())
-  archetype    Archetype? @relation(fields: [archetype_id], references: [archetype_id])
-  user         app_user?  @relation(fields: [user_id], references: [user_id])
-
-  @@unique([user_id, archetype_id])
-  @@map("user_archetype_progress")
-  @@schema("psychometrics")
-}
-
 model Content {
-  content_id      Int                     @id @default(autoincrement())
+  content_id      String                @id @default(uuid()) @db.Uuid
   title           String
   description     String?
-  prerequisite_id Int?
-  created_at      DateTime                @default(now())
-  prerequisite    Content?                @relation("ContentPrerequisite", fields: [prerequisite_id], references: [content_id])
-  prerequisites   Content[]               @relation("ContentPrerequisite")
+  prerequisite_id String?               @db.Uuid // Corregido
+  created_at      DateTime              @default(now())
+  prerequisite    Content?              @relation("ContentPrerequisite", fields: [prerequisite_id], references: [content_id])
+  prerequisites   Content[]             @relation("ContentPrerequisite")
   userProgress    UserContentProgress[]
 
   @@map("content")
@@ -156,8 +131,8 @@ model Content {
 }
 
 model UserContentProgress {
-  user_id     Int
-  content_id  Int
+  user_id     String   @db.Uuid // Corregido
+  content_id  String   @db.Uuid // Corregido
   completed   Boolean  @default(false)
   progress    Float?
   last_update DateTime @default(now())
@@ -170,10 +145,10 @@ model UserContentProgress {
 }
 
 model AuditLog {
-  audit_id   Int       @id @default(autoincrement())
-  user_id    Int?
+  audit_id   String    @id @default(uuid()) @db.Uuid
+  user_id    String?   @db.Uuid // Corregido
   table_name String    @db.VarChar(100)
-  record_id  Int?
+  record_id  String?
   timestamp  DateTime  @default(now())
   details    Json?
   user       app_user? @relation(fields: [user_id], references: [user_id])
@@ -183,8 +158,8 @@ model AuditLog {
 }
 
 model Notification {
-  notification_id Int       @id @default(autoincrement())
-  user_id         Int?
+  notification_id String    @id @default(uuid()) @db.Uuid
+  user_id         String?   @db.Uuid // Corregido
   title           String    @db.VarChar(150)
   message         String?
   read            Boolean   @default(false)
@@ -193,4 +168,13 @@ model Notification {
 
   @@map("notification")
   @@schema("communication")
+}
+
+enum linkType {
+  STUDENT   @map("1")
+  ASSISTANT @map("2")
+  TEACHER   @map("3")
+  DIRECTOR  @map("4")
+
+  @@schema("auth")
 }
