@@ -9,6 +9,24 @@ import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+
+  const requiredEnvVars = [
+    'KEYCLOAK_URL',
+    'KEYCLOAK_REALM',
+    'KEYCLOAK_CLIENT_ID',
+  ];
+
+  const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
+
+  if (missingEnvVars.length > 0) {
+    logger.error(
+      `❌ Application failed to start due to missing environment variables: ${missingEnvVars.join(
+        ', '
+      )}`
+    );
+    process.exit(1);
+  }
+
   const app = await NestFactory.create(AppModule);
 
   // CORS habilitado para el frontend

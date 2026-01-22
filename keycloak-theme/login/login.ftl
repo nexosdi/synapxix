@@ -10,10 +10,7 @@
                         <div class="relative hidden lg:flex h-full flex-col justify-between p-12 bg-gradient-to-br from-blue-600 to-indigo-700">
                             <div class="relative z-10">
                                 <a class="flex items-center gap-3" href="#">
-                                    <!-- Espacio para logo futuro - Reemplaza el SVG con: <img src="${url.resourcesPath}/img/logo.png" alt="Synapxix" class="h-8 w-8" /> -->
-                                    <svg class="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 2L2 7V17L12 22L22 17V7L12 2ZM12 4.437L19.531 8.5V15.5L12 19.563L4.469 15.5V8.5L12 4.437Z"></path>
-                                    </svg>
+                                    <img src="${url.resourcesPath}/img/logo.png" alt="Synapxix" class="h-8 w-8 object-contain" />
                                     <span class="text-2xl font-bold tracking-tight text-white">Synapxix</span>
                                 </a>
                             </div>
@@ -22,14 +19,17 @@
                             <div class="relative z-10 flex-1 flex items-center justify-center py-8">
                                 <div class="w-full max-w-2xl">
                                     <div class="relative w-full" style="padding-bottom: 56.25%;">
-                                        <iframe 
-                                            class="absolute top-0 left-0 w-full h-full rounded-xl shadow-2xl"
-                                            src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0&mute=0&controls=1&loop=1&playlist=dQw4w9WgXcQ" 
-                                            title="YouTube video player" 
-                                            frameborder="0" 
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                                            allowfullscreen>
-                                        </iframe>
+                                        <video
+                                            class="absolute top-0 left-0 w-full h-full rounded-xl shadow-2xl object-cover"
+                                            autoplay
+                                            loop
+                                            muted
+                                            playsinline
+                                            poster="${url.resourcesPath}/img/video-poster.jpg">
+                                            <source src="${url.resourcesPath}/video/bg-video.mp4" type="video/mp4">
+                                            <!-- Fallback a una imagen si el video falla -->
+                                            <img src="${url.resourcesPath}/img/video-poster.jpg" alt="Synapxix Promo" class="w-full h-full object-cover rounded-xl">
+                                        </video>
                                     </div>
                                 </div>
                             </div>

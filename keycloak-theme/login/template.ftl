@@ -36,6 +36,9 @@
             <link href="${url.resourcesPath}/${style}" rel="stylesheet" />
         </#list>
     </#if>
+    <#if recaptchaRequired??>
+        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    </#if>
 </head>
 <body class="font-display bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200">
     <#nested "form">

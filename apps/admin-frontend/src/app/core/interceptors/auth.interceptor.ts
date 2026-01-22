@@ -55,9 +55,52 @@ export class AuthInterceptor implements HttpInterceptor {
       catchError((error: HttpErrorResponse) => {
         // 4. Manejar errores de autenticación
         if (error.status === 401) {
-          console.warn('⚠️ Token expirado o inválido, redirigiendo a login...');
-          this.keycloakService.logout();
-          this.router.navigate(['/login']);
+          console.warn('⚠️ Token expirado o inválido, intentando renovar...');
+          
+          // Intentar renovar el token antes de desconectar
+          return new Observable<HttpEvent<any>>(observer => {
+            this.keycloakService.updateToken(5)
+              .then(refreshed => {
+                if (refreshed) {
+                  console.log('✅ Token renovado exitosamente, reintentando petición...');
+                  
+                  // Obtener el nuevo token y reintentar la petición original
+                  this.keycloakService.getToken()
+                    .then(newToken => {
+                      const clonedReq = req.clone({
+                        setHeaders: {
+                          Authorization: `Bearer ${newToken}`,
+                        },
+                      });
+                      
+                      // Reintentar la petición con el nuevo token
+                      next.handle(clonedReq).subscribe({
+                        next: (event) => observer.next(event),
+                        error: (err) => observer.error(err),
+                        complete: () => observer.complete()
+                      });
+                    })
+                    .catch(err => {
+                      console.error('❌ Error obteniendo nuevo token:', err);
+                      this.keycloakService.logout();
+                      this.router.navigate(['/login']);
+                      observer.error(error);
+                    });
+                } else {
+                  // Token no se pudo renovar (refresh token expirado)
+                  console.warn('⚠️ No se pudo renovar el token, cerrando sesión...');
+                  this.keycloakService.logout();
+                  this.router.navigate(['/login']);
+                  observer.error(error);
+                }
+              })
+              .catch(err => {
+                console.error('❌ Error renovando token:', err);
+                this.keycloakService.logout();
+                this.router.navigate(['/login']);
+                observer.error(error);
+              });
+          });
         }
 
         if (error.status === 403) {

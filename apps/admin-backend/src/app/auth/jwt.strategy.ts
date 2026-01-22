@@ -14,11 +14,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         cache: true,
         rateLimit: true,
         jwksRequestsPerMinute: 5,
-        jwksUri: `${configService.get<string>('KEYCLOAK_AUTH_SERVER_URL')}/realms/${configService.get<string>('KEYCLOAK_REALM')}/protocol/openid-connect/certs`,
+        jwksUri: `${configService.get<string>('KEYCLOAK_URL')}/realms/${configService.get<string>('KEYCLOAK_REALM')}/protocol/openid-connect/certs`,
       }),
 
       audience: configService.get<string>('KEYCLOAK_CLIENT_ID'),
-      issuer: `${configService.get<string>('KEYCLOAK_AUTH_SERVER_URL')}/realms/${configService.get<string>('KEYCLOAK_REALM')}`,
+      issuer: `${configService.get<string>('KEYCLOAK_URL')}/realms/${configService.get<string>('KEYCLOAK_REALM')}`,
       algorithms: ['RS256'],
     });
   }
