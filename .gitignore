@@ -4,6 +4,9 @@
 dist
 tmp
 out-tsc
+/generated
+!/generated/prisma/schema.prisma
+!/generated/prisma/migrations
 
 # dependencies
 node_modules
@@ -12,7 +15,9 @@ node_modules
 .env 
 .env.local
 .env.*.local
-
+.env.development
+.env.production
+.env.test
 
 # IDEs and editors
 /.idea
@@ -44,12 +49,16 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# Nx
 .nx/cache
 .nx/workspace-data
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
+# Angular
 .angular
+
+# Auth0 (legacy)
 auth0.config.ts
 
 # Docker
