@@ -19,7 +19,10 @@ import { InteractiveContent } from '../models/history.model';
   template: `<ng-container #dynamicComponentContainer></ng-container>`,
 })
 export class GameRunnerComponent implements OnInit, OnDestroy {
-  private static readonly AUTO_ADVANCE_DELAY_MS = 3500;
+  /** * Aumentado a 60 segundos para que te de tiempo a probar e interactuar 
+   * con el juego de "Read & Select" sin que se pase solo.
+   */
+  private static readonly AUTO_ADVANCE_DELAY_MS = 60000; 
 
   @ViewChild('dynamicComponentContainer', {
     read: ViewContainerRef,
@@ -31,10 +34,30 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  private renderEffectRef: EffectRef | null = null;
   private advanceTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /**
+   * EL CAMBIO CLAVE: Definimos el efecto aquí arriba (field initializer).
+   * Esto garantiza que Angular tenga el "Injection Context" correcto.
+   */
+  private readonly renderEffect = effect(() => {
+    const content = this.historyService.currentContent();
+    
+    if (!content) {
+      this.clearAdvanceTimer();
+      if (this.historyService.isJourneyComplete()) {
+        this.container.clear();
+        this.router.navigate(['../map'], { relativeTo: this.route });
+      }
+      return;
+    }
+
+    // Si hay contenido, lo renderizamos
+    this.renderContent(content);
+  });
+
   ngOnInit(): void {
+    // Aquí solo gestionamos el inicio del viaje si no hay nada cargado
     if (!this.historyService.currentContent()) {
       const initial = this.historyService.beginJourney();
       if (!initial) {
@@ -43,32 +66,17 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
         return;
       }
     }
-
-    this.renderEffectRef = effect(() => {
-      const content = this.historyService.currentContent();
-      if (!content) {
-        this.clearAdvanceTimer();
-        if (this.historyService.isJourneyComplete()) {
-          this.container.clear();
-          this.router.navigate(['../map'], { relativeTo: this.route });
-        }
-        return;
-      }
-      this.renderContent(content);
-    });
   }
 
   ngOnDestroy(): void {
-    this.renderEffectRef?.destroy();
+    // El efecto se destruye automáticamente al ser una propiedad de clase
     this.clearAdvanceTimer();
   }
 
   private async renderContent(content: InteractiveContent): Promise<void> {
     const loader = resolveGameLoader(content.gameType);
     if (!loader) {
-      console.error(
-        `No loader registered for game type "${content.gameType}".`
-      );
+      console.error(`No loader registered for game type "${content.gameType}".`);
       return;
     }
 
@@ -77,13 +85,13 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
       const componentRef = this.container.createComponent(await loader(), {
         index: 0,
       });
+
+      // Inyectamos los datos al componente dinámico
       componentRef.setInput('content', content);
+      
       this.scheduleAdvance();
     } catch (error) {
-      console.error(
-        `Error loading component for game "${content.gameType}".`,
-        error
-      );
+      console.error(`Error loading component for game "${content.gameType}".`, error);
     }
   }
 
