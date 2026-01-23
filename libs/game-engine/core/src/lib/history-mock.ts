@@ -2,35 +2,64 @@ import { History, InteractiveContent } from './models/history.model';
 
 // Remarks: this file contains a example history, this must come from a server, only for development purposes.
 export const contentMap: InteractiveContent[] = [
+  
   {
-  "id": "mission-spotlight-01",
-  "gameType": "spotlight",
+  "id": "mission-sound-001",
+  "gameType": "sound-match",
   "gameInput": {
-    "prompt": "Protocolo de Seguridad: Localiza las anomalías térmicas en el reactor central",
-    "backgroundImage": "https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&q=80&w=2000",
+    "prompt": "¿Qué instrumento suena así?",
+    "audioUrl": "assets/audio/piano-sample.mp3",
     "locale": "es-AR",
-    "targets": [
+    "options": [
       { 
-        "id": "anomaly-1", 
-        "name": "Núcleo de Fusión", 
-        "x": 49.5, 
-        "y": 51.2, 
-        "found": false 
+        "id": "opt-1", 
+        "text": "Piano", 
+        "isCorrect": true, 
+        "imageUrl": "assets/images/games/piano.png" 
       },
       { 
-        "id": "anomaly-2", 
-        "name": "Ventilación Primaria", 
-        "x": 22.8, 
-        "y": 35.4, 
-        "found": false 
+        "id": "opt-2", 
+        "text": "Guitarra", 
+        "isCorrect": false, 
+        "imageUrl": "assets/images/games/guitar.png" 
       },
       { 
-        "id": "anomaly-3", 
-        "name": "Tanque de Refrigerante", 
-        "x": 82.1, 
-        "y": 72.8, 
-        "found": false 
+        "id": "opt-3", 
+        "text": "Tambor", 
+        "isCorrect": false, 
+        "imageUrl": "assets/images/games/drum.png" 
       }
+    ]
+  }
+},
+{
+  "id": "balance-01",
+  "gameType": "balance-master",
+  "gameInput": {
+    "prompt": "¿Qué número es más grande?",
+    "locale": "es-AR",
+    "leftSide": {
+      "value": 5,
+      "label": "Unidades"
+    },
+    "rightSide": {
+      "value": 10,
+      "label": "Decenas"
+    },
+    "correctOperator": "<"
+  }
+},
+  {
+  "id": "odd-01",
+  "gameType": "intruder",
+  "gameInput": {
+    "prompt": "¿Quién no vive en la selva?",
+    "locale": "es-AR",
+    "options": [
+      { "id": "1", "text": "León", "isCorrect": false, "imageUrl": "..." },
+      { "id": "2", "text": "Tigre", "isCorrect": false, "imageUrl": "..." },
+      { "id": "3", "text": "Pájaro", "isCorrect": false, "imageUrl": "..." },
+      { "id": "4", "text": "Pingüino", "isCorrect": true, "imageUrl": "..." }
     ]
   }
 },
@@ -195,6 +224,52 @@ export const contentMap: InteractiveContent[] = [
     }
   
   },
+  {
+  "id": "mem-01",
+  "gameType": "neural-link",
+  "gameInput": {
+    "prompt": "Encuentra las parejas de animales",
+    "locale": "es-AR",
+    "cards": [
+      { "id": "1", "matchId": "a", "text": "León" },
+      { "id": "2", "matchId": "a", "imageUrl": "URL_LEON" },
+      { "id": "3", "matchId": "b", "text": "Mono" },
+      { "id": "4", "matchId": "b", "imageUrl": "URL_MONO" }
+    ]
+  }
+},
+{
+  "id": "mission-spotlight-01",
+  "gameType": "spotlight",
+  "gameInput": {
+    "prompt": "Protocolo de Seguridad: Localiza las anomalías térmicas en el reactor central",
+    "backgroundImage": "https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&q=80&w=2000",
+    "locale": "es-AR",
+    "targets": [
+      { 
+        "id": "anomaly-1", 
+        "name": "Núcleo de Fusión", 
+        "x": 49.5, 
+        "y": 51.2, 
+        "found": false 
+      },
+      { 
+        "id": "anomaly-2", 
+        "name": "Ventilación Primaria", 
+        "x": 22.8, 
+        "y": 35.4, 
+        "found": false 
+      },
+      { 
+        "id": "anomaly-3", 
+        "name": "Tanque de Refrigerante", 
+        "x": 82.1, 
+        "y": 72.8, 
+        "found": false 
+      }
+    ]
+  }
+},
 ];
 
 export const HISTORY_MOCK: History = {

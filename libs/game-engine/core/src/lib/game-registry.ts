@@ -36,10 +36,26 @@ export const gameComponentRegistry: Record<GameType, GameComponentLoader> = {
     import(
       './game-types/spotlight-game/spotlight-game.component'
     ).then((m) => m.SpotlightGameComponent),
+  'neural-link': () =>
+    import(
+      './game-types/neural-link-game/neural-link-game.component'
+    ).then((m) => m.NeuralLinkGameComponent),
   'timeline-order': () =>
     import(
       './game-types/timeline-order-game/timeline-order-game.component.component' // <-- Corregido aquí
     ).then((m) => m.TimelineOrderGameComponent),
+  'intruder': () =>
+    import(
+      './game-types/intruder-game/intruder-game.component' // <-- Corregido aquí
+    ).then((m) => m.IntruderGameComponent),
+  'balance-master': () =>
+    import(
+      './game-types/balance-game/balance-game.component' // <-- Corregido aquí
+    ).then((m) => m.BalanceMasterComponent),
+  'sound-match': () =>
+    import(
+      './game-types/sound-match/sound-match.component' // <-- Corregido aquí
+    ).then((m) => m.SoundMatchGameComponent),
 };
 
 export function resolveGameLoader(

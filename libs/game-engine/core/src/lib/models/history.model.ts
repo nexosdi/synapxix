@@ -7,6 +7,10 @@ export type GameType =
   | 'timeline-order'
   | 'categorization'
   | 'spotlight'
+  | 'neural-link'
+  | 'intruder'
+  | 'balance-master'
+  | 'sound-match'
   | 'speak-about-photo';
 
 export interface InteractiveContentBase<

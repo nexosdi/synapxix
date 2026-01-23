@@ -72,6 +72,10 @@ export class MapComponent {
     'timeline-order': 'order your timeline',
     'categorization': 'categorization',
     'spotlight': 'spotlight',
+    'intruder': 'find the intruder',
+    'neural-link': 'memory neural link',
+    'balance-master': 'balance master',
+    'sound-match': 'sound match',
   };
 
   readonly activeHistory = this.historyService.activeHistory;
