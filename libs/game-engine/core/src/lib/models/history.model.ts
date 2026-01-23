@@ -4,6 +4,9 @@ export type GameType =
   | 'listen-type'
   | 'fill-in-the-blanks'
   | 'read-aloud'
+  | 'timeline-order'
+  | 'categorization'
+  | 'spotlight'
   | 'speak-about-photo';
 
 export interface InteractiveContentBase<

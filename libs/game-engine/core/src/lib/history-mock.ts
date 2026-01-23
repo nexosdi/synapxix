@@ -3,6 +3,38 @@ import { History, InteractiveContent } from './models/history.model';
 // Remarks: this file contains a example history, this must come from a server, only for development purposes.
 export const contentMap: InteractiveContent[] = [
   {
+  "id": "mission-spotlight-01",
+  "gameType": "spotlight",
+  "gameInput": {
+    "prompt": "Protocolo de Seguridad: Localiza las anomalías térmicas en el reactor central",
+    "backgroundImage": "https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&q=80&w=2000",
+    "locale": "es-AR",
+    "targets": [
+      { 
+        "id": "anomaly-1", 
+        "name": "Núcleo de Fusión", 
+        "x": 49.5, 
+        "y": 51.2, 
+        "found": false 
+      },
+      { 
+        "id": "anomaly-2", 
+        "name": "Ventilación Primaria", 
+        "x": 22.8, 
+        "y": 35.4, 
+        "found": false 
+      },
+      { 
+        "id": "anomaly-3", 
+        "name": "Tanque de Refrigerante", 
+        "x": 82.1, 
+        "y": 72.8, 
+        "found": false 
+      }
+    ]
+  }
+},
+  {
     id: 'avatar-journey-1',
     gameType: 'avatar',
     gameInput: {
@@ -19,8 +51,8 @@ export const contentMap: InteractiveContent[] = [
           label: 'Chef Linguini',
           description:
             'Seasoned with stories, but not the right fit this time.',
-          isCorrect: false,
-        },
+            isCorrect: false,
+          },
         {
           id: 'professor-parrot',
           label: 'Professor Parrot',
@@ -129,6 +161,39 @@ export const contentMap: InteractiveContent[] = [
       media: 'assets/backgrounds/garden-frame.png',
       locale: 'en-US',
     },
+  },
+  {
+    id: 'h-arg-01',
+    gameType: 'timeline-order',
+    gameInput: {
+      prompt: '¿Puedes ordenar estos hechos históricos?',
+    locale: 'es-AR',
+    events: [
+      { id: 'e1', text: 'Revolución de Mayo', order: 1 },
+      { id: 'e2', text: 'Declaración de la Independencia', order: 2 },
+      { id: 'e3', text: 'Cruce de los Andes', order: 3 },
+      { id: 'e4', text: 'Constitución Nacional', order: 4 }
+    ]
+  }
+},
+    {
+    id: 'time-line-order-1',
+    gameType: 'categorization',
+    gameInput: {
+      prompt: '¿Cuáles son Frutas y cuáles Vegetales?',
+      locale: 'es-AR',
+      categories: [
+        { id: 'cat1', label: 'Frutas', icon: '🍎' },
+        { id: 'cat2', label: 'Vegetales', icon: '🥦' }
+      ],
+      items: [
+        { id: 'i1', text: 'Manzana', categoryId: 'cat1', imageUrl: 'URL_AQUÍ' },
+        { id: 'i2', text: 'Zanahoria', categoryId: 'cat2', imageUrl: 'URL_AQUÍ' },
+        { id: 'i3', text: 'Banana', categoryId: 'cat1' },
+        { id: 'i4', text: 'Lechuga', categoryId: 'cat2' }
+      ]
+    }
+  
   },
 ];
 

@@ -28,6 +28,18 @@ export const gameComponentRegistry: Record<GameType, GameComponentLoader> = {
     import(
       './game-types/speak-about-photo-game/speak-about-photo-game.component'
     ).then((m) => m.SpeakAboutPhotoGameComponent),
+  'categorization': () =>
+    import(
+      './game-types/categorization-game/categorization-game.component'
+    ).then((m) => m.CategorizationGameComponent),
+  'spotlight': () =>
+    import(
+      './game-types/spotlight-game/spotlight-game.component'
+    ).then((m) => m.SpotlightGameComponent),
+  'timeline-order': () =>
+    import(
+      './game-types/timeline-order-game/timeline-order-game.component.component' // <-- Corregido aquí
+    ).then((m) => m.TimelineOrderGameComponent),
 };
 
 export function resolveGameLoader(
