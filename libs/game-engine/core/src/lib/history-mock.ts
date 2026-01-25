@@ -6,7 +6,6 @@ export const contentMap: InteractiveContent[] = [
   {
   "id": "mission-sound-001",
   "gameType": "sound-match",
-  "category":"general",
   "gameInput": {
     "prompt": "¿Qué instrumento suena así?",
     "audioUrl": "assets/audio/piano-sample.mp3",
@@ -36,7 +35,6 @@ export const contentMap: InteractiveContent[] = [
 {
   "id": "balance-01",
   "gameType": "balance-master",
-  "category":"ciencias",
   "gameInput": {
     "prompt": "¿Qué número es más grande?",
     "locale": "es-AR",
@@ -54,7 +52,6 @@ export const contentMap: InteractiveContent[] = [
   {
   "id": "odd-01",
   "gameType": "intruder",
-  "category":"general",
   "gameInput": {
     "prompt": "¿Quién no vive en la selva?",
     "locale": "es-AR",
@@ -69,7 +66,6 @@ export const contentMap: InteractiveContent[] = [
   {
     id: 'avatar-journey-1',
     gameType: 'avatar',
-   "category":"general",
     gameInput: {
       legend: 'Choose a guide to help you explore the language lab.',
       options: [
@@ -99,7 +95,6 @@ export const contentMap: InteractiveContent[] = [
   {
     id: 'read-select-forest-1',
     gameType: 'read-select',
-   "category":"literatura",
     gameInput: {
       prompt: 'Tap every real word you can find before the vines grow back.',
       options: [
@@ -118,7 +113,6 @@ export const contentMap: InteractiveContent[] = [
   {
     id: 'listen-type-bell-1',
     gameType: 'listen-type',
-   "category":"general",
     gameInput: {
       audioUrl: 'assets/audio/bell_chime.mp3',
       answer: 'Silver bells are ringing.',
@@ -137,7 +131,6 @@ export const contentMap: InteractiveContent[] = [
   {
     id: 'fill-blanks-story-1',
     gameType: 'fill-in-the-blanks',
-   "category":"literatura",
     gameInput: {
       sentence: 'The ___ fox jumps over the ___ dog.',
       blanks: [
@@ -165,7 +158,6 @@ export const contentMap: InteractiveContent[] = [
   {
     id: 'read-aloud-echo-1',
     gameType: 'read-aloud',
-   "category":"literatura",
     gameInput: {
       text: 'Practice makes progress, so read this line with confidence.',
       recording: {
@@ -183,7 +175,6 @@ export const contentMap: InteractiveContent[] = [
   {
     id: 'speak-photo-garden-1',
     gameType: 'speak-about-photo',
-   "category":"literatura",
     gameInput: {
       imageUrl: 'assets/images/garden.jpg',
       prompt: 'Describe the garden in one or two sentences.',
@@ -203,7 +194,6 @@ export const contentMap: InteractiveContent[] = [
   {
     id: 'h-arg-01',
     gameType: 'timeline-order',
-   "category":"historia",
     gameInput: {
       prompt: '¿Puedes ordenar estos hechos históricos?',
     locale: 'es-AR',
@@ -216,9 +206,8 @@ export const contentMap: InteractiveContent[] = [
   }
 },
     {
-    id: 'categorization-fruits-vegetables-1',
+    id: 'time-line-order-1',
     gameType: 'categorization',
-   "category":"general",
     gameInput: {
       prompt: '¿Cuáles son Frutas y cuáles Vegetales?',
       locale: 'es-AR',
@@ -238,7 +227,6 @@ export const contentMap: InteractiveContent[] = [
   {
   "id": "mem-01",
   "gameType": "neural-link",
-  "category":"general",
   "gameInput": {
     "prompt": "Encuentra las parejas de animales",
     "locale": "es-AR",
@@ -253,7 +241,6 @@ export const contentMap: InteractiveContent[] = [
 {
   "id": "mission-spotlight-01",
   "gameType": "spotlight",
-  "category":"ciencias",
   "gameInput": {
     "prompt": "Protocolo de Seguridad: Localiza las anomalías térmicas en el reactor central",
     "backgroundImage": "https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&q=80&w=2000",

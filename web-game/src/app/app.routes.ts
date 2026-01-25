@@ -7,6 +7,8 @@ import {
 } from '@nexosdi.synapxix/game-engine/core';
 import { MapComponent } from '../components/map.component';
 import { SplashComponent } from '../components/splash.component';
+import { RoadmapBuilderComponent } from '../teachers-form/roadmap-builder.component';
+
 
 export const routes: Routes = [
   {
@@ -16,7 +18,7 @@ export const routes: Routes = [
   {
     path: 'history/:historyId',
     providers: [HistoryService],
-    canActivate: [AuthGuard],
+    // canActivate: [AuthGuard],
     resolve: {
       historyReady: historyRouteResolver,
     },
@@ -33,6 +35,10 @@ export const routes: Routes = [
       {
         path: 'game',
         component: GameRunnerComponent,
+      },
+      {
+        path: 'admin/builder',
+        component: RoadmapBuilderComponent,
       },
     ],
   },
