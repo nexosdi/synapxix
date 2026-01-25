@@ -13,6 +13,9 @@ export type GameType =
   | 'sound-match'
   | 'speak-about-photo';
 
+// Definimos las categorías posibles para evitar errores de escritura
+export type GameCategory = 'literatura' | 'historia' | 'ciencias' | 'general';
+
 export interface InteractiveContentBase<
   TType extends GameType = GameType,
   TData extends object = object
@@ -20,6 +23,10 @@ export interface InteractiveContentBase<
   id: string;
   gameType: TType;
   gameInput: TData;
+  // --- NUEVOS CAMPOS DINÁMICOS ---
+  category?: GameCategory; // Para filtrar en las pantallas
+  title?: string;          // Nombre amigable para la lista
+  order?: number;         // Orden dentro de su categoría
 }
 
 export type InteractiveContent<
