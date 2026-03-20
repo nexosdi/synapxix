@@ -4,7 +4,7 @@ import { appRoutes } from './app.routes';
 // import { provideClientHydration } from '@angular/platform-browser';
 import { KeycloakService } from 'keycloak-angular';
 import { initializeKeycloak } from './keycloak-initializer';
-import { provideHttpClient, withInterceptors, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
@@ -12,7 +12,7 @@ export const appConfig: ApplicationConfig = {
     // provideClientHydration(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(appRoutes),
-    provideHttpClient(),
+    provideHttpClient(withInterceptorsFromDi()),
     KeycloakService,
     // Registrar el interceptor HTTP para autenticación
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },

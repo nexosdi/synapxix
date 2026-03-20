@@ -17,20 +17,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         jwksUri: `${configService.get<string>('KEYCLOAK_URL')}/realms/${configService.get<string>('KEYCLOAK_REALM')}/protocol/openid-connect/certs`,
       }),
 
-      audience: configService.get<string>('KEYCLOAK_CLIENT_ID'),
+      audience: configService.get<string>('KEYCLOAK_BACKEND_CLIENT_ID'),
       issuer: `${configService.get<string>('KEYCLOAK_URL')}/realms/${configService.get<string>('KEYCLOAK_REALM')}`,
       algorithms: ['RS256'],
     });
   }
 
-  async validate(payload: any) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async validate(payload: Record<string, any>) {
 
     if (!payload.sub) {
       throw new UnauthorizedException('Token inválido: falta identificador de usuario');
     }
 
     const realmRoles = payload.realm_access?.roles || [];
-    const clientRoles = payload.resource_access?.[this.configService.get<string>('KEYCLOAK_CLIENT_ID')]?.roles || [];
+    const clientRoles = payload.resource_access?.[this.configService.get<string>('KEYCLOAK_BACKEND_CLIENT_ID')]?.roles || [];
     
     const roles = [...realmRoles, ...clientRoles];
 

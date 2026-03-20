@@ -14,6 +14,7 @@ async function bootstrap() {
     'KEYCLOAK_URL',
     'KEYCLOAK_REALM',
     'KEYCLOAK_CLIENT_ID',
+    'KEYCLOAK_BACKEND_CLIENT_ID',
   ];
 
   const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);

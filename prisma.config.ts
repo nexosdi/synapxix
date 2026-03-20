@@ -6,5 +6,5 @@ loadEnv({
 })
 
 export default defineConfig({
-  schema: './prisma/schema.prisma',
+  schema: './libs/prisma/src/schema.prisma',
 })
