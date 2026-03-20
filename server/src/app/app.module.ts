@@ -4,9 +4,10 @@ import { AppService } from './app.service';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { AuthModule } from './auth/auth.module';
 import { LearningModule } from './learning/learning.module';
+import { ResearchModule } from './modules/research/research.module';
 
 @Module({
-  imports: [AuthModule, LearningModule],
+  imports: [AuthModule, LearningModule, ResearchModule],
   controllers: [AppController],
   providers: [AppService, JwtAuthGuard],
 })
