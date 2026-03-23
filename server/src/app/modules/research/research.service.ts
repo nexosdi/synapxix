@@ -1,41 +1,45 @@
 import { Injectable } from '@nestjs/common';
 import { ProcessGameActivityDto } from './models/game-input.model';
+import { AiProvider } from './providers/ai.provider';
 
 @Injectable()
 export class ResearchService {
-  
+  constructor(private readonly aiProvider: AiProvider) {}
 
   async processActivity(data: ProcessGameActivityDto) {
     const { gameType, gameInput, studentResult } = data;
 
     const systemPrompt = this.generateSystemPrompt(gameType);
-    
     const simplifiedContext = this.simplifyContext(gameType, gameInput);
 
-    console.log(`Analyzing ${gameType} for student ${data.studentId}`);
-    
+    const aiAnalysis = await this.aiProvider.analyzePedagogicalAction(
+      systemPrompt,
+      simplifiedContext,
+      studentResult
+    );
+
     return {
-      analysis: `AI processing context: ${simplifiedContext}`,
-      systemContext: systemPrompt,
+      game: gameType,
+      studentId: data.studentId,
+      aiFeedback: aiAnalysis,
+      analysisContext: `AI processing context: ${simplifiedContext}`,
       performanceSummary: {
-        wasSuccessful: studentResult.succes, 
+        wasSuccessful: studentResult.success, 
         timeTaken: studentResult.duration,
         inputAnalyzed: studentResult.content
       },
       dimensionUpdate: {
-        logic: studentResult.succes ? 0.9 : 0.4,
+        logic: studentResult.success ? 0.9 : 0.4,
         creativity: 0.5
       }
     };
   }
 
-  
   private generateSystemPrompt(type: string): string {
     return `You are a multimodal pedagogical analyst. Analyze the ${type} activity 
             to identify learning patterns and cognitive dimensions.`;
   }
 
-  
   private simplifyContext(type: string, input: any): string {
     switch (type) {
       case 'fill-in-the-blanks':

@@ -17,7 +17,7 @@ export class ProcessGameActivityDto {
     studentResult: {
         content: string | string[];
         duration: number;
-        succes: boolean;
+        success: boolean;
 
     };
 }
