@@ -1,7 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap');
 
 :host {
-  /* Theme Colors extracted from Tailwind config */
   --sys-primary: #00668a;
   --sys-primary-dim: #7ad0ff;
   --sys-primary-container: #c3e8ff;
@@ -28,14 +27,13 @@
 
   display: block;
   font-family: 'Be Vietnam Pro', sans-serif;
-  color: var(--sys-on-surface);
   margin-top: 2rem;
   padding-bottom: 4rem;
 }
 
 .playground-wrapper {
   background-color: var(--sys-surface-container-lowest);
-  border-radius: 2rem;
+  border-radius: 2.5rem;
   padding: 3rem;
   box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(0, 0, 0, 0.03);
@@ -44,13 +42,11 @@
 .text-primary { color: var(--sys-primary); }
 .text-secondary { color: var(--sys-secondary); }
 
-/* Background helpers for dynamic binding */
 .bg-primary-container { background-color: var(--sys-primary-container) !important; color: var(--sys-on-primary-container); }
 .bg-secondary-container { background-color: var(--sys-secondary-container) !important; color: var(--sys-on-secondary-container); }
 .bg-tertiary-container { background-color: var(--sys-tertiary-container) !important; color: var(--sys-on-tertiary-container); }
 .bg-error-container { background-color: var(--sys-error-container) !important; color: var(--sys-on-error-container); }
 
-/* Hero Section */
 .hero-section {
   margin-bottom: 2.5rem;
   
@@ -69,7 +65,6 @@
   }
 }
 
-/* Sections */
 .selection-section {
   margin-bottom: 3rem;
 
@@ -116,7 +111,6 @@
   }
 }
 
-/* Category Grid */
 .category-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -186,7 +180,6 @@
   }
 }
 
-/* Difficulty Grid */
 .difficulty-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -226,7 +219,6 @@
   }
 }
 
-/* Status Panel */
 .status-panel {
   background-color: var(--sys-surface-container-low);
   padding: 1.5rem;

@@ -2,7 +2,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
 :host {
-  /* Theme Colors */
   --sys-primary: #006762;
   --sys-primary-dim: #005a56;
   --sys-primary-container: #72f1e8;
@@ -29,7 +28,6 @@
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-/* ---------------- FAB Button ---------------- */
 .chat-fab {
   position: fixed;
   bottom: 24px;
@@ -62,7 +60,6 @@
   }
 }
 
-/* ---------------- Widget Overlay ---------------- */
 .chat-widget {
   position: fixed;
   bottom: 96px;
@@ -89,7 +86,6 @@
   }
 }
 
-/* ---------------- Header ---------------- */
 .chat-header {
   display: flex;
   justify-content: space-between;
@@ -165,7 +161,6 @@
   }
 }
 
-/* ---------------- Message List ---------------- */
 .message-list {
   flex-grow: 1;
   overflow-y: auto;
@@ -228,7 +223,6 @@
   }
 }
 
-/* ---------------- Thinking Indicator ---------------- */
 .thinking-indicator {
   display: flex;
   justify-content: flex-start;
@@ -275,7 +269,6 @@
   50% { transform: translateY(-3px); }
 }
 
-/* ---------------- Footer (Input & Chips) ---------------- */
 .chat-footer {
   padding: 1rem;
   background-color: rgba(255, 255, 255, 0.6);

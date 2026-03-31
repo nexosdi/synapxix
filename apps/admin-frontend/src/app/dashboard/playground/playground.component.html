@@ -1,11 +1,9 @@
 <div class="playground-wrapper">
-  <!-- Hero Section -->
   <section class="hero-section">
     <h2 class="hero-title">¿A qué jugamos hoy? 🚀</h2>
     <p class="hero-subtitle">Elegí tu aventura favorita para empezar.</p>
   </section>
 
-  <!-- Category Selection -->
   <section class="selection-section">
     <div class="section-header">
       <h3 class="section-title">
@@ -31,7 +29,6 @@
         </div>
         <span class="category-name">{{ cat.name }}</span>
         
-        <!-- Active Checkmark -->
         <div class="active-badge" *ngIf="selectedCategory === cat.id">
           <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0, 'wght' 700;">check</span>
         </div>
@@ -39,7 +36,6 @@
     </div>
   </section>
 
-  <!-- Difficulty Selection -->
   <section class="selection-section">
     <div class="section-header">
       <h3 class="section-title">
@@ -72,7 +68,6 @@
     </div>
   </section>
 
-  <!-- Form Status and Submit -->
   <section class="submit-section">
     <div class="status-panel" [class.ready]="isReady">
       <div class="status-info">

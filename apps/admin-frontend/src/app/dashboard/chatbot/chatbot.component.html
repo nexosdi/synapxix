@@ -1,4 +1,3 @@
-<!-- Floating Action Button (FAB) -->
 <button 
   class="chat-fab" 
   (click)="toggleChat()"
@@ -8,9 +7,7 @@
   </span>
 </button>
 
-<!-- Chat Widget Overlay -->
 <div class="chat-widget" [class.hidden-widget]="!isChatOpen">
-  <!-- Header -->
   <header class="chat-header">
     <div class="header-info">
       <div class="avatar-container">
@@ -29,10 +26,8 @@
     </div>
   </header>
 
-  <!-- Message List -->
   <main class="message-list" #messageContainer>
     <ng-container *ngFor="let msg of messages">
-      <!-- AI Message -->
       <div class="message-row ai-row" *ngIf="msg.type === 'ai'">
         <div class="message-bubble ai-bubble">
           <p class="message-text">{{ msg.text }}</p>
@@ -40,7 +35,6 @@
         </div>
       </div>
 
-      <!-- User Message -->
       <div class="message-row user-row" *ngIf="msg.type === 'user'">
         <div class="message-bubble user-bubble">
           <p class="message-text">{{ msg.text }}</p>
@@ -49,7 +43,6 @@
       </div>
     </ng-container>
 
-    <!-- Thinking Indicator -->
     <div class="thinking-indicator" *ngIf="isTyping">
       <div class="thinking-bubble">
         <div class="bouncy-dots">
@@ -62,15 +55,12 @@
     </div>
   </main>
 
-  <!-- Footer Area (Input & Chips) -->
   <footer class="chat-footer">
-    <!-- Suggested Chips -->
     <div class="chip-row" *ngIf="hasAiResponse">
       <button class="suggested-chip" (click)="sendMessage('¡Sí, me encantaría!')">¡Sí, me encantaría!</button>
       <button class="suggested-chip" (click)="sendMessage('Ver otros juegos')">Ver otros juegos</button>
     </div>
     
-    <!-- Input Area -->
     <div class="input-area">
       <div class="input-wrapper">
         <input 

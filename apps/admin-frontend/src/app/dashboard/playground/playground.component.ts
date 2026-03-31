@@ -71,14 +71,13 @@ export class PlaygroundComponent {
       case 'facil': return { color: 'var(--sys-tertiary)' };
       case 'medio': return { color: 'var(--sys-secondary)' };
       case 'dificil': return { color: 'var(--sys-error)' };
-      default: return { color: 'var(--sys-secondary)' }; // default look
+      default: return { rotation: '0deg', color: 'var(--sys-secondary)' };
     }
   }
 
   startGame() {
     if (this.isReady) {
       console.log(`Starting game: ${this.selectedCategoryName} - ${this.selectedDifficultyName}`);
-      // Future routing or game logic here
     }
   }
 }

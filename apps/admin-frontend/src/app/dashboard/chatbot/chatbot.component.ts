@@ -71,7 +71,6 @@ export class ChatbotComponent implements AfterViewChecked {
     const now = new Date();
     const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
-    // Add user message
     this.messages.push({
       type: 'user',
       text: text,
@@ -82,7 +81,6 @@ export class ChatbotComponent implements AfterViewChecked {
     this.isTyping = true;
     this.needsScroll = true;
     
-    // Simulate AI response
     setTimeout(() => {
       this.isTyping = false;
       this.messages.push({
