@@ -48,30 +48,14 @@
     <main class="dashboard-content">
       <section class="welcome-section">
         <h2 class="welcome-title">¡Hola, {{ username }}! 👋</h2>
-        <p class="welcome-subtitle">¿Listo para aprender y divertirte hoy?</p>
+        <p class="welcome-subtitle">¿Listo para administrar tu plataforma hoy?</p>
       </section>
 
-      <div class="stats-grid">
-        <div *ngFor="let stat of stats" class="stat-card" [class]="stat.color">
-          <div class="stat-icon">{{ stat.icon }}</div>
-          <div class="stat-value">{{ stat.value }}</div>
-          <div class="stat-label">{{ stat.label }}</div>
-        </div>
-      </div>
-
-      <h3 class="section-title">🎯 Tus Juegos</h3>
-      <div class="games-grid">
-        <div *ngFor="let game of games" class="game-card">
-          <div class="game-image">
-            <span>{{ game.emoji }}</span>
-          </div>
-          <div class="game-info">
-            <h4 class="game-title">{{ game.title }}</h4>
-            <p class="game-description">{{ game.description }}</p>
-            <span class="game-badge">{{ game.badge }}</span>
-          </div>
-        </div>
-      </div>
+      <!-- Main Playground Area -->
+      <app-playground></app-playground>
     </main>
   </div>
+  
+  <!-- AI Friend Chatbot Widget -->
+  <app-chatbot></app-chatbot>
 </div>

@@ -1,0 +1,105 @@
+<div class="playground-wrapper">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <h2 class="hero-title">¿A qué jugamos hoy? 🚀</h2>
+    <p class="hero-subtitle">Elegí tu aventura favorita para empezar.</p>
+  </section>
+
+  <!-- Category Selection -->
+  <section class="selection-section">
+    <div class="section-header">
+      <h3 class="section-title">
+        <span class="material-symbols-outlined text-primary" *ngIf="!categoryIcon">category</span>
+        <span *ngIf="categoryIcon" style="font-size: 1.25rem;">{{ categoryIcon }}</span>
+        Categorías
+      </h3>
+      <span class="status-badge" [class.unselected]="!selectedCategory">
+        <span class="material-symbols-outlined">ads_click</span>
+        {{ selectedCategory ? 'Categoría lista ✓' : 'Elegí una categoría 🎯' }}
+      </span>
+    </div>
+
+    <div class="category-grid">
+      <button 
+        *ngFor="let cat of categories"
+        (click)="selectCategory(cat.id)"
+        class="category-card"
+        [class.active]="selectedCategory === cat.id">
+        
+        <div class="icon-circle" [ngClass]="cat.bgColorClass">
+          {{ cat.icon }}
+        </div>
+        <span class="category-name">{{ cat.name }}</span>
+        
+        <!-- Active Checkmark -->
+        <div class="active-badge" *ngIf="selectedCategory === cat.id">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0, 'wght' 700;">check</span>
+        </div>
+      </button>
+    </div>
+  </section>
+
+  <!-- Difficulty Selection -->
+  <section class="selection-section">
+    <div class="section-header">
+      <h3 class="section-title">
+        <span class="material-symbols-outlined" 
+              [style.color]="difficultyIconState.color"
+              style="transition: color 0.4s ease; display: inline-block;">
+          speed
+        </span>
+        Dificultad
+      </h3>
+      <span class="status-badge difficulty-badge" [class.unselected]="!selectedDifficulty">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+        {{ selectedDifficulty ? 'Dificultad lista ✓' : 'Seleccioná una dificultad ⭐' }}
+      </span>
+    </div>
+
+    <div class="difficulty-grid">
+      <button 
+        *ngFor="let diff of difficulties"
+        (click)="selectDifficulty(diff.id)"
+        class="difficulty-card"
+        [ngClass]="[diff.baseClass, diff.shadowClass]"
+        [class.active]="selectedDifficulty === diff.id">
+        
+        <span>{{ diff.name }}</span>
+        <span class="stars-container">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;" *ngFor="let s of [].constructor(diff.stars)">star</span>
+        </span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Form Status and Submit -->
+  <section class="submit-section">
+    <div class="status-panel" [class.ready]="isReady">
+      <div class="status-info">
+        <div class="status-icon">
+          <span class="material-symbols-outlined">{{ isReady ? 'task_alt' : 'pending_actions' }}</span>
+        </div>
+        <div>
+          <p class="status-title">{{ isReady ? '¡Todo listo!' : 'Faltan selecciones' }}</p>
+          <p class="status-desc" *ngIf="isReady">Has seleccionado {{ selectedCategoryName }} en dificultad {{ selectedDifficultyName }}.</p>
+          <p class="status-desc" *ngIf="!isReady">Selecciona una categoría y dificultad para continuar.</p>
+        </div>
+      </div>
+
+      <div class="tooltip-container">
+        <div class="btn-wrapper">
+          <button 
+            class="start-btn" 
+            [disabled]="!isReady"
+            (click)="startGame()">
+            Comenzar Juego
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+          </button>
+        </div>
+        <div class="custom-tooltip" *ngIf="!isReady">
+          ⚠️ Selecciona una categoría y dificultad primero
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

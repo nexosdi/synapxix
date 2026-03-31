@@ -2,63 +2,19 @@ import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KeycloakService } from 'keycloak-angular';
 import { Router } from '@angular/router';
+import { ChatbotComponent } from './chatbot/chatbot.component';
+import { PlaygroundComponent } from './playground/playground.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ChatbotComponent, PlaygroundComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   username: string = '';
   loading: boolean = true;
-  
-  stats = [
-    { icon: '🎮', value: '12', label: 'Juegos Completados', color: 'purple' },
-    { icon: '⭐', value: '248', label: 'Estrellas Ganadas', color: 'orange' },
-    { icon: '🏆', value: '5', label: 'Logros Desbloqueados', color: 'blue' },
-    { icon: '🔥', value: '7', label: 'Días Seguidos', color: 'pink' }
-  ];
-
-  games = [
-    {
-      emoji: '🧮',
-      title: 'Matemáticas Divertidas',
-      description: 'Aprende a sumar y restar jugando',
-      badge: 'Nuevo'
-    },
-    {
-      emoji: '🎨',
-      title: 'Colores y Formas',
-      description: 'Descubre el mundo de los colores',
-      badge: 'Popular'
-    },
-    {
-      emoji: '📚',
-      title: 'Letras Mágicas',
-      description: 'Aprende el abecedario',
-      badge: 'Recomendado'
-    },
-    {
-      emoji: '🧩',
-      title: 'Rompecabezas',
-      description: 'Resuelve puzzles divertidos',
-      badge: 'Desafío'
-    },
-    {
-      emoji: '🎵',
-      title: 'Música y Ritmo',
-      description: 'Aprende con canciones',
-      badge: 'Nuevo'
-    },
-    {
-      emoji: '🌍',
-      title: 'Explora el Mundo',
-      description: 'Conoce países y culturas',
-      badge: 'Aventura'
-    }
-  ];
 
   // Mini-juego: Whack-a-Mole
   gameScore: number = 0;
