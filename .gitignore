@@ -46,3 +46,8 @@ Thumbs.db
 .angular
 auth0.config.ts
 auth0.config.ts
+
+# Secrets and environment variables
+.env
+.env.local
+.env.*.local
