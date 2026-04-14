@@ -14,6 +14,7 @@ interface Difficulty {
   stars: number;
   baseClass: string;
   shadowClass: string;
+  ageText: string;
 }
 
 @Component({
@@ -34,9 +35,9 @@ export class PlaygroundComponent {
   selectedCategory: string | null = null;
 
   difficulties: Difficulty[] = [
-    { id: 'facil', name: 'Fácil', stars: 1, baseClass: 'bg-tertiary', shadowClass: 'shadow-tertiary' },
-    { id: 'medio', name: 'Medio', stars: 2, baseClass: 'bg-secondary', shadowClass: 'shadow-secondary' },
-    { id: 'dificil', name: 'Difícil', stars: 3, baseClass: 'bg-error', shadowClass: 'shadow-error' }
+    { id: 'facil', name: 'Fácil', stars: 1, baseClass: 'bg-tertiary', shadowClass: 'shadow-tertiary', ageText: 'Recomendado para 3-5 años' },
+    { id: 'medio', name: 'Medio', stars: 2, baseClass: 'bg-secondary', shadowClass: 'shadow-secondary', ageText: 'Recomendado para 6-8 años' },
+    { id: 'dificil', name: 'Difícil', stars: 3, baseClass: 'bg-error', shadowClass: 'shadow-error', ageText: 'Recomendado de 9 a más años' }
   ];
 
   selectedDifficulty: string | null = null;

@@ -53,18 +53,30 @@
     </div>
 
     <div class="difficulty-grid">
-      <button 
-        *ngFor="let diff of difficulties"
-        (click)="selectDifficulty(diff.id)"
-        class="difficulty-card"
-        [ngClass]="[diff.baseClass, diff.shadowClass]"
-        [class.active]="selectedDifficulty === diff.id">
+      <div 
+        class="difficulty-wrapper"
+        *ngFor="let diff of difficulties">
         
-        <span>{{ diff.name }}</span>
-        <span class="stars-container">
-          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;" *ngFor="let s of [].constructor(diff.stars)">star</span>
+        <button 
+          (click)="selectDifficulty(diff.id)"
+          class="difficulty-card w-full"
+          [ngClass]="[diff.baseClass, diff.shadowClass]"
+          [class.active]="selectedDifficulty === diff.id">
+          
+          <span>{{ diff.name }}</span>
+          <span class="stars-container">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;" *ngFor="let s of [].constructor(diff.stars)">star</span>
+          </span>
+        </button>
+
+        <span class="custom-diff-tooltip" *ngIf="selectedDifficulty !== diff.id">
+          {{ diff.ageText }}
         </span>
-      </button>
+
+        <span class="difficulty-hint" *ngIf="selectedDifficulty === diff.id">
+          {{ diff.ageText }}
+        </span>
+      </div>
     </div>
   </section>
 
