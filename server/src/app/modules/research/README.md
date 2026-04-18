@@ -51,3 +51,9 @@ curl -X POST http://localhost:3000/api/research/process
 * dimensionUpdate: the impact calculation on dimensions (logic, creativity, etc.).
 
 * performanceSummary: summary of the technical data analyzed.
+-----------------------------------------------------------------------
+New Implementation
+- logger de nestJS
+- if error: InternalServerErrorException
+- Provider receives string and returns string
+- if add game, modify   contextMap. No principal logic.

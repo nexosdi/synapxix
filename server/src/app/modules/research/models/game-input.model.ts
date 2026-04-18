@@ -1,23 +1,33 @@
+import{ IsString, IsNotEmpty, IsObject } from 'class-validator';
 export type GameType = 'avatar' | 'read-select' | 'listen-type' |'fill-in-the-blank' |'read-aloud' |'speak-about-photo';
 
-export interface BaseaGameInput {
+export interface BaseGameInput {
     locale: string;
     timeLimitSec?: number;
 }
 
-export interface SpeakAboutPhotoGameInput extends BaseaGameInput {
+export interface SpeakAboutPhotoGameInput extends BaseGameInput {
    targetKeywords: string[];
    imageUrl: string;
 }
 
 export class ProcessGameActivityDto {
-    studentId: string;
-    gameType: GameType;
-    gameInput: any;
-    studentResult: {
+    @IsString()
+    @IsNotEmpty()
+    studentId!: string;
+
+    @IsString()
+    @IsNotEmpty()
+    gameType!: GameType;
+
+    @IsObject()
+    gameInput!: Record<string,any>;
+
+    @IsObject()
+    studentResult!: {
         content: string | string[];
         duration: number;
         success: boolean;
 
     };
-}
+} 

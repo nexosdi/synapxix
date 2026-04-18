@@ -1,16 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ProcessGameActivityDto } from './models/game-input.model';
 import { AiProvider } from './providers/ai.provider';
+import { LearningService } from '../../learning/learning.service';
 
 @Injectable()
 export class ResearchService {
-  constructor(private readonly aiProvider: AiProvider) {}
+  private readonly logger = new Logger(ResearchService.name);
+
+  constructor(
+    private readonly aiProvider: AiProvider,
+    private readonly learningService: LearningService
+  ) {}
 
   async processActivity(data: ProcessGameActivityDto) {
-    const { gameType, gameInput, studentResult } = data;
+    const { gameType, gameInput, studentResult, studentId } = data;
 
     const systemPrompt = this.generateSystemPrompt(gameType);
-    const simplifiedContext = this.simplifyContext(gameType, gameInput);
+    const simplifiedContext = this.getSimplifiedContext(gameType, gameInput);
 
     const aiAnalysis = await this.aiProvider.analyzePedagogicalAction(
       systemPrompt,
@@ -18,9 +24,21 @@ export class ResearchService {
       studentResult
     );
 
+    const dimensionImpact = this.calculateDimensionImpact(studentResult);
+    
+    try {
+      await this.learningService.reinforceTopic({
+        userId: studentId,
+        topicId: gameType,
+        delta: studentResult.success ? 0.1 : -0.5
+      });
+    } catch (error: any) {
+      this.logger.error(`Failed to update graph: ${error.message}`);
+    }
+
     return {
       game: gameType,
-      studentId: data.studentId,
+      studentId: studentId,
       aiFeedback: aiAnalysis,
       analysisContext: `AI processing context: ${simplifiedContext}`,
       performanceSummary: {
@@ -28,32 +46,30 @@ export class ResearchService {
         timeTaken: studentResult.duration,
         inputAnalyzed: studentResult.content
       },
-      dimensionUpdate: {
-        logic: studentResult.success ? 0.9 : 0.4,
-        creativity: 0.5
-      }
+      dimensionUpdate: dimensionImpact,
     };
   }
 
-  private generateSystemPrompt(type: string): string {
-    return `You are a multimodal pedagogical analyst. Analyze the ${type} activity 
-            to identify learning patterns and cognitive dimensions.`;
+  private getSimplifiedContext(type: string, input: any): string {
+    const contextMap: Record<string, () => string> = {
+      'fill-in-the-blanks': () => `Sentence: ${input.sentence}. Blanks: ${input.blanks?.length || 0}`,
+      'speak-about-photo': () => `Prompt: ${input.prompt}. Keywords: ${input.targetKeywords?.join(', ')}`,
+      'listen-type': () => `Audio: ${input.audioUrl}. Expected: ${input.answer}`,
+      'read-aloud': () => `Text: ${input.text}. Min Score: ${input.scoring?.minPronScore}%`,
+      'avatar': () => `Legend: ${input.legend}. Options: ${input.options?.length}`,
+    };
+    return contextMap[type]?.() || 'General learning activity';
   }
 
-  private simplifyContext(type: string, input: any): string {
-    switch (type) {
-      case 'fill-in-the-blanks':
-        return `Fill-in-the-blanks: ${input.sentence}. Total blanks: ${input.blanks?.length || 0}`;
-      case 'speak-about-photo':
-        return `Photo description. Prompt: ${input.prompt}. Target keywords: ${input.targetKeywords?.join(', ')}`;
-      case 'listen-type':
-        return `Transcription. Audio URL: ${input.audioUrl}. Expected answer: ${input.answer}`;
-      case 'read-aloud':
-        return `Reading aloud. Text: ${input.text}. Required Pronunciation Score: ${input.scoring?.minPronScore}%`;
-      case 'avatar':
-        return `Avatar selection. Legend: ${input.legend}. Options available: ${input.options?.length}`;
-      default:
-        return 'General learning activity';
-    }
+  private generateSystemPrompt(type: string): string {
+    return `You are a pedagogical analyst evaluating a ${type} activity`;
+  }
+
+  private calculateDimensionImpact(result: any) {
+    return {
+      logic: result.success ? 0.9 : 0.4,
+      creativity: result.duration < 60 ? 0.8 : 0.4,
+      engagement: result.duration < 60 ? 0.8 : 0.4
+    };
   }
 }
