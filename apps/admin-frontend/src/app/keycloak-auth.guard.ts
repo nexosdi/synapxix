@@ -17,8 +17,14 @@ export class AuthGuard extends KeycloakAuthGuard {
   }
 
   async isAccessAllowed(): Promise<boolean> {
-    if (!this.authenticated) {
-      this.router.navigate(['/login']);
+    // Verificamos si el usuario está autenticado de forma explícita
+    const loggedIn = await this.keycloakService.isLoggedIn();
+
+    if (!loggedIn) {
+      console.warn('[AuthGuard] Usuario no autenticado, redirigiendo a login...');
+      await this.keycloakService.login({
+        redirectUri: window.location.origin + '/dashboard',
+      });
       return false;
     }
 

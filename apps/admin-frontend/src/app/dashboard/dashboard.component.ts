@@ -1,9 +1,11 @@
 import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { switchMap } from 'rxjs/operators';
 import { KeycloakService } from 'keycloak-angular';
 import { Router } from '@angular/router';
 import { ChatbotComponent } from './chatbot/chatbot.component';
-import { PlaygroundComponent } from './playground/playground.component';
+import { PlaygroundComponent, Category, Difficulty } from './playground/playground.component';
+import { ApiService } from '../core/services/api.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -15,6 +17,20 @@ import { PlaygroundComponent } from './playground/playground.component';
 export class DashboardComponent implements OnInit, OnDestroy {
   username: string = '';
   loading: boolean = true;
+
+  // Datos para el Playground (Configuración base con IDs reales del catálogo)
+  categories: Category[] = [
+    { id: 'linguistic', name: 'Lingüística', icon: '📚', bgColorClass: 'bg-secondary-container' },
+    { id: 'logical_mathematical', name: 'Lógica', icon: '🧮', bgColorClass: 'bg-tertiary-container' },
+    { id: 'spatial', name: 'Espacial', icon: '🗺️', bgColorClass: 'bg-primary-container' },
+    { id: 'musical', name: 'Musical', icon: '🎵', bgColorClass: 'bg-error-container' }
+  ];
+
+  difficulties: Difficulty[] = [
+    { id: 'visual_summary', name: 'Visual', stars: 1, baseClass: 'bg-primary-container', shadowClass: 'shadow-primary', ageText: 'Resumen visual' },
+    { id: 'interactive_quiz', name: 'Interactiva', stars: 2, baseClass: 'bg-secondary-container', shadowClass: 'shadow-secondary', ageText: 'Quiz rápido' },
+    { id: 'project_challenge', name: 'Desafío', stars: 3, baseClass: 'bg-tertiary-container', shadowClass: 'shadow-tertiary', ageText: 'Proyecto mini' }
+  ];
 
   // Mini-juego: Whack-a-Mole
   gameScore: number = 0;
@@ -31,7 +47,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   constructor(
     private keycloakService: KeycloakService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private apiService: ApiService
   ) {
     // Cargar puntuación guardada del localStorage
     const savedScore = localStorage.getItem('synapsis_game_score');
@@ -42,31 +59,41 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     try {
-      const isLogged = await this.keycloakService.isLoggedIn();
-      
-      if (!isLogged) {
-        console.log('[Dashboard] Not logged in, redirecting to login');
-        this.router.navigate(['/login']);
-        return;
-      }
-
+      // Cargamos el perfil para obtener el nombre y el ID.
       await this.keycloakService.loadUserProfile();
-      
       this.username = this.keycloakService.getUsername() || 'Usuario';
       
+      // Liberamos el estado de carga lo antes posible para evitar rebotes
       this.loading = false;
-      
-      // Iniciar el mini-juego
       this.startMoleGame();
-      
       this.cdr.detectChanges();
+
+      // Sincronización en segundo plano (no bloqueante)
+      const userId = this.keycloakService.getKeycloakInstance()?.subject;
+      if (userId) {
+        this.apiService.post('learning/bootstrap', {}).pipe(
+          switchMap(() => this.apiService.post('learning/users', { 
+            userId: userId, 
+            name: this.username 
+          }))
+        ).subscribe({
+          next: () => console.log('[Dashboard] Entorno de aprendizaje sincronizado.'),
+          error: (err: any) => console.error('[Dashboard] Error sincronizando aprendizaje:', err)
+        });
+      }
     } catch (err) {
-      console.error('[Dashboard] Error:', err);
-      this.username = 'Error al cargar usuario';
+      console.error('[Dashboard] Error en inicialización:', err);
       this.loading = false;
+      this.username = 'Usuario Synapsis';
+      this.startMoleGame();
       this.cdr.detectChanges();
     }
   }
+
+  // Se necesita importar switchMap
+  // Nota: Ya existe import de switchMap en otros archivos, 
+  // pero hay que verificar en este archivo.
+
 
   ngOnDestroy() {
     // Limpiar el intervalo cuando se destruya el componente

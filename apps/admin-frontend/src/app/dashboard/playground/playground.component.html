@@ -97,13 +97,14 @@
         <div class="btn-wrapper">
           <button 
             class="start-btn" 
-            [disabled]="!isReady"
+            [disabled]="!isReady || isSubmitting"
             (click)="startGame()">
-            Comenzar Juego
-            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+            {{ isSubmitting ? 'Registrando...' : 'Comenzar Juego' }}
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;" *ngIf="!isSubmitting">play_arrow</span>
+            <span class="spinner-small" *ngIf="isSubmitting"></span>
           </button>
         </div>
-        <div class="custom-tooltip" *ngIf="!isReady">
+        <div class="custom-tooltip" *ngIf="!isReady && !isSubmitting">
           ⚠️ Selecciona una categoría y dificultad primero
         </div>
       </div>

@@ -396,11 +396,24 @@
       &:disabled {
         background: var(--sys-surface-variant);
         color: var(--sys-on-surface-variant);
-        pointer-events: none; /* Passes hover/click to the wrapper */
+        pointer-events: none;
         box-shadow: none;
+      }
+
+      .spinner-small {
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 0.8s ease-in-out infinite;
       }
     }
   }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 @keyframes slideDownFade {

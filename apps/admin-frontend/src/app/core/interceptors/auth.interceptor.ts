@@ -6,7 +6,7 @@ import {
   HttpEvent,
   HttpErrorResponse,
 } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { Observable, throwError, from } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { KeycloakService } from 'keycloak-angular';
 import { Router } from '@angular/router';
@@ -28,19 +28,10 @@ export class AuthInterceptor implements HttpInterceptor {
     req: HttpRequest<any>,
     next: HttpHandler
   ): Observable<HttpEvent<any>> {
-    // 1. Convertir la promesa del token a Observable
-    return new Observable<string>(observer => {
-      this.keycloakService.getToken()
-        .then(token => {
-          observer.next(token);
-          observer.complete();
-        })
-        .catch(err => {
-          observer.error(err);
-        });
-    }).pipe(
+    // 1. Obtener el token de forma síncrona si es posible o esperar a la promesa
+    return from(this.keycloakService.getToken()).pipe(
       switchMap(token => {
-        // 2. Si hay token, añadirlo al header Authorization
+        // 2. Si hay token, añadirlo. Si no, seguir sin él (el backend responderá 401 si es necesario)
         if (token) {
           req = req.clone({
             setHeaders: {
@@ -49,7 +40,6 @@ export class AuthInterceptor implements HttpInterceptor {
           });
         }
         
-        // 3. Pasar la petición al siguiente interceptor
         return next.handle(req);
       }),
       catchError((error: HttpErrorResponse) => {

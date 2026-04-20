@@ -1,14 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { LearningApiService } from '../../core/services/learning-api.service';
 
-interface Category {
+export interface Category {
   id: string;
   name: string;
   icon: string;
   bgColorClass: string;
 }
 
-interface Difficulty {
+export interface Difficulty {
   id: string;
   name: string;
   stars: number;
@@ -25,28 +26,22 @@ interface Difficulty {
   styleUrls: ['./playground.component.scss']
 })
 export class PlaygroundComponent {
-  categories: Category[] = [
-    { id: 'animales', name: 'Animales', icon: '🐶', bgColorClass: 'bg-secondary-container' },
-    { id: 'colores', name: 'Colores', icon: '🎨', bgColorClass: 'bg-tertiary-container' },
-    { id: 'numeros', name: 'Números', icon: '🔢', bgColorClass: 'bg-primary-container' },
-    { id: 'letras', name: 'Letras', icon: '🔠', bgColorClass: 'bg-error-container' }
-  ];
+  @Input() categories: Category[] = [];
+  @Input() difficulties: Difficulty[] = [];
 
   selectedCategory: string | null = null;
-
-  difficulties: Difficulty[] = [
-    { id: 'facil', name: 'Fácil', stars: 1, baseClass: 'bg-tertiary', shadowClass: 'shadow-tertiary', ageText: 'Recomendado para 3-5 años' },
-    { id: 'medio', name: 'Medio', stars: 2, baseClass: 'bg-secondary', shadowClass: 'shadow-secondary', ageText: 'Recomendado para 6-8 años' },
-    { id: 'dificil', name: 'Difícil', stars: 3, baseClass: 'bg-error', shadowClass: 'shadow-error', ageText: 'Recomendado de 9 a más años' }
-  ];
-
   selectedDifficulty: string | null = null;
+  isSubmitting = false;
+
+  constructor(private learningApi: LearningApiService) {}
 
   selectCategory(id: string) {
+    if (this.isSubmitting) return;
     this.selectedCategory = this.selectedCategory === id ? null : id;
   }
 
   selectDifficulty(id: string) {
+    if (this.isSubmitting) return;
     this.selectedDifficulty = this.selectedDifficulty === id ? null : id;
   }
 
@@ -77,8 +72,22 @@ export class PlaygroundComponent {
   }
 
   startGame() {
-    if (this.isReady) {
-      console.log(`Starting game: ${this.selectedCategoryName} - ${this.selectedDifficultyName}`);
+    if (this.isReady && !this.isSubmitting) {
+      this.isSubmitting = true;
+      
+      this.learningApi.registerGameSelection(this.selectedCategory!, this.selectedDifficulty!)
+        .subscribe({
+          next: () => {
+            console.log('¡Conexión con la API exitosa!');
+            this.isSubmitting = false;
+            alert('¡Selección registrada con éxito en Synapsis!');
+          },
+          error: (err) => {
+            console.error('Error al registrar:', err);
+            this.isSubmitting = false;
+            alert('No se pudo registrar la selección. Verifica la consola.');
+          }
+        });
     }
   }
 }

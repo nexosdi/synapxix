@@ -32,9 +32,12 @@ export class LearningService {
       this.raw(
         'CREATE CONSTRAINT lm_key IF NOT EXISTS FOR (m:LearnMethod) REQUIRE m.key IS UNIQUE'
       ),
-      this.raw(`CREATE INDEX topic_vec IF NOT EXISTS
+      this.raw(`CREATE VECTOR INDEX topic_vec IF NOT EXISTS
         FOR (t:Topic) ON (t.embedding)
-        OPTIONS {indexProvider:'vector-1.0', indexConfig:{algorithm:'hnsw', similarityFunction:'cosine', dimensions:768}}`),
+        OPTIONS {indexConfig: {
+          \`vector.dimensions\`: 768,
+          \`vector.similarity_function\`: 'cosine'
+        }}`),
     ];
 
     for (const query of constraintQueries) {
@@ -115,7 +118,7 @@ export class LearningService {
               t.uses = coalesce(t.uses,0)
         MERGE (u)-[:OWNS]->(t)
         MERGE (u)-[r:INTEREST_IN]->(t)
-          SET r.weight = apoc.math.min(1.0, apoc.math.max(0.0, coalesce(r.weight,0.0) + $initialWeight))
+          SET r.weight = CASE WHEN coalesce(r.weight,0.0) + $initialWeight < 0.0 THEN 0.0 WHEN coalesce(r.weight,0.0) + $initialWeight > 1.0 THEN 1.0 ELSE coalesce(r.weight,0.0) + $initialWeight END
         RETURN t, r
       `,
         {
@@ -140,7 +143,7 @@ export class LearningService {
       this.raw(
         `
         MATCH (u:User {id:$userId})-[r:INTEREST_IN]->(t:Topic {id:$topicId})
-        SET r.weight = apoc.math.min(1.0, apoc.math.max(0.0, coalesce(r.weight,0)+$delta))
+        SET r.weight = CASE WHEN coalesce(r.weight,0)+$delta < 0.0 THEN 0.0 WHEN coalesce(r.weight,0)+$delta > 1.0 THEN 1.0 ELSE coalesce(r.weight,0)+$delta END
         SET t.uses   = coalesce(t.uses,0) + CASE WHEN $delta>0 THEN 1 ELSE 0 END
         RETURN t.id AS topicId, r.weight AS weight, t.uses AS uses
       `,
@@ -159,7 +162,7 @@ export class LearningService {
         UNWIND $prefKeys AS k
         MATCH (lp:LearnPref {key:k})
         MERGE (u)-[r:PREFERS]->(lp)
-          SET r.weight = apoc.math.min(1.0, apoc.math.max(0.0, coalesce(r.weight,0)+$initWeight))
+          SET r.weight = CASE WHEN coalesce(r.weight,0)+$initWeight < 0.0 THEN 0.0 WHEN coalesce(r.weight,0)+$initWeight > 1.0 THEN 1.0 ELSE coalesce(r.weight,0)+$initWeight END
         RETURN k AS prefKey, r.weight AS weight
       `,
         {
@@ -180,7 +183,7 @@ export class LearningService {
         MATCH (u:User {id:$userId})
         MATCH (m:LearnMethod {key:$methodKey})
         MERGE (u)-[r:BENEFITS_FROM]->(m)
-          SET r.weight = apoc.math.min(1.0, apoc.math.max(0.0, coalesce(r.weight,0)+$initWeight))
+          SET r.weight = CASE WHEN coalesce(r.weight,0)+$initWeight < 0.0 THEN 0.0 WHEN coalesce(r.weight,0)+$initWeight > 1.0 THEN 1.0 ELSE coalesce(r.weight,0)+$initWeight END
         RETURN m.key AS methodKey, r.weight AS weight
       `,
         {
@@ -198,7 +201,7 @@ export class LearningService {
       this.raw(
         `
         MATCH (u:User {id:$userId})-[r:BENEFITS_FROM]->(m:LearnMethod {key:$methodKey})
-        SET r.weight = apoc.math.min(1.0, apoc.math.max(0.0, coalesce(r.weight,0)+$delta))
+        SET r.weight = CASE WHEN coalesce(r.weight,0)+$delta < 0.0 THEN 0.0 WHEN coalesce(r.weight,0)+$delta > 1.0 THEN 1.0 ELSE coalesce(r.weight,0)+$delta END
         RETURN m.key AS methodKey, r.weight AS weight
       `,
         dto
