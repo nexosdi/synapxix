@@ -18,7 +18,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   username: string = '';
   loading: boolean = true;
 
-  // Datos para el Playground (Configuración base con IDs reales del catálogo)
   categories: Category[] = [
     { id: 'linguistic', name: 'Lingüística', icon: '📚', bgColorClass: 'bg-secondary-container' },
     { id: 'logical_mathematical', name: 'Lógica', icon: '🧮', bgColorClass: 'bg-tertiary-container' },
@@ -32,7 +31,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     { id: 'project_challenge', name: 'Desafío', stars: 3, baseClass: 'bg-tertiary-container', shadowClass: 'shadow-tertiary', ageText: 'Proyecto mini' }
   ];
 
-  // Mini-juego: Whack-a-Mole
   gameScore: number = 0;
   moleVisible: boolean = false;
   molePosition = { top: 50, left: 50 };
@@ -40,7 +38,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   gameInterval: any;
   moleEmojis = ['🐹', '🐰', '🐻', '🐼', '🐨', '🦊', '🐸', '🐙'];
   
-  // Animación de puntos
   showPointsAnimation: boolean = false;
   pointsAnimationPosition = { top: 50, left: 50 };
 
@@ -50,7 +47,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private apiService: ApiService
   ) {
-    // Cargar puntuación guardada del localStorage
     const savedScore = localStorage.getItem('synapsis_game_score');
     if (savedScore) {
       this.gameScore = parseInt(savedScore, 10);
@@ -59,30 +55,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     try {
-      // Cargamos el perfil para obtener el nombre y el ID.
       await this.keycloakService.loadUserProfile();
       this.username = this.keycloakService.getUsername() || 'Usuario';
-      
-      // Liberamos el estado de carga lo antes posible para evitar rebotes
       this.loading = false;
       this.startMoleGame();
       this.cdr.detectChanges();
 
-      // Sincronización en segundo plano (no bloqueante)
       const userId = this.keycloakService.getKeycloakInstance()?.subject;
       if (userId) {
         this.apiService.post('learning/bootstrap', {}).pipe(
-          switchMap(() => this.apiService.post('learning/users', { 
-            userId: userId, 
-            name: this.username 
+          switchMap(() => this.apiService.post('learning/users', {
+            userId: userId,
+            name: this.username
           }))
         ).subscribe({
-          next: () => console.log('[Dashboard] Entorno de aprendizaje sincronizado.'),
-          error: (err: any) => console.error('[Dashboard] Error sincronizando aprendizaje:', err)
+          next: () => console.log('[Dashboard] Learning environment synced.'),
+          error: (err: any) => console.error('[Dashboard] Sync error:', err)
         });
       }
     } catch (err) {
-      console.error('[Dashboard] Error en inicialización:', err);
+      console.error('[Dashboard] Initialization error:', err);
       this.loading = false;
       this.username = 'Usuario Synapsis';
       this.startMoleGame();
@@ -96,7 +88,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
 
   ngOnDestroy() {
-    // Limpiar el intervalo cuando se destruya el componente
     if (this.gameInterval) {
       clearInterval(this.gameInterval);
     }
@@ -110,54 +101,29 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return this.username.charAt(0).toUpperCase();
   }
 
-  // Mini-juego: Whack-a-Mole
   startMoleGame() {
-    this.gameInterval = setInterval(() => {
-      this.showMole();
-    }, 30000); 
-
+    this.gameInterval = setInterval(() => this.showMole(), 30000);
     setTimeout(() => this.showMole(), 5000);
   }
 
   showMole() {
-    // Generar posición aleatoria
     this.molePosition = {
-      top: Math.random() * 70 + 10, // 10-80%
-      left: Math.random() * 70 + 10  // 10-80%
+      top: Math.random() * 70 + 10,
+      left: Math.random() * 70 + 10
     };
-
-    // Seleccionar emoji aleatorio
     this.moleEmoji = this.moleEmojis[Math.floor(Math.random() * this.moleEmojis.length)];
-
-    // Mostrar el topo
     this.moleVisible = true;
-
-    // Ocultar después de 3 segundos si no lo atrapan
-    setTimeout(() => {
-      this.moleVisible = false;
-    }, 3000);
+    setTimeout(() => { this.moleVisible = false; }, 3000);
   }
 
   catchMole() {
     if (this.moleVisible) {
       this.gameScore += 10;
       this.moleVisible = false;
-      
-      // Guardar puntuación en localStorage
       localStorage.setItem('synapsis_game_score', this.gameScore.toString());
-      
-      // Mostrar animación de puntos
       this.pointsAnimationPosition = { ...this.molePosition };
       this.showPointsAnimation = true;
-      
-      // Ocultar animación después de 1 segundo
-      setTimeout(() => {
-        this.showPointsAnimation = false;
-      }, 1000);
-      
-      console.log('¡Atrapaste al topo! Puntos:', this.gameScore);
+      setTimeout(() => { this.showPointsAnimation = false; }, 1000);
     }
   }
-
-
 }

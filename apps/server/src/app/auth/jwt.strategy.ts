@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
+import { ConfigService } from '@nestjs/config';
 import { auth0Config } from '@nexosdi.synapxix/auth0-config';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import jwksRsa from 'jwks-rsa';
 
-export type Auth0JwtPayload = {
+export type JwtPayload = {
   [key: string]: unknown;
   iss?: string;
   aud?: string | string[];
@@ -14,8 +15,6 @@ export type Auth0JwtPayload = {
   picture?: string;
 };
 
-import { ConfigService } from '@nestjs/config';
-
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private configService: ConfigService) {
@@ -23,18 +22,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const keycloakRealm = configService.get<string>('KEYCLOAK_REALM');
     const keycloakClientId = configService.get<string>('KEYCLOAK_CLIENT_ID');
 
-    // Priorizamos Keycloak si está configurado
-    const keycloakIssuer = keycloakUrl && keycloakRealm 
+    const keycloakIssuer = keycloakUrl && keycloakRealm
       ? `${keycloakUrl}/realms/${keycloakRealm}`
       : null;
 
-    const issuer = normalizeIssuer(keycloakIssuer || configService.get<string>('AUTH0_DOMAIN') || auth0Config.domain);
-    const audience = keycloakClientId || configService.get<string>('AUTH0_AUDIENCE') || auth0Config.audience;
-
-    console.log(`[JwtStrategy] Configured with:
-      Issuer: ${issuer}
-      Audience: ${audience}
-      JWKS URI: ${issuer}/protocol/openid-connect/certs`);
+    const issuer = normalizeIssuer(
+      keycloakIssuer ||
+      configService.get<string>('AUTH0_DOMAIN') ||
+      auth0Config.domain
+    );
 
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -47,27 +43,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         jwksRequestsPerMinute: 10,
         jwksUri: `${issuer}/protocol/openid-connect/certs`,
       }),
-      issuer: issuer,
-      // No forzamos la audiencia para Keycloak por ahora para evitar problemas de desajuste,
-      // ya que Keycloak a veces no pone el clientId en el campo 'aud' por defecto.
-      // Si quieres forzarla, descomenta la siguiente línea:
-      // audience: audience,
+      issuer,
       algorithms: ['RS256'],
     });
   }
 
-  validate(payload: any) {
-    // console.log('[JwtStrategy] Payload validado:', payload);
+  validate(payload: JwtPayload) {
     return payload;
   }
 }
 
 function normalizeIssuer(domain: string): string {
   if (!domain) return '';
-  
-  const sanitized = domain.startsWith('http')
+  return domain.startsWith('http')
     ? domain.replace(/\/+$/, '')
     : `https://${domain}`.replace(/\/+$/, '');
-
-  return sanitized;
 }
