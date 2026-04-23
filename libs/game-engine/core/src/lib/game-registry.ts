@@ -42,7 +42,7 @@ export const gameComponentRegistry: Record<GameType, GameComponentLoader> = {
     ).then((m) => m.NeuralLinkGameComponent),
   'timeline-order': () =>
     import(
-      './game-types/timeline-order-game/timeline-order-game.component.component' // <-- Corregido aquí
+      './game-types/timeline-order-game/timeline-order-game.component'
     ).then((m) => m.TimelineOrderGameComponent),
   'intruder': () =>
     import(

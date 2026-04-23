@@ -66,10 +66,10 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
   })
   container!: ViewContainerRef;
 
-  public readonly historyService = inject(HistoryService);
-  public readonly sessionService = inject(GameSessionService);
-  public readonly flowService = inject(GameFlowService);
-  public readonly performanceService = inject(GamePerformanceService);
+  private readonly historyService = inject(HistoryService);
+  private readonly sessionService = inject(GameSessionService);
+  protected readonly flowService = inject(GameFlowService);
+  private readonly performanceService = inject(GamePerformanceService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -150,9 +150,14 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
       const historyId = historyContext?.id || 'unknown';
       const totalGames = historyContext?.contentMap.length || 0;
       const category = historyContext?.category;
-      
-      // FIX ME: We hardcode userId until real Auth Context is wired in
-      this.sessionService.startSession(historyId, 'user-id-placeholder', totalGames, category);
+
+      // Sin user, se fuerza a que sea null haciendo un return, hay que integrarlo a keycloak luego
+      const userId: string | null = null;
+      if (!userId) {
+        console.error('GameRunner: no authenticated user, aborting session.');
+        return;
+      }
+      this.sessionService.startSession(historyId, userId, totalGames, category);
     }
   }
 
