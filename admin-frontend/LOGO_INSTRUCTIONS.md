@@ -5,7 +5,7 @@
 Para que el logo aparezca correctamente en la pantalla de login, debes colocar tu archivo de logo en:
 
 ```
-apps/admin-frontend/src/assets/logo.png
+admin-frontend/src/assets/logo.png
 ```
 
 ## Formatos soportados
@@ -34,3 +34,4 @@ Si tu logo tiene un nombre diferente (por ejemplo `synapsis-logo.png`), actualiz
 ## Fallback
 
 Si no colocas ningún logo, se mostrará automáticamente un placeholder colorido con la letra "S" de Synapsis.
+

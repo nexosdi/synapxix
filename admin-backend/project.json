@@ -1,7 +1,7 @@
 {
   "name": "admin-backend",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/admin-backend/src",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "admin-backend/src",
   "projectType": "application",
   "tags": [],
   "targets": {
@@ -10,7 +10,7 @@
       "options": {
         "command": "webpack-cli build",
         "args": ["--node-env=production"],
-        "cwd": "apps/admin-backend"
+        "cwd": "admin-backend"
       },
       "configurations": {
         "development": {
@@ -23,8 +23,8 @@
       "cache": true,
       "executor": "@nx/js:prune-lockfile",
       "outputs": [
-        "{workspaceRoot}/dist/apps/admin-backend/package.json",
-        "{workspaceRoot}/dist/apps/admin-backend/package-lock.json"
+        "{workspaceRoot}/dist/admin-backend/package.json",
+        "{workspaceRoot}/dist/admin-backend/package-lock.json"
       ],
       "options": {
         "buildTarget": "build"
@@ -33,7 +33,7 @@
     "copy-workspace-modules": {
       "dependsOn": ["build"],
       "cache": true,
-      "outputs": ["{workspaceRoot}/dist/apps/admin-backend/workspace_modules"],
+      "outputs": ["{workspaceRoot}/dist/admin-backend/workspace_modules"],
       "executor": "@nx/js:copy-workspace-modules",
       "options": {
         "buildTarget": "build"

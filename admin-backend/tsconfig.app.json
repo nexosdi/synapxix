@@ -10,3 +10,4 @@
   },
   "include": ["src/**/*.ts", "src/categories/dto/update-category.dto.ts", "src/prisma/prisma.module.ts"]
 }
+

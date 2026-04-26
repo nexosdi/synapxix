@@ -3,25 +3,25 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "prefix": "synapxix",
-  "sourceRoot": "apps/web-game/src",
+  "sourceRoot": "web-game/src",
   "tags": [],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/apps/web-game",
-        "browser": "apps/web-game/src/main.ts",
+        "outputPath": "dist/web-game",
+        "browser": "web-game/src/main.ts",
         "polyfills": ["zone.js"],
-        "tsConfig": "apps/web-game/tsconfig.app.json",
+        "tsConfig": "web-game/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
           {
             "glob": "**/*",
-            "input": "apps/web-game/public"
+            "input": "web-game/public"
           }
         ],
-        "styles": ["apps/web-game/src/styles.scss"]
+        "styles": ["web-game/src/styles.scss"]
       },
       "configurations": {
         "production": {
@@ -79,7 +79,7 @@
       "executor": "@nx/web:file-server",
       "options": {
         "buildTarget": "web-game:build",
-        "staticFilePath": "dist/apps/web-game/browser",
+        "staticFilePath": "dist/web-game/browser",
         "spa": true
       }
     }

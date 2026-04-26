@@ -1,8 +1,8 @@
 export default {
   displayName: 'admin-frontend',
-  preset: '../../jest.preset.js',
+  preset: '../jest.preset.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-  coverageDirectory: '../../coverage/apps/admin-frontend',
+  coverageDirectory: '../coverage/admin-frontend',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
       'jest-preset-angular',
@@ -19,3 +19,4 @@ export default {
     'jest-preset-angular/build/serializers/html-comment',
   ],
 };
+

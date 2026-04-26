@@ -1,36 +1,36 @@
 {
   "name": "admin-frontend",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "prefix": "app",
-  "sourceRoot": "apps/admin-frontend/src",
+  "sourceRoot": "admin-frontend/src",
   "tags": [],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/apps/admin-frontend",
-        "browser": "apps/admin-frontend/src/main.ts",
-        "index": "apps/admin-frontend/src/index.html",
+        "outputPath": "dist/admin-frontend",
+        "browser": "admin-frontend/src/main.ts",
+        "index": "admin-frontend/src/index.html",
         "polyfills": ["zone.js"],
-        "tsConfig": "apps/admin-frontend/tsconfig.app.json",
+        "tsConfig": "admin-frontend/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
           {
             "glob": "**/*",
-            "input": "apps/admin-frontend/public"
+            "input": "admin-frontend/public"
           }
         ],
-        "styles": ["apps/admin-frontend/src/styles.scss"],
+        "styles": ["admin-frontend/src/styles.scss"],
         "scripts": []
       },
       "configurations": {
         "production": {
           "fileReplacements": [
             {
-              "replace": "apps/admin-frontend/src/environments/environment.ts",
-              "with": "apps/admin-frontend/src/environments/environment.prod.ts"
+              "replace": "admin-frontend/src/environments/environment.ts",
+              "with": "admin-frontend/src/environments/environment.prod.ts"
             }
           ],
           "budgets": [
@@ -85,8 +85,8 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "apps/admin-frontend/jest.config.ts",
-        "tsConfig": "apps/admin-frontend/tsconfig.spec.json"
+        "jestConfig": "admin-frontend/jest.config.ts",
+        "tsConfig": "admin-frontend/tsconfig.spec.json"
       }
     },
     "serve-static": {
@@ -100,9 +100,9 @@
       "dependsOn": ["build"],
       "executor": "@angular-devkit/build-angular:server",
       "options": {
-        "outputPath": "dist/apps/admin-frontend/server",
-        "main": "apps/admin-frontend/server.ts",
-        "tsConfig": "apps/admin-frontend/tsconfig.server.json",
+        "outputPath": "dist/admin-frontend/server",
+        "main": "admin-frontend/server.ts",
+        "tsConfig": "admin-frontend/tsconfig.server.json",
         "inlineStyleLanguage": "scss"
       },
       "configurations": {
@@ -152,3 +152,5 @@
     }
   }
 }
+
+
