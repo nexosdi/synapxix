@@ -4,9 +4,11 @@
 dist
 tmp
 out-tsc
-/generated
-!/generated/prisma/schema.prisma
-!/generated/prisma/migrations
+# generated prisma client
+generated/
+*.db
+*.db-journal
+
 
 # dependencies
 node_modules
