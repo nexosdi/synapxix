@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@nexosdi.synapxix/prisma';
 import { CreateContentDto } from './dto/create-content.dto';
 import { PaginationDto } from '../../../shared/data-access/dto/pagination.dto';
@@ -7,6 +7,8 @@ import { UpdateContentDto } from './dto/update-content.dto';
 
 @Injectable()
 export class ContentService {
+    private readonly logger = new Logger(ContentService.name);
+    
     constructor(private readonly prisma: PrismaService) { }
 
     async create(createContentDto: CreateContentDto) {
@@ -15,7 +17,7 @@ export class ContentService {
                 data: createContentDto,
             });
         } catch (e) {
-            console.log(e);
+            this.logger.error(`Failed to create content: ${e.message}`, e.stack);
             throw e;
         }
     }
@@ -55,7 +57,7 @@ export class ContentService {
                 data: updateContentDto,
             });
         } catch (e) {
-            console.log(e);
+            this.logger.error(`Failed to update content with ID ${id}: ${e.message}`, e.stack);
             throw e;
         }
     }
@@ -67,7 +69,7 @@ export class ContentService {
                 where: { id },
             });
         } catch (e) {
-            console.log(e);
+            this.logger.error(`Failed to remove content with ID ${id}: ${e.message}`, e.stack);
             throw e;
         }
     }

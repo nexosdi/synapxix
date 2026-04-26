@@ -43,54 +43,28 @@ export class AuthInterceptor implements HttpInterceptor {
         return next.handle(req);
       }),
       catchError((error: HttpErrorResponse) => {
-        // 4. Manejar errores de autenticación
+        // Manejar errores de autenticación (401 Unauthorized)
         if (error.status === 401) {
-          console.warn('⚠️ Token expirado o inválido, intentando renovar...');
+          console.warn('⚠️ Token expirado, intentando renovar...');
           
-          // Intentar renovar el token antes de desconectar
-          return new Observable<HttpEvent<any>>(observer => {
-            this.keycloakService.updateToken(5)
-              .then(refreshed => {
-                if (refreshed) {
-                  console.log('✅ Token renovado exitosamente, reintentando petición...');
-                  
-                  // Obtener el nuevo token y reintentar la petición original
-                  this.keycloakService.getToken()
-                    .then(newToken => {
-                      const clonedReq = req.clone({
-                        setHeaders: {
-                          Authorization: `Bearer ${newToken}`,
-                        },
-                      });
-                      
-                      // Reintentar la petición con el nuevo token
-                      next.handle(clonedReq).subscribe({
-                        next: (event) => observer.next(event),
-                        error: (err) => observer.error(err),
-                        complete: () => observer.complete()
-                      });
-                    })
-                    .catch(err => {
-                      console.error('❌ Error obteniendo nuevo token:', err);
-                      this.keycloakService.logout();
-                      this.router.navigate(['/login']);
-                      observer.error(error);
-                    });
-                } else {
-                  // Token no se pudo renovar (refresh token expirado)
-                  console.warn('⚠️ No se pudo renovar el token, cerrando sesión...');
-                  this.keycloakService.logout();
-                  this.router.navigate(['/login']);
-                  observer.error(error);
-                }
-              })
-              .catch(err => {
-                console.error('❌ Error renovando token:', err);
-                this.keycloakService.logout();
-                this.router.navigate(['/login']);
-                observer.error(error);
-              });
-          });
+          return from(this.keycloakService.updateToken(5)).pipe(
+            switchMap(() => from(this.keycloakService.getToken())),
+            switchMap(newToken => {
+              console.log('✅ Token renovado, reintentando petición...');
+              return next.handle(
+                req.clone({
+                  setHeaders: {
+                    Authorization: `Bearer ${newToken}`
+                  }
+                })
+              );
+            }),
+            catchError((err) => {
+              console.error('❌ No se pudo renovar el token:', err);
+              this.keycloakService.logout();
+              return throwError(() => error);
+            })
+          );
         }
 
         if (error.status === 403) {

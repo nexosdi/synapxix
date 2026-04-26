@@ -1,5 +1,6 @@
 generator client {
     provider = "prisma-client-js"
+    output   = "../../../generated/prisma"
 }
 
 datasource db {
@@ -31,56 +32,56 @@ model Dimension {
   name String
 }
 
-// === SISTEMA DE USUARIOS Y ROLES ===
+// === USER AND ROLE SYSTEM ===
 
-// Usuario base - conecta con Keycloak
+// Base user - connects with Keycloak
 model User {
   id            String   @id @default(uuid())
-  keycloakId    String   @unique // ID del usuario en Keycloak
+  keycloakId    String   @unique // User ID in Keycloak
   email         String   @unique
   name          String
   role          UserRole
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  // Relaciones: un usuario puede tener UN perfil específico según su rol
+  // Relations: a user can have ONE specific profile depending on their role
   tutorProfile  Tutor?
-  ninoProfile   Nino?
+  childProfile   Child?
 }
 
-// Enum para los roles
+// Enum for roles
 enum UserRole {
-  NINO
+  CHILD
   TUTOR
   ADMIN
 }
 
-// Perfil de Tutor - información adicional para tutores
+// Tutor Profile - additional information for tutors
 model Tutor {
   id        String   @id @default(uuid())
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  telefono  String?
+  phone     String?
   
-  // Un tutor puede tener múltiples niños
-  ninos     Nino[]
+  // A tutor can have multiple children
+  children  Child[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-// Perfil de Niño - información adicional para niños
-model Nino {
+// Child Profile - additional information for children
+model Child {
   id        String   @id @default(uuid())
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  edad      Int?
-  grado     String?
-  avatar    String?  // URL o identificador del avatar
+  age       Int?
+  grade     String?
+  avatar    String?  // Avatar URL or identifier
   
-  // Un niño puede pertenecer a un tutor (opcional)
+  // A child can belong to a tutor (optional)
   tutorId   String?
   tutor     Tutor?   @relation(fields: [tutorId], references: [id], onDelete: SetNull)
   

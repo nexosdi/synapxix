@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@nexosdi.synapxix/prisma';
 import { PaginationDto } from '../../../shared/data-access/dto/pagination.dto';
 import { PaginatedResponseDto } from '../../../shared/data-access/dto/base-response.dto';
@@ -7,6 +7,8 @@ import { UpdateDimensionDto } from './dto/update-dimension.dto';
 
 @Injectable()
 export class DimensionsService {
+    private readonly logger = new Logger(DimensionsService.name);
+    
     constructor(private readonly prisma: PrismaService) { }
 
     async create(createDimensionDto: CreateDimensionDto) {
@@ -15,7 +17,7 @@ export class DimensionsService {
                 data: createDimensionDto,
             });
         } catch (e) {
-            console.log(e);
+            this.logger.error(`Failed to create dimension: ${e.message}`, e.stack);
             throw e;
         }
     }
@@ -41,7 +43,7 @@ export class DimensionsService {
         });
 
         if (!dimension) {
-            throw new NotFoundException(`Category with ID ${id} not found`);
+            throw new NotFoundException(`Dimension with ID ${id} not found`);
         }
 
         return dimension;
@@ -55,7 +57,7 @@ export class DimensionsService {
                 data: updateDimensionDto,
             });
         } catch (e) {
-            console.log(e);
+            this.logger.error(`Failed to update dimension with ID ${id}: ${e.message}`, e.stack);
             throw e;
         }
     }
@@ -67,7 +69,7 @@ export class DimensionsService {
                 where: { id },
             });
         } catch (e) {
-            console.log(e);
+            this.logger.error(`Failed to remove dimension with ID ${id}: ${e.message}`, e.stack);
             throw e;
         }
     }

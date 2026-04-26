@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@nexosdi.synapxix/prisma';
 import { PaginationDto } from '../../../shared/data-access/dto/pagination.dto';
 import { PaginatedResponseDto } from '../../../shared/data-access/dto/base-response.dto';
@@ -7,6 +7,8 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoriesService {
+    private readonly logger = new Logger(CategoriesService.name);
+    
     constructor(private readonly prisma: PrismaService) { }
 
     async create(createCategoryDto: CreateCategoryDto) {
@@ -15,7 +17,7 @@ export class CategoriesService {
                 data: createCategoryDto,
             });
         } catch (e) {
-            console.log(e);
+            this.logger.error(`Failed to create category: ${e.message}`, e.stack);
             throw e;
         }
     }
@@ -55,7 +57,7 @@ export class CategoriesService {
                 data: updateCategoryDto,
             });
         } catch (e) {
-            console.log(e);
+            this.logger.error(`Failed to update category with ID ${id}: ${e.message}`, e.stack);
             throw e;
         }
     }
@@ -67,7 +69,7 @@ export class CategoriesService {
                 where: { id },
             });
         } catch (e) {
-            console.log(e);
+            this.logger.error(`Failed to remove category with ID ${id}: ${e.message}`, e.stack);
             throw e;
         }
     }
