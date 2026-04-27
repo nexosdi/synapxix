@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { AuthService } from '@auth0/auth0-angular'; 
+import { filter, switchMap, take } from 'rxjs';
 import { CognitiveElement } from './models/CognitiveElement.model';
 import { CognitiveService } from './services/Cognitive.service';
 import { CognitiveCardComponent } from './components/CognitiveCard.component';
@@ -8,16 +9,14 @@ import { CognitiveChartComponent } from './components/CognitiveCharts.components
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,                          // ← requerido para poder importarlo en app.component
+  standalone: true,
   imports: [
     CommonModule,
-    HttpClientModule,
     CognitiveCardComponent,
     CognitiveChartComponent,
   ],
   template: `
     <div class="dashboard">
-
       <div *ngIf="errorMessage" class="dashboard__error">
         <span><strong>⚠️ Error:</strong> {{ errorMessage }}</span>
         <button (click)="fetchData()">Reintentar</button>
@@ -42,54 +41,18 @@ import { CognitiveChartComponent } from './components/CognitiveCharts.components
 
         <app-cognitive-chart [element]="selectedElement"></app-cognitive-chart>
       </ng-container>
-
     </div>
   `,
   styles: [`
-    .dashboard {
-      padding: 2rem;
-      background: #f8f9fa;
-      min-height: 100vh;
-      font-family: 'Segoe UI', sans-serif;
-    }
+    /* Tus estilos se mantienen igual */
+    .dashboard { padding: 2rem; background: #f8f9fa; min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
     .dashboard__title { color: #1e293b; margin-bottom: 2rem; font-weight: 700; }
-    .dashboard__grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2.5rem;
-    }
+    .dashboard__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
     .dashboard__loading { text-align: center; padding: 3rem; }
     .dashboard__loading p { margin-top: 1rem; color: #64748b; }
-    .dashboard__error {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #fee2e2;
-      color: #dc2626;
-      padding: 1rem;
-      border-radius: 12px;
-      border: 1px solid #fecaca;
-      margin-bottom: 1.5rem;
-    }
-    .dashboard__error button {
-      background: #dc2626;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .loader {
-      display: inline-block;
-      width: 40px;
-      height: 40px;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #3f51b5;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
+    .dashboard__error { display: flex; justify-content: space-between; align-items: center; background: #fee2e2; color: #dc2626; padding: 1rem; border-radius: 12px; border: 1px solid #fecaca; margin-bottom: 1.5rem; }
+    .dashboard__error button { background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .loader { display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3f51b5; border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   `],
 })
@@ -99,7 +62,8 @@ export class DashboardComponent implements OnInit {
   public isLoading = true;
   public errorMessage = '';
 
-  constructor(private cognitiveService: CognitiveService) {}
+  private auth = inject(AuthService);
+  private cognitiveService = inject(CognitiveService);
 
   ngOnInit(): void {
     this.fetchData();
@@ -109,15 +73,22 @@ export class DashboardComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.cognitiveService.getElements().subscribe({
+    this.auth.isLoading$.pipe(
+      filter(loading => !loading),
+      take(1), 
+      switchMap(() => this.cognitiveService.getElements())
+    ).subscribe({
       next: (data) => {
         this.elements = data;
         this.selectedElement = data[0] ?? null;
         this.isLoading = false;
       },
-      error: () => {
+      error: (err) => {
         this.isLoading = false;
-        this.errorMessage = 'No se pudo conectar con el backend de Synapxix.';
+        this.errorMessage = err.status === 401 
+          ? 'Sesión inválida o expirada. Por favor, reintenta el login.' 
+          : 'No se pudo conectar con el backend de Synapxix.';
+        console.error('Error en Dashboard:', err);
       },
     });
   }

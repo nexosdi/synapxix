@@ -13,13 +13,14 @@ async function bootstrap() {
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
 
-  // --- SOLUCIÓN AL CORS AQUÍ ---
+  // --- CONFIGURACIÓN DE CORS REFORZADA ---
   app.enableCors({
-    origin: 'http://localhost:4300', // El puerto exacto de tu Angular
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true, // Importante si usas cookies o tokens en headers
+    origin: 'http://localhost:4300', 
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // Agregamos OPTIONS
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'], // <--- ESTO ES CLAVE
+    credentials: true,
   });
-  // ------------------------------
+  // ---------------------------------------
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
