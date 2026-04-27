@@ -12,4 +12,18 @@ model User {
     name          String?
     email         String?   @unique
     emailVerified DateTime?
+    profile       UserProfile? 
+}
+
+model UserProfile {
+    id            String   @id @default(cuid())
+    theme         String   @default("dark")
+    language      String   @default("es")
+    notifications Boolean  @default(true)
+    
+    // Relación con User
+    userId        String   @unique
+    user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    updatedAt     DateTime @updatedAt
 }
