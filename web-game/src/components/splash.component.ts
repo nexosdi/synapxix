@@ -27,16 +27,16 @@ export class SplashComponent {
 
   async onPlayClick(): Promise<void> {
     const target = `/history/${HISTORY_MOCK.id}/map`;
-    const isAuthenticated = await firstValueFrom(this.auth.isAuthenticated$);
+    // const isAuthenticated = await firstValueFrom(this.auth.isAuthenticated$);
 
-    if (!isAuthenticated) {
-      await firstValueFrom(
-        this.auth.loginWithRedirect({
-          appState: { target },
-        })
-      );
-      return;
-    }
+    // if (!isAuthenticated) {
+    //   await firstValueFrom(
+    //     this.auth.loginWithRedirect({
+    //       appState: { target },
+    //     })
+    //   );
+    //   return;
+    // }
 
     this.router.navigateByUrl(target);
   }
