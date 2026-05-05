@@ -1,20 +1,5 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  CreateTopicDto,
-  CreateUserDto,
-  InitMethodDto,
-  MethodFeedbackDto,
-  ReinforceTopicDto,
-  SetPreferencesDto,
-} from '@nexosdi.synapxix/learning/shared';
+import {Body,Controller,Get,Param,Post,Query,UseGuards} from '@nestjs/common';
+import {CreateTopicDto,CreateUserDto,InitMethodDto,MethodFeedbackDto,ReinforceTopicDto,SetPreferencesDto,} from '@nexosdi.synapxix/learning/shared';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { LearningService } from './learning.service';
 
