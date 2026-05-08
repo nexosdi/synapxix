@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../../libs/prisma/src/lib/services/prisma.service'; 
+import { PrismaService } from '@nexosdi.synapxix/prisma'; 
 import { UpdatePreferencesDto } from './dto/updated-preferences';
 
 
