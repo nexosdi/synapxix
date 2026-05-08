@@ -1,4 +1,4 @@
-import type { InteractiveContentBase } from '../../models/history.model';
+import { InteractiveContentBase } from '../../models/history.model';
 
 export type SpeakAboutPhotoGameType = 'speak-about-photo';
 
@@ -22,6 +22,7 @@ export interface SpeakAboutPhotoGameData {
   locale: string;
 }
 
+// ESTA ES LA EXPORTACIÓN QUE FALTA (TS2305)
 export type SpeakAboutPhotoInteractiveContent = InteractiveContentBase<
   SpeakAboutPhotoGameType,
   SpeakAboutPhotoGameData
@@ -29,6 +30,7 @@ export type SpeakAboutPhotoInteractiveContent = InteractiveContentBase<
 
 export type SpeakAboutPhotoGameModel = SpeakAboutPhotoGameData;
 
+// ESTA ES LA FUNCIÓN QUE FALTA (TS2305)
 export function toSpeakAboutPhotoGameModel(
   content: SpeakAboutPhotoInteractiveContent
 ): SpeakAboutPhotoGameModel {
