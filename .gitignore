@@ -78,3 +78,4 @@ yarn-error.log*
 .cache/
 data/
 postgres/
+data/
