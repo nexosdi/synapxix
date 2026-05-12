@@ -44,5 +44,8 @@ Thumbs.db
 .github/instructions/nx.instructions.md
 
 .angular
-auth0.config.ts
-auth0.config.ts
+
+# Environment variables with secrets
+.env
+.env.local
+.env.*.local

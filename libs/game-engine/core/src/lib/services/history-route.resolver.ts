@@ -3,7 +3,7 @@ import { ResolveFn, Router } from '@angular/router';
 import { HISTORY_MOCK } from '../history-mock';
 import { HistoryService } from './history.service';
 
-export const historyRouteResolver: ResolveFn<boolean> = (route) => {
+export const historyRouteResolver: ResolveFn<boolean> = async (route) => {
   const historyService = inject(HistoryService);
   const router = inject(Router);
 
@@ -13,7 +13,7 @@ export const historyRouteResolver: ResolveFn<boolean> = (route) => {
     return false;
   }
 
-  const loaded = historyService.loadHistory(historyId);
+  const loaded = await historyService.loadHistory(historyId);
   if (!loaded) {
     router.navigate(['/history', HISTORY_MOCK.id, 'map']);
     return false;
