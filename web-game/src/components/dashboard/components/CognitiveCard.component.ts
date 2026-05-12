@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common'; 
 import { CognitiveElement } from '../models/CognitiveElement.model';
 
 @Component({
@@ -9,9 +9,12 @@ import { CognitiveElement } from '../models/CognitiveElement.model';
   template: `
     <div
       class="card"
+      role="button"
+      tabindex="0"
       [class.card--selected]="isSelected"
-      [style.--accent]="element.color"
+      [style.--accent]="element.color || '#3b82f6'" 
       (click)="selected.emit(element)"
+      (keydown.enter)="selected.emit(element)"
     >
       <div class="card__header">
         <span class="card__name">{{ element.name }}</span>
@@ -39,10 +42,15 @@ import { CognitiveElement } from '../models/CognitiveElement.model';
       box-shadow: 0 4px 6px rgba(0,0,0,0.05);
       cursor: pointer;
       border: 2px solid transparent;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      transition: all 0.3s ease; /* Simplificado para incluir el focus */
+      outline: none;
     }
-    .card:hover { box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-    .card--selected { border-color: var(--accent); }
+    .card:hover, .card:focus { 
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1); 
+      transform: translateY(-2px); /* Un toque extra de UX */
+    }
+    .card:focus { border-color: #cbd5e1; }
+    .card--selected { border-color: var(--accent); background: #f8fafc; }
     .card__header {
       display: flex;
       justify-content: space-between;
@@ -57,12 +65,12 @@ import { CognitiveElement } from '../models/CognitiveElement.model';
       height: 12px;
       overflow: hidden;
     }
-    .card__bar-fill { height: 100%; transition: width 1s ease; }
+    .card__bar-fill { height: 100%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
     .card__hint { font-size: 0.75rem; color: #94a3b8; margin-top: 10px; margin-bottom: 0; }
   `],
 })
 export class CognitiveCardComponent {
-  @Input() element!: CognitiveElement;
+  @Input({ required: true }) element!: CognitiveElement;
   @Input() isSelected = false;
   @Output() selected = new EventEmitter<CognitiveElement>();
 }
