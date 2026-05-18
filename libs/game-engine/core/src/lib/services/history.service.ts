@@ -1,12 +1,13 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { History, InteractiveContent, GameType, SubjectCategory } from '../models/history.model';
+import { HISTORY_DATA_PROVIDER, HistoryDataProvider, HistoryFilter } from './history-data-provider';
 import { HISTORY_MOCK } from '../history-mock';
-import { GameType, History, InteractiveContent } from '../models/history.model';
 
 @Injectable()
 export class HistoryService {
-  private readonly historyRegistry = new Map<string, History>([
-    [HISTORY_MOCK.id, HISTORY_MOCK],
-  ]);
+  // Inject the data provider if available, otherwise fallback to direct mock usage
+  private readonly dataProvider = inject<HistoryDataProvider>(HISTORY_DATA_PROVIDER, { optional: true });
+
   private readonly historiesSignal = signal<History[]>([]);
   private readonly activeHistoryId = signal<string | null>(null);
   private readonly journeyStarted = signal(false);
@@ -50,18 +51,56 @@ export class HistoryService {
     return this.currentContentIndex() < history.contentMap.length - 1;
   });
 
-  loadHistory(historyId: string): boolean {
-    const history = this.historyRegistry.get(historyId);
+  /**
+   * Load a history by ID.
+   * Uses the injected HistoryDataProvider if available, otherwise falls back to the hardcoded mock.
+   */
+  async loadHistory(historyId: string): Promise<boolean> {
+    let history: History | null = null;
+
+    if (this.dataProvider) {
+      // Use the provider (mock or backend)
+      history = await this.dataProvider.getHistory(historyId);
+    } else {
+      // Direct fallback to the hardcoded mock (legacy behavior)
+      history = historyId === HISTORY_MOCK.id ? HISTORY_MOCK : null;
+    }
+
     if (!history) {
       console.warn(
         `History "${historyId}" not found. Falling back to mock history "${HISTORY_MOCK.id}".`
       );
       return false;
     }
+
     this.historiesSignal.set([history]);
     this.activeHistoryId.set(history.id);
     this.resetJourney();
     return true;
+  }
+
+  /**
+   * Load all available histories, optionally filtered by category.
+   * Used by category selector views.
+   */
+  async loadHistories(filter?: HistoryFilter): Promise<History[]> {
+    if (this.dataProvider) {
+      const histories = await this.dataProvider.getHistories(filter);
+      this.historiesSignal.set(histories);
+      return histories;
+    }
+
+    // Fallback: return the single mock
+    const mockHistories = [HISTORY_MOCK];
+    this.historiesSignal.set(mockHistories);
+    return mockHistories;
+  }
+
+  /**
+   * Get histories by category (convenience method for the category selector).
+   */
+  async getHistoriesByCategory(category: SubjectCategory): Promise<History[]> {
+    return this.loadHistories({ category });
   }
 
   beginJourney(): InteractiveContent | null {
@@ -108,5 +147,17 @@ export class HistoryService {
       return [];
     }
     return history.contentMap.filter((item) => item.gameType === gameType);
+  }
+
+  /**
+   * Full cleanup of internal state.
+   * Call this when navigating away from a completed journey
+   * to prevent stale state from leaking into the next session.
+   */
+  cleanup(): void {
+    this.journeyStarted.set(false);
+    this.currentContentIndex.set(0);
+    this.activeHistoryId.set(null);
+    this.historiesSignal.set([]);
   }
 }

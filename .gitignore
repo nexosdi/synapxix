@@ -65,3 +65,8 @@ auth0.config.ts
 
 # Docker
 postgres-backup.tar.gz
+
+# Environment variables with secrets
+.env
+.env.local
+.env.*.local
