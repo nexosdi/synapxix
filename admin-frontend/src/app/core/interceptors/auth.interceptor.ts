@@ -9,66 +9,45 @@ import {
 import { Observable, throwError, from } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { KeycloakService } from 'keycloak-angular';
-import { Router } from '@angular/router';
 
 /**
- * Interceptor HTTP para:
- * 1. Añadir token de Keycloak a cada petición
- * 2. Manejar errores de autenticación (401, 403)
- * 3. Redirigir a login si el token expiró
+ * HTTP Interceptor that:
+ * 1. Attaches the Keycloak Bearer token to every outgoing request
+ * 2. On 401, attempts a token refresh and retries the request once
+ * 3. Logs out the user if the token refresh fails
  */
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-  constructor(
-    private keycloakService: KeycloakService,
-    private router: Router
-  ) {}
+  constructor(private keycloakService: KeycloakService) {}
 
   intercept(
     req: HttpRequest<any>,
     next: HttpHandler
   ): Observable<HttpEvent<any>> {
-    // 1. Obtener el token de forma síncrona si es posible o esperar a la promesa
     return from(this.keycloakService.getToken()).pipe(
       switchMap(token => {
-        // 2. Si hay token, añadirlo. Si no, seguir sin él (el backend responderá 401 si es necesario)
-        if (token) {
-          req = req.clone({
-            setHeaders: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-        }
-        
-        return next.handle(req);
+        const authReq = token
+          ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+          : req;
+
+        return next.handle(authReq);
       }),
       catchError((error: HttpErrorResponse) => {
-        // Manejar errores de autenticación (401 Unauthorized)
         if (error.status === 401) {
-          console.warn('⚠️ Token expirado, intentando renovar...');
-          
           return from(this.keycloakService.updateToken(5)).pipe(
             switchMap(() => from(this.keycloakService.getToken())),
-            switchMap(newToken => {
-              console.log('✅ Token renovado, reintentando petición...');
-              return next.handle(
+            switchMap(newToken =>
+              next.handle(
                 req.clone({
-                  setHeaders: {
-                    Authorization: `Bearer ${newToken}`
-                  }
+                  setHeaders: { Authorization: `Bearer ${newToken}` },
                 })
-              );
-            }),
-            catchError((err) => {
-              console.error('❌ No se pudo renovar el token:', err);
+              )
+            ),
+            catchError((refreshError: unknown) => {
               this.keycloakService.logout();
-              return throwError(() => error);
+              return throwError(() => refreshError);
             })
           );
-        }
-
-        if (error.status === 403) {
-          console.error('❌ Acceso denegado: no tienes permisos para esta acción');
         }
 
         return throwError(() => error);
