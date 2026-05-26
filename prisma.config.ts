@@ -2,9 +2,9 @@ import { config as loadEnv } from 'dotenv';
 import { defineConfig } from 'prisma/config';
 
 loadEnv({
-  path: './env'
+  path: './.env' // <--- Faltaba el punto antes de env
 })
 
 export default defineConfig({
-  schema: './src/database/schema.prisma',
+  schema: './libs/prisma/src/schema.prisma',
 })
