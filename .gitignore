@@ -79,3 +79,4 @@ yarn-error.log*
 data/
 postgres/
 data/
+.env
