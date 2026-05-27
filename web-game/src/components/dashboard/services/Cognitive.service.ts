@@ -2,10 +2,12 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, throwError, retry } from 'rxjs'; 
 import { CognitiveElement } from '../models/CognitiveElement.model';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class CognitiveService {
-  private readonly apiUrl = 'http://localhost:3000/api/auth/preferences';
+  
+  private readonly apiUrl = '${environment.apiUrl}/auth/preferences';
 
   constructor(private http: HttpClient) {}
 
