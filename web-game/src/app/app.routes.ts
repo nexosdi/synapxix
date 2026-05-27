@@ -4,10 +4,14 @@ import {
   GameRunnerComponent,
   HistoryService,
   historyRouteResolver,
+  HISTORY_DATA_PROVIDER,
+  MockHistoryDataProvider,
 } from '@nexosdi.synapxix/game-engine/core';
 import { MapComponent } from '../components/map.component';
 import { SplashComponent } from '../components/splash.component';
 import { DashboardComponent } from '../components/dashboard/dashboard.component';
+import { RoadmapBuilderComponent } from '../teachers-form/roadmap-builder.component';
+
 
 export const routes: Routes = [
   {
@@ -19,9 +23,13 @@ export const routes: Routes = [
    canActivate: [AuthGuard] },
   {
     path: 'history/:historyId',
-    providers: [HistoryService],
-    // El AuthGuard protege esta ruta y todas sus hijas (map y game)
     canActivate: [AuthGuard],
+    providers: [
+      HistoryService,
+      MockHistoryDataProvider,
+      { provide: HISTORY_DATA_PROVIDER, useExisting: MockHistoryDataProvider },
+    ],
+    // canActivate: [AuthGuard],
     resolve: {
       historyReady: historyRouteResolver,
     },
@@ -38,6 +46,10 @@ export const routes: Routes = [
       {
         path: 'game',
         component: GameRunnerComponent,
+      },
+      {
+        path: 'admin/builder',
+        component: RoadmapBuilderComponent,
       },
     ],
   },

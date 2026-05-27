@@ -42,6 +42,16 @@ export class SplashComponent {
       });
       return;
     }
+    // const isAuthenticated = await firstValueFrom(this.auth.isAuthenticated$);
+
+    // if (!isAuthenticated) {
+    //   await firstValueFrom(
+    //     this.auth.loginWithRedirect({
+    //       appState: { target },
+    //     })
+    //   );
+    //   return;
+    // }
 
     // Si ya está autenticado, simplemente navegamos
     this.router.navigateByUrl(target);
