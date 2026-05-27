@@ -7,7 +7,7 @@ import { environment } from '../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class CognitiveService {
   
-  private readonly apiUrl = '${environment.apiUrl}/auth/preferences';
+  private readonly apiUrl = `${environment.apiUrl}/auth/preferences`;
 
   constructor(private http: HttpClient) {}
 
