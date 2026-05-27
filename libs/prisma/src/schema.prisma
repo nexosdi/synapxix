@@ -3,8 +3,19 @@ generator client {
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url = env("DATABASE_URL") 
+  schemas  = ["audit", "auth", "communication", "core", "knowledge", "psychometrics"]
+}
+model Institution {
+  institution_id String @id @default(uuid()) @db.Uuid
+  name           String?     @db.VarChar(150)
+  description    String?
+  created_at     DateTime    @default(now())
+  structures     Structure[]
+
+  @@map("institution")
+  @@schema("core")
 }
 
 model Structure {
@@ -181,7 +192,4 @@ enum linkType {
   DIRECTOR @map("4")
 
   @@schema("auth")
-}
-
-    updatedAt     DateTime @updatedAt
 }
