@@ -4,9 +4,11 @@ import { AuthWidgetComponent } from '../components/auth-widget.component';
 
 @Component({
   selector: 'app-root',
-  templateUrl: './app.component.html',
+  template: `
+    <app-auth-widget></app-auth-widget>
+    <router-outlet></router-outlet>
+  `,
   imports: [RouterOutlet, AuthWidgetComponent],
   standalone: true,
 })
-export class AppComponent {
-}
+export class AppComponent {}

@@ -12,46 +12,46 @@ import { AuthHttpInterceptor, provideAuth0 } from '@auth0/auth0-angular';
 import { auth0Config } from '@nexosdi.synapxix/auth0-config';
 import { routes } from './app.routes';
 
-function getRedirectUri(): string {
-  if (typeof window === 'undefined' || !window.location) {
-    return 'http://localhost:4300';
-  }
-
-  return window.location.origin;
-}
-
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withInterceptorsFromDi()),
+    
+    // Mantenemos la DI para el interceptor basado en clases
+    provideHttpClient(withInterceptorsFromDi()), 
+    
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthHttpInterceptor,
       multi: true,
     },
+    
     provideAuth0({
       domain: auth0Config.domain,
       clientId: auth0Config.clientId,
       authorizationParams: {
-        audience: auth0Config.audience,
-        redirect_uri: getRedirectUri(),
-        scope: auth0Config.scope,
+        // El audience debe ser EXACTAMENTE el Identifier de tu API en Auth0
+        audience: 'http://localhost:3000/api', 
+        redirect_uri: window.location.origin,
+        scope: 'openid profile email', 
       },
       httpInterceptor: {
         allowedList: [
           {
-            uri: `${auth0Config.api.baseUrl}/*`,
+            // El asterisco permite que todas las rutas bajo /api lleven el token
+            uri: 'http://localhost:3000/api/*',
             tokenOptions: {
               authorizationParams: {
-                audience: auth0Config.audience,
+                audience: 'http://localhost:3000/api',
               },
             },
           },
         ],
       },
+      // Cambiamos a 'localstorage' para persistencia, pero sin Refresh Tokens por ahora
+      // para eliminar el error "Missing Refresh Token" de raíz.
       cacheLocation: 'localstorage',
-      useRefreshTokens: true,
+      useRefreshTokens: false, 
     }),
   ],
 };
