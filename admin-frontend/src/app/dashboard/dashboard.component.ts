@@ -7,18 +7,42 @@ import { Router } from '@angular/router';
 import { KeycloakService } from 'keycloak-angular';
 import { Router } from '@angular/router';
 import { ChatbotComponent } from './chatbot/chatbot.component';
+<<<<<<< HEAD
 >>>>>>> b757008 (feat(chatbot): mover implementación del chatbot desde santiago-front)
 import { PlaygroundComponent, Category, Difficulty } from './playground/playground.component';
+=======
+>>>>>>> 5388f43 (fix(chatbot): remover import de PlaygroundComponent para feature/chatbot)
 import { ApiService } from '../core/services/api.service';
+
+// Type interfaces for playground (imported locally for feature/chatbot branch)
+interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  bgColorClass: string;
+}
+
+interface Difficulty {
+  id: string;
+  name: string;
+  stars: number;
+  baseClass: string;
+  shadowClass: string;
+  ageText: string;
+}
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
 <<<<<<< HEAD
+<<<<<<< HEAD
   imports: [CommonModule, PlaygroundComponent],
 =======
   imports: [CommonModule, ChatbotComponent, PlaygroundComponent],
 >>>>>>> b757008 (feat(chatbot): mover implementación del chatbot desde santiago-front)
+=======
+  imports: [CommonModule, ChatbotComponent],
+>>>>>>> 5388f43 (fix(chatbot): remover import de PlaygroundComponent para feature/chatbot)
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
