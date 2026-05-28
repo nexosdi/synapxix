@@ -1,13 +1,25 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+<<<<<<< HEAD
 import { environment } from '../../../environments/environment';
 
+=======
+
+/**
+ * Servicio centralizado para todas las peticiones HTTP al backend
+ * Usa el interceptor AuthInterceptor para enviar el token automáticamente
+ */
+>>>>>>> fa98438 (feat(chatbot): mover implementación del chatbot desde santiago-front)
 @Injectable({
   providedIn: 'root',
 })
 export class ApiService {
+<<<<<<< HEAD
   private apiUrl = environment.apiUrl;
+=======
+  private apiUrl = 'http://localhost:3000/api'; // Cambiar según tu backend
+>>>>>>> fa98438 (feat(chatbot): mover implementación del chatbot desde santiago-front)
 
   constructor(private http: HttpClient) {}
 
