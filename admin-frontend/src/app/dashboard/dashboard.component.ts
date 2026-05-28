@@ -3,14 +3,13 @@ import { CommonModule } from '@angular/common';
 import { switchMap } from 'rxjs/operators';
 import { KeycloakService } from 'keycloak-angular';
 import { Router } from '@angular/router';
-import { ChatbotComponent } from './chatbot/chatbot.component';
 import { PlaygroundComponent, Category, Difficulty } from './playground/playground.component';
 import { ApiService } from '../core/services/api.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, ChatbotComponent, PlaygroundComponent],
+  imports: [CommonModule, PlaygroundComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
