@@ -4,13 +4,29 @@ import { switchMap } from 'rxjs/operators';
 import { KeycloakService } from 'keycloak-angular';
 import { Router } from '@angular/router';
 import { ChatbotComponent } from './chatbot/chatbot.component';
-import { PlaygroundComponent, Category, Difficulty } from './playground/playground.component';
 import { ApiService } from '../core/services/api.service';
+
+// Type interfaces for playground (imported locally for feature/chatbot branch)
+interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  bgColorClass: string;
+}
+
+interface Difficulty {
+  id: string;
+  name: string;
+  stars: number;
+  baseClass: string;
+  shadowClass: string;
+  ageText: string;
+}
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, ChatbotComponent, PlaygroundComponent],
+  imports: [CommonModule, ChatbotComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
