@@ -1,14 +1,24 @@
 import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { switchMap } from 'rxjs/operators';
+<<<<<<< HEAD
 import { Router } from '@angular/router';
+=======
+import { KeycloakService } from 'keycloak-angular';
+import { Router } from '@angular/router';
+import { ChatbotComponent } from './chatbot/chatbot.component';
+>>>>>>> b757008 (feat(chatbot): mover implementación del chatbot desde santiago-front)
 import { PlaygroundComponent, Category, Difficulty } from './playground/playground.component';
 import { ApiService } from '../core/services/api.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
+<<<<<<< HEAD
   imports: [CommonModule, PlaygroundComponent],
+=======
+  imports: [CommonModule, ChatbotComponent, PlaygroundComponent],
+>>>>>>> b757008 (feat(chatbot): mover implementación del chatbot desde santiago-front)
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
@@ -35,11 +45,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
   moleEmoji: string = '🐹';
   gameInterval: any;
   moleEmojis = ['🐹', '🐰', '🐻', '🐼', '🐨', '🦊', '🐸', '🐙'];
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> b757008 (feat(chatbot): mover implementación del chatbot desde santiago-front)
   showPointsAnimation: boolean = false;
   pointsAnimationPosition = { top: 50, left: 50 };
 
   constructor(
+<<<<<<< HEAD
+=======
+    private keycloakService: KeycloakService,
+>>>>>>> b757008 (feat(chatbot): mover implementación del chatbot desde santiago-front)
     private router: Router,
     private cdr: ChangeDetectorRef,
     private apiService: ApiService
@@ -52,11 +70,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     try {
+<<<<<<< HEAD
       this.username = 'Usuario';
+=======
+      await this.keycloakService.loadUserProfile();
+      this.username = this.keycloakService.getUsername() || 'Usuario';
+>>>>>>> b757008 (feat(chatbot): mover implementación del chatbot desde santiago-front)
       this.loading = false;
       this.startMoleGame();
       this.cdr.detectChanges();
 
+<<<<<<< HEAD
       const userId = 'test-user';
 
       this.apiService.post('learning/bootstrap', {}).pipe(
@@ -69,6 +93,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
         error: (err: any) => console.error('[Dashboard] Sync error:', err)
       });
 
+=======
+      const userId = this.keycloakService.getKeycloakInstance()?.subject;
+      if (userId) {
+        this.apiService.post('learning/bootstrap', {}).pipe(
+          switchMap(() => this.apiService.post('learning/users', {
+            userId: userId,
+            name: this.username
+          }))
+        ).subscribe({
+          next: () => console.log('[Dashboard] Learning environment synced.'),
+          error: (err: any) => console.error('[Dashboard] Sync error:', err)
+        });
+      }
+>>>>>>> b757008 (feat(chatbot): mover implementación del chatbot desde santiago-front)
     } catch (err) {
       console.error('[Dashboard] Initialization error:', err);
       this.loading = false;
@@ -78,6 +116,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+<<<<<<< HEAD
+=======
+  // Se necesita importar switchMap
+  // Nota: Ya existe import de switchMap en otros archivos, 
+  // pero hay que verificar en este archivo.
+
+
+>>>>>>> b757008 (feat(chatbot): mover implementación del chatbot desde santiago-front)
   ngOnDestroy() {
     if (this.gameInterval) {
       clearInterval(this.gameInterval);
@@ -85,7 +131,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   logout() {
+<<<<<<< HEAD
     this.router.navigate(['/login']);
+=======
+    this.keycloakService.logout(window.location.origin);
+>>>>>>> b757008 (feat(chatbot): mover implementación del chatbot desde santiago-front)
   }
 
   getUserInitial(): string {
@@ -102,6 +152,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       top: Math.random() * 70 + 10,
       left: Math.random() * 70 + 10
     };
+<<<<<<< HEAD
 
     this.moleEmoji = this.moleEmojis[Math.floor(Math.random() * this.moleEmojis.length)];
     this.moleVisible = true;
@@ -109,12 +160,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       this.moleVisible = false;
     }, 3000);
+=======
+    this.moleEmoji = this.moleEmojis[Math.floor(Math.random() * this.moleEmojis.length)];
+    this.moleVisible = true;
+    setTimeout(() => { this.moleVisible = false; }, 3000);
+>>>>>>> b757008 (feat(chatbot): mover implementación del chatbot desde santiago-front)
   }
 
   catchMole() {
     if (this.moleVisible) {
       this.gameScore += 10;
       this.moleVisible = false;
+<<<<<<< HEAD
 
       localStorage.setItem('synapsis_game_score', this.gameScore.toString());
 
@@ -124,6 +181,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
       setTimeout(() => {
         this.showPointsAnimation = false;
       }, 1000);
+=======
+      localStorage.setItem('synapsis_game_score', this.gameScore.toString());
+      this.pointsAnimationPosition = { ...this.molePosition };
+      this.showPointsAnimation = true;
+      setTimeout(() => { this.showPointsAnimation = false; }, 1000);
+>>>>>>> b757008 (feat(chatbot): mover implementación del chatbot desde santiago-front)
     }
   }
 }

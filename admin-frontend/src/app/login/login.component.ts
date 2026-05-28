@@ -29,7 +29,6 @@ import { Router } from '@angular/router';
               <span class="logo-text">S</span>
             </div>
           </div>
-
           <h1 class="brand-name">Synapsis</h1>
           <p class="tagline">¡Donde aprender es divertido!</p>
         </div>
