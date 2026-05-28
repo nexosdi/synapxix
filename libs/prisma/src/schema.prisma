@@ -1,195 +1,90 @@
 generator client {
     provider = "prisma-client-js"
+    output   = "../../../generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("DATABASE_URL") 
-  schemas  = ["audit", "auth", "communication", "core", "knowledge", "psychometrics"]
-}
-model Institution {
-  institution_id String @id @default(uuid()) @db.Uuid
-  name           String?     @db.VarChar(150)
-  description    String?
-  created_at     DateTime    @default(now())
-  structures     Structure[]
-
-  @@map("institution")
-  @@schema("core")
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
 }
 
-model Structure {
-  structure_id   String @id @default(uuid()) @db.Uuid
-  institution_id String @db.Uuid
-  name           String          @db.VarChar(150)
-  parent_id      String?         @db.Uuid
-  description    String?
-  created_at     DateTime        @default(now())
-  userStructures UserStructure[]
-  institution    Institution     @relation(fields: [institution_id], references: [institution_id])
-  parent         Structure?      @relation("StructureToParent", fields: [parent_id], references: [structure_id])
-  children       Structure[]     @relation("StructureToParent")
+model Category {
+  id Int @id @default(autoincrement())
+  name String
+  description String?
 
-  @@map("structure")
-  @@schema("core")
+  // Relations
+  contents Content[]
 }
 
-model app_user {
-  user_id           String                  @id @default(uuid()) @db.Uuid
-  username          String                  @db.VarChar(150)
-  email             String                  @db.VarChar(150)
-  firstname         String                  @db.VarChar(150)
-  lastname          String                  @db.VarChar(150)
-  role              String                  @default("user") @db.VarChar(150)
-  created_at        DateTime                @default(now())
-  active            Boolean                 @default(true)
-  auditLogs         AuditLog[]
-  sessions          Session[]
-  linksFrom         UserLink[]              @relation("UserLinkFrom")
-  linksTo           UserLink[]              @relation("UserLinkTo")
-  userStructures    UserStructure[]
-  notifications     Notification[]
-  contentProgress   UserContentProgress[]
-  credits           Int                     @default(0)
-  transactions      EconomyTransaction[]    @relation("UserToTransactions")
+model Content {
+  id Int @id @default(autoincrement())
+  title String
+  description String?
 
-  @@map("app_user")
-  @@schema("auth")
-}
-
-model EconomyTransaction{
-  transaction_id    String @id @default(uuid()) @db.Uuid
-  user_id String @db.Uuid
-  game_session_id String @unique @db.VarChar(150)
-  amount Int
-  type String @default("GAME_VICTORY") @db.VarChar(50)
-  created_at DateTime @default(now())
-
-  user app_user @relation("UserToTransactions", fields: [user_id], references: [user_id])
-
-  @@map ("economy_transaction")
-  @@schema("core")
-}
-
-model UserLink {
-  link_id      String @id @default(uuid()) @db.Uuid
-  id_user_from String? @db.Uuid
-  id_user_to   String? @db.Uuid
-  link_type    linkType
-  created_at   DateTime  @default(now())
-  userFrom     app_user? @relation("UserLinkFrom", fields: [id_user_from], references: [user_id])
-  userTo       app_user? @relation("UserLinkTo", fields: [id_user_to], references: [user_id])
-
-  @@unique([id_user_from, id_user_to, link_type])
-  @@map("user_link")
-  @@schema("auth")
-}
-
-model UserStructure {
-  user_id      String @db.Uuid
-  structure_id String @db.Uuid
-  structure    Structure @relation(fields: [structure_id], references: [structure_id])
-  user         app_user  @relation(fields: [user_id], references: [user_id])
-
-  @@id([user_id, structure_id])
-  @@map("user_structure")
-  @@schema("auth")
-}
-
-model Session {
-  session_id String @id @default(uuid()) @db.Uuid
-  user_id    String? @db.Uuid
-  token      String
-  created_at DateTime  @default(now())
-  expires_at DateTime
-  user       app_user? @relation(fields: [user_id], references: [user_id])
-
-  @@map("session")
-  @@schema("auth")
+  // Relations
+  categoryId Int?
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 }
 
 model Dimension {
-  dimension_id String @id @default(uuid()) @db.Uuid
-  name         String      @db.VarChar(150)
-  description  String?
-  archetypes   Archetype[] @relation("ArchetypeToDimension")
+  id Int @id @default(autoincrement())
+  name String
+}
+
+// === USER AND ROLE SYSTEM ===
+
+// Base user - connects with Keycloak
+model User {
+  id            String   @id @default(uuid())
+  keycloakId    String   @unique // User ID in Keycloak
+  email         String   @unique
+  name          String
+  role          UserRole
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations: a user can have ONE specific profile depending on their role
+  tutorProfile  Tutor?
+  childProfile   Child?
+}
+
+// Enum for roles
+enum UserRole {
+  CHILD
+  TUTOR
+  ADMIN
+}
+
+// Tutor Profile - additional information for tutors
+model Tutor {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  @@map("dimension")
-  @@schema("psychometrics")
+  phone     String?
+  
+  // A tutor can have multiple children
+  children  Child[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model Archetype {
-  archetype_id String                     @id @default(uuid()) @db.Uuid
-  dimension_id String?  @db.Uuid
-  name         String                  @db.VarChar(150)
-  description  String?
-  dimension    Dimension?              @relation("ArchetypeToDimension", fields: [dimension_id], references: [dimension_id])
-
-  @@map("archetype")
-  @@schema("psychometrics")
-}
-
-
-
-model Content {
-  content_id      String @id @default(uuid()) @db.Uuid
-  title           String
-  description     String?
-  prerequisite_id String? @db.Uuid
-  created_at      DateTime              @default(now())
-  prerequisite    Content?              @relation("ContentPrerequisite", fields: [prerequisite_id], references: [content_id])
-  prerequisites   Content[]             @relation("ContentPrerequisite")
-  userProgress    UserContentProgress[]
-
-  @@map("content")
-  @@schema("knowledge")
-}
-
-model UserContentProgress {
-  user_id     String @db.Uuid
-  content_id  String @db.Uuid
-  completed   Boolean  @default(false)
-  progress    Float?
-  last_update DateTime @default(now())
-  content     Content  @relation(fields: [content_id], references: [content_id])
-  user        app_user @relation(fields: [user_id], references: [user_id])
-
-  @@id([user_id, content_id])
-  @@map("user_content_progress")
-  @@schema("knowledge")
-}
-
-model AuditLog {
-  audit_id   String @id @default(uuid()) @db.Uuid
-  user_id    String?  @db.Uuid
-  table_name String    @db.VarChar(100)
-  record_id  String?   @db.Uuid
-  timestamp  DateTime  @default(now())
-  details    Json?
-  user       app_user? @relation(fields: [user_id], references: [user_id])
-
-  @@map("audit_log")
-  @@schema("audit")
-}
-
-model Notification {
-  notification_id String @id @default(uuid()) @db.Uuid
-  user_id         String?  @db.Uuid
-  title           String    @db.VarChar(150)
-  message         String?
-  read            Boolean   @default(false)
-  created_at      DateTime  @default(now())
-  user            app_user? @relation(fields: [user_id], references: [user_id])
-
-  @@map("notification")
-  @@schema("communication")
-}
-
-enum linkType {
-  STUDENT  @map("1")
-  ASSISTANT @map("2")
-  TEACHER @map("3")
-  DIRECTOR @map("4")
-
-  @@schema("auth")
+// Child Profile - additional information for children
+model Child {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  age       Int?
+  grade     String?
+  avatar    String?  // Avatar URL or identifier
+  
+  // A child can belong to a tutor (optional)
+  tutorId   String?
+  tutor     Tutor?   @relation(fields: [tutorId], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
