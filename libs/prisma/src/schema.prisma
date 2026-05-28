@@ -52,9 +52,87 @@ model app_user {
   contentProgress   UserContentProgress[]
   credits           Int                     @default(0)
   transactions      EconomyTransaction[]    @relation("UserToTransactions")
+  psychometricProfile UserPsychometricProfile?
+  gameEvaluationSessions GameEvaluationSession[]
+  cognitiveMetrics   CognitiveMetric[]
+  motorMetrics       MotorMetric[]
 
   @@map("app_user")
   @@schema("auth")
+}
+
+model UserPsychometricProfile {
+  profile_id        String  @id @default(uuid()) @db.Uuid
+  user_id           String  @db.Uuid @unique
+  cognitive_balance Float   @default(0)
+  motor_balance     Float   @default(0)
+  cognitive_sessions Int    @default(0)
+  motor_sessions    Int     @default(0)
+  last_updated      DateTime @updatedAt
+  user              app_user @relation(fields: [user_id], references: [user_id])
+
+  @@map("user_psychometric_profile")
+  @@schema("psychometrics")
+}
+
+model GameEvaluationSession {
+  evaluation_session_id String @id @default(uuid()) @db.Uuid
+  user_id               String @db.Uuid
+  game_session_id       String @db.VarChar(150)
+  history_id            String?
+  game_type             String @db.VarChar(100)
+  category              String?
+  started_at            DateTime
+  ended_at              DateTime
+  duration_seconds      Int
+  raw_score             Float
+  accuracy              Float
+  created_at            DateTime @default(now())
+  user                  app_user @relation(fields: [user_id], references: [user_id])
+  cognitiveMetrics      CognitiveMetric[]
+  motorMetrics          MotorMetric[]
+
+  @@map("game_evaluation_session")
+  @@schema("psychometrics")
+}
+
+model CognitiveMetric {
+  cognitive_metric_id String  @id @default(uuid()) @db.Uuid
+  evaluation_session_id String @db.Uuid
+  user_id            String  @db.Uuid
+  game_session_id    String  @db.VarChar(150)
+  cognitive_score    Float
+  attention_index    Float
+  memory_index       Float
+  processing_speed   Float
+  consistency        Float
+  accuracy           Float
+  details            Json?
+  created_at         DateTime @default(now())
+  session            GameEvaluationSession @relation(fields: [evaluation_session_id], references: [evaluation_session_id])
+  user               app_user @relation(fields: [user_id], references: [user_id])
+
+  @@map("cognitive_metric")
+  @@schema("psychometrics")
+}
+
+model MotorMetric {
+  motor_metric_id    String  @id @default(uuid()) @db.Uuid
+  evaluation_session_id String @db.Uuid
+  user_id            String  @db.Uuid
+  game_session_id    String  @db.VarChar(150)
+  motor_score        Float
+  coordination_index Float
+  reaction_index     Float
+  control_index      Float
+  accuracy           Float
+  details            Json?
+  created_at         DateTime @default(now())
+  session            GameEvaluationSession @relation(fields: [evaluation_session_id], references: [evaluation_session_id])
+  user               app_user @relation(fields: [user_id], references: [user_id])
+
+  @@map("motor_metric")
+  @@schema("psychometrics")
 }
 
 model EconomyTransaction{
