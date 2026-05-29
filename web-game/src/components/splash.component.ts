@@ -3,9 +3,12 @@ import { Router } from '@angular/router';
 import { AuthService } from '@auth0/auth0-angular';
 import { HISTORY_MOCK } from '@nexosdi.synapxix/game-engine/core';
 import { firstValueFrom } from 'rxjs';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-splash',
+  standalone: true, // Asegúrate de que sea standalone si no usas NgModules
+  imports: [CommonModule],
   template: `
     <div
       class="flex min-h-screen items-center justify-center bg-cover bg-center bg-no-repeat"
@@ -27,17 +30,30 @@ export class SplashComponent {
 
   async onPlayClick(): Promise<void> {
     const target = `/history/${HISTORY_MOCK.id}/map`;
+    
+    // Verificamos si el usuario ya está autenticado
     const isAuthenticated = await firstValueFrom(this.auth.isAuthenticated$);
 
     if (!isAuthenticated) {
-      await firstValueFrom(
-        this.auth.loginWithRedirect({
-          appState: { target },
-        })
-      );
+      // loginWithRedirect no debe esperarse con firstValueFrom 
+      // porque causa que la aplicación se quede "colgada" antes de redirigir.
+      this.auth.loginWithRedirect({
+        appState: { target },
+      });
       return;
     }
+    // const isAuthenticated = await firstValueFrom(this.auth.isAuthenticated$);
 
+    // if (!isAuthenticated) {
+    //   await firstValueFrom(
+    //     this.auth.loginWithRedirect({
+    //       appState: { target },
+    //     })
+    //   );
+    //   return;
+    // }
+
+    // Si ya está autenticado, simplemente navegamos
     this.router.navigateByUrl(target);
   }
 }

@@ -69,6 +69,13 @@ export class MapComponent {
     'fill-in-the-blanks': 'Fill in the Blanks',
     'read-aloud': 'Read Aloud',
     'speak-about-photo': 'Speak About the Photo',
+    'timeline-order': 'order your timeline',
+    'categorization': 'categorization',
+    'spotlight': 'spotlight',
+    'intruder': 'find the intruder',
+    'neural-link': 'memory neural link',
+    'balance-master': 'balance master',
+    'sound-match': 'sound match',
   };
 
   readonly activeHistory = this.historyService.activeHistory;
