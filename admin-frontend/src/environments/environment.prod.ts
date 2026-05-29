@@ -1,6 +1,7 @@
 export const environment = {
   production: true,
 <<<<<<< HEAD
+<<<<<<< HEAD
   apiUrl: 'https://api.synapxix.com/api', // placeholder - lo actualizamos cuando tengamos deploy
 =======
   keycloak: {
@@ -10,3 +11,6 @@ export const environment = {
   },
 >>>>>>> b757008 (feat(chatbot): mover implementación del chatbot desde santiago-front)
 };
+=======
+};
+>>>>>>> 77a51fb (eliminar keycloak)

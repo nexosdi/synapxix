@@ -1,4 +1,5 @@
 export const environment = {
+<<<<<<< HEAD
   production: false,
 <<<<<<< HEAD
   apiUrl: 'http://localhost:3000/api',
@@ -10,3 +11,7 @@ export const environment = {
   },
 >>>>>>> b757008 (feat(chatbot): mover implementación del chatbot desde santiago-front)
 };
+=======
+  production: false
+};
+>>>>>>> 77a51fb (eliminar keycloak)

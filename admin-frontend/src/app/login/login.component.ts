@@ -8,7 +8,6 @@ import { Router } from '@angular/router';
   imports: [CommonModule],
   template: `
     <div class="login-container" [style.background]="gradientBackground">
-      <!-- Floating shapes background -->
       <div class="floating-shapes">
         <div class="shape shape-1">🎮</div>
         <div class="shape shape-2">🎨</div>
@@ -19,12 +18,14 @@ import { Router } from '@angular/router';
       </div>
 
       <div class="login-box">
-        <!-- Logo and Brand Section -->
         <div class="brand-section">
           <div class="logo-container">
             <img src="assets/logo.png" alt="Synapsis Logo" class="logo"
                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+<<<<<<< HEAD
 
+=======
+>>>>>>> 77a51fb (eliminar keycloak)
             <div class="logo-placeholder">
               <span class="logo-text">S</span>
             </div>
@@ -49,7 +50,7 @@ import { Router } from '@angular/router';
         <div class="info-footer">
           <p class="hint">
             <span class="lock-icon">🔒</span>
-            Inicio de sesión seguro
+            Modo demo activo
           </p>
         </div>
       </div>
@@ -60,9 +61,13 @@ import { Router } from '@angular/router';
 export class LoginComponent {
   gradientBackground = 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)';
 
+<<<<<<< HEAD
   constructor(
     private router: Router
   ) {
+=======
+  constructor(private router: Router) {
+>>>>>>> 77a51fb (eliminar keycloak)
     this.checkLoginStatus();
   }
 
@@ -81,11 +86,23 @@ export class LoginComponent {
       hsl(${hue3}, 75%, 70%) 100%)`;
   }
 
+<<<<<<< HEAD
   async checkLoginStatus() {
     return;
   }
 
   login() {
+=======
+  checkLoginStatus() {
+    const isLoggedIn = localStorage.getItem('demo_logged_in');
+    if (isLoggedIn) {
+      this.router.navigate(['/dashboard']);
+    }
+  }
+
+  login() {
+    localStorage.setItem('demo_logged_in', 'true');
+>>>>>>> 77a51fb (eliminar keycloak)
     this.router.navigate(['/dashboard']);
   }
 }
