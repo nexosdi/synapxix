@@ -1,9 +1,6 @@
 import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KeycloakService } from 'keycloak-angular';
 import { Router } from '@angular/router';
-
-
 
 @Component({
   selector: 'app-login',
@@ -11,7 +8,6 @@ import { Router } from '@angular/router';
   imports: [CommonModule],
   template: `
     <div class="login-container" [style.background]="gradientBackground">
-      <!-- Floating shapes background -->
       <div class="floating-shapes">
         <div class="shape shape-1">🎮</div>
         <div class="shape shape-2">🎨</div>
@@ -22,13 +18,10 @@ import { Router } from '@angular/router';
       </div>
 
       <div class="login-box">
-        <!-- Logo and Brand Section -->
         <div class="brand-section">
           <div class="logo-container">
-            <!-- Placeholder para el logo - reemplaza el src con tu logo -->
-            <img src="assets/logo.png" alt="Synapsis Logo" class="logo" 
+            <img src="assets/logo.png" alt="Synapsis Logo" class="logo"
                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-            <!-- Fallback si no hay logo -->
             <div class="logo-placeholder">
               <span class="logo-text">S</span>
             </div>
@@ -37,7 +30,6 @@ import { Router } from '@angular/router';
           <p class="tagline">¡Donde aprender es divertido!</p>
         </div>
 
-        <!-- Welcome Message -->
         <div class="welcome-section">
           <h2 class="welcome-title">¡Bienvenido! 👋</h2>
           <p class="welcome-message">
@@ -45,18 +37,16 @@ import { Router } from '@angular/router';
           </p>
         </div>
 
-        <!-- Login Button -->
         <button (click)="login()" class="login-btn">
           <span class="btn-icon">🚀</span>
           <span class="btn-text">¡Comenzar Aventura!</span>
           <span class="btn-sparkle">✨</span>
         </button>
 
-        <!-- Info Footer -->
         <div class="info-footer">
           <p class="hint">
             <span class="lock-icon">🔒</span>
-            Inicio de sesión seguro
+            Modo demo activo
           </p>
         </div>
       </div>
@@ -66,11 +56,8 @@ import { Router } from '@angular/router';
 })
 export class LoginComponent {
   gradientBackground = 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)';
-  
-  constructor(
-    private keycloakService: KeycloakService,
-    private router: Router
-  ) {
+
+  constructor(private router: Router) {
     this.checkLoginStatus();
   }
 
@@ -78,27 +65,26 @@ export class LoginComponent {
   onMouseMove(event: MouseEvent) {
     const x = event.clientX / window.innerWidth;
     const y = event.clientY / window.innerHeight;
-    
-    // Calcular colores basados en la posición del mouse
-    const hue1 = Math.floor(220 + x * 60); // 220-280
-    const hue2 = Math.floor(260 + y * 40); // 260-300
-    const hue3 = Math.floor(300 + (x + y) * 30); // 300-360
-    
-    this.gradientBackground = `linear-gradient(135deg, 
-      hsl(${hue1}, 70%, 65%) 0%, 
-      hsl(${hue2}, 60%, 60%) 50%, 
+
+    const hue1 = Math.floor(220 + x * 60);
+    const hue2 = Math.floor(260 + y * 40);
+    const hue3 = Math.floor(300 + (x + y) * 30);
+
+    this.gradientBackground = `linear-gradient(135deg,
+      hsl(${hue1}, 70%, 65%) 0%,
+      hsl(${hue2}, 60%, 60%) 50%,
       hsl(${hue3}, 75%, 70%) 100%)`;
   }
 
-  async checkLoginStatus() {
-    const isLoggedIn = await this.keycloakService.isLoggedIn();
+  checkLoginStatus() {
+    const isLoggedIn = localStorage.getItem('demo_logged_in');
     if (isLoggedIn) {
       this.router.navigate(['/dashboard']);
     }
   }
 
   login() {
-    const redirectUri = window.location.origin + '/dashboard';
-    this.keycloakService.login({ redirectUri });
+    localStorage.setItem('demo_logged_in', 'true');
+    this.router.navigate(['/dashboard']);
   }
 }

@@ -1,12 +1,11 @@
 import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { switchMap } from 'rxjs/operators';
-import { KeycloakService } from 'keycloak-angular';
 import { Router } from '@angular/router';
 import { ChatbotComponent } from './chatbot/chatbot.component';
 import { ApiService } from '../core/services/api.service';
+import { switchMap } from 'rxjs/operators';
 
-// Type interfaces for playground (imported locally for feature/chatbot branch)
+// Type interfaces for chatbot/playground
 interface Category {
   id: string;
   name: string;
@@ -31,8 +30,8 @@ interface Difficulty {
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit, OnDestroy {
-  username: string = '';
-  loading: boolean = true;
+  username: string = 'Usuario';
+  loading: boolean = false;
 
   categories: Category[] = [
     { id: 'linguistic', name: 'Lingüística', icon: '📚', bgColorClass: 'bg-secondary-container' },
@@ -53,12 +52,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   moleEmoji: string = '🐹';
   gameInterval: any;
   moleEmojis = ['🐹', '🐰', '🐻', '🐼', '🐨', '🦊', '🐸', '🐙'];
-  
+
   showPointsAnimation: boolean = false;
   pointsAnimationPosition = { top: 50, left: 50 };
 
   constructor(
-    private keycloakService: KeycloakService,
     private router: Router,
     private cdr: ChangeDetectorRef,
     private apiService: ApiService
@@ -71,37 +69,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     try {
-      await this.keycloakService.loadUserProfile();
-      this.username = this.keycloakService.getUsername() || 'Usuario';
       this.loading = false;
       this.startMoleGame();
       this.cdr.detectChanges();
 
-      const userId = this.keycloakService.getKeycloakInstance()?.subject;
-      if (userId) {
-        this.apiService.post('learning/bootstrap', {}).pipe(
-          switchMap(() => this.apiService.post('learning/users', {
-            userId: userId,
+      // Mock bootstrap (sin auth)
+      this.apiService.post('learning/bootstrap', {}).pipe(
+        switchMap(() =>
+          this.apiService.post('learning/users', {
+            userId: 'demo-user',
             name: this.username
-          }))
-        ).subscribe({
-          next: () => console.log('[Dashboard] Learning environment synced.'),
-          error: (err: any) => console.error('[Dashboard] Sync error:', err)
-        });
-      }
+          })
+        )
+      ).subscribe({
+        next: () => console.log('[Dashboard] Learning environment synced.'),
+        error: (err: any) => console.error('[Dashboard] Sync error:', err)
+      });
+
     } catch (err) {
       console.error('[Dashboard] Initialization error:', err);
       this.loading = false;
-      this.username = 'Usuario Synapsis';
       this.startMoleGame();
       this.cdr.detectChanges();
     }
   }
-
-  // Se necesita importar switchMap
-  // Nota: Ya existe import de switchMap en otros archivos, 
-  // pero hay que verificar en este archivo.
-
 
   ngOnDestroy() {
     if (this.gameInterval) {
@@ -110,7 +101,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   logout() {
-    this.keycloakService.logout(window.location.origin);
+    this.router.navigate(['/login']);
   }
 
   getUserInitial(): string {
