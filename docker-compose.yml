@@ -1,0 +1,134 @@
+
+services:
+  # PostgreSQL Database para Keycloak
+  # PostgreSQL Database for Keycloak
+  postgres-keycloak:
+    image: postgres:15-alpine
+    container_name: keycloak-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${KEYCLOAK_DB_NAME}
+      POSTGRES_USER: ${KEYCLOAK_DB_USER}
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+    volumes:
+      - postgres_keycloak_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - keycloak-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KEYCLOAK_DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL Database for Application
+  postgres-app:
+    image: postgres:15-alpine
+    container_name: app-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${APP_DB_NAME}
+      POSTGRES_USER: ${APP_DB_USER}
+      POSTGRES_PASSWORD: ${APP_DB_PASSWORD}
+    volumes:
+      - postgres_app_data:/var/lib/postgresql/data
+    ports:
+      - "${APP_DB_PORT}:5432"
+    networks:
+      - keycloak-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${APP_DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Keycloak Server
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4.2
+    container_name: keycloak-server
+    restart: unless-stopped
+    command:
+      - start-dev
+    environment:
+      # Admin credentials
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      
+      # Database configuration
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/${KEYCLOAK_DB_NAME}
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USER}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_DB_SCHEMA: public
+      
+      # Hostname configuration
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      
+      # HTTP configuration
+      KC_HTTP_ENABLED: true
+      KC_HTTP_PORT: 8080
+      
+      # Health checks
+      KC_HEALTH_ENABLED: true
+      KC_METRICS_ENABLED: true
+      
+      # Disable CSP to allow reCAPTCHA (dev only)
+      KC_HTTP_HEADERS_CONTENT_SECURITY_POLICY: ""
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount custom theme
+      - ./keycloak-theme:/opt/keycloak/themes/synapxix
+    depends_on:
+      postgres-keycloak:
+        condition: service_healthy
+    networks:
+      - keycloak-network
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Neo4j Graph Database (Learning Module)
+  neo4j:
+    image: neo4j:5.26.0
+    container_name: synapxix-neo4j
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: ${NEO4J_USERNAME}/${NEO4J_PASSWORD}
+      # Habilitar APOC y otras extensiones
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: "apoc.*"
+      NEO4J_dbms_security_procedures_allowlist: "apoc.*"
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    ports:
+      - "7474:7474" # HTTP
+      - "7687:7687" # Bolt
+    networks:
+      - keycloak-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_keycloak_data:
+    driver: local
+  postgres_app_data:
+    driver: local
+  neo4j_data:
+    driver: local
+  neo4j_logs:
+    driver: local
+
+networks:
+  keycloak-network:
+    driver: bridge
