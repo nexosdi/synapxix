@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
-import { KeycloakService } from 'keycloak-angular';
-import { Observable, from } from 'rxjs';
+import { Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
 @Injectable({
@@ -9,20 +8,15 @@ import { switchMap } from 'rxjs/operators';
 })
 export class LearningApiService {
   constructor(
-    private apiService: ApiService,
-    private keycloakService: KeycloakService
+    private apiService: ApiService
   ) {}
 
   /**
    * Registra la selección de categoría y dificultad del usuario en el sistema de aprendizaje
    */
   registerGameSelection(categoryId: string, difficultyId: string): Observable<any> {
-    const userId = this.keycloakService.getKeycloakInstance().subject;
-    
-    // Siguiendo la lógica del proyecto: 
-    // 1. Establecemos la categoría como una preferencia (SetPreferencesDto)
-    // 2. Iniciamos el método con la dificultad (InitMethodDto)
-    
+    const userId = 'test-user';
+
     return this.apiService.post('learning/preferences', {
       userId: userId,
       prefKeys: [categoryId],

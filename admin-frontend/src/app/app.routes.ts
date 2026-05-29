@@ -1,5 +1,4 @@
 import { Route } from '@angular/router';
-import { AuthGuard } from './keycloak-auth.guard';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { LoginComponent } from './login/login.component';
 import { LoginPreviewComponent } from './login-preview/login-preview.component';
@@ -26,7 +25,6 @@ export const appRoutes: Route[] = [
   {
     path: 'dashboard',
     component: DashboardComponent,
-    canActivate: [AuthGuard],
   },
   {
     path: '**',
