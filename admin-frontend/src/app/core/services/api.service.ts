@@ -2,9 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { environment } from '../../../environments/environment';
 
 =======
+=======
+import { environment } from '../../../environments/environment';
+>>>>>>> 2a87e4a (feat: implement ApiService and environment configurations for centralized HTTP requests)
 
 /**
  * Servicio centralizado para todas las peticiones HTTP al backend
@@ -16,10 +20,14 @@ import { environment } from '../../../environments/environment';
 })
 export class ApiService {
 <<<<<<< HEAD
+<<<<<<< HEAD
   private apiUrl = environment.apiUrl;
 =======
   private apiUrl = 'http://localhost:3000/api'; // Cambiar según tu backend
 >>>>>>> fa98438 (feat(chatbot): mover implementación del chatbot desde santiago-front)
+=======
+  private apiUrl = environment.apiUrl;
+>>>>>>> 2a87e4a (feat: implement ApiService and environment configurations for centralized HTTP requests)
 
   constructor(private http: HttpClient) {}
 
