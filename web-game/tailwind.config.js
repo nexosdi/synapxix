@@ -1,10 +1,18 @@
-const { join } = require('path');
+import { join } from 'path';
 
 /** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: [join(__dirname, 'src/**/*.{html,ts,scss}')],
+export default {
+  content: [
+    "./web-game/src/**/*.{html,ts,scss}",
+    "./libs/**/*.{html,ts,scss}",
+  ],
   theme: {
-    extend: {},
+    extend: {
+      borderWidth: { '3': '3px' },
+      colors: {
+        synapxix: '#1b95fb',
+      }
+    },
   },
   plugins: [],
 };
