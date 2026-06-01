@@ -1,6 +1,5 @@
 generator client {
     provider = "prisma-client-js"
-    output   = "../../../generated/prisma"
 }
 
 datasource db {
@@ -8,83 +7,9 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model Category {
-  id Int @id @default(autoincrement())
-  name String
-  description String?
-
-  // Relations
-  contents Content[]
-}
-
-model Content {
-  id Int @id @default(autoincrement())
-  title String
-  description String?
-
-  // Relations
-  categoryId Int?
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-}
-
-model Dimension {
-  id Int @id @default(autoincrement())
-  name String
-}
-
-// === USER AND ROLE SYSTEM ===
-
-// Base user - connects with Keycloak
 model User {
-  id            String   @id @default(uuid())
-  keycloakId    String   @unique // User ID in Keycloak
-  email         String   @unique
-  name          String
-  role          UserRole
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations: a user can have ONE specific profile depending on their role
-  tutorProfile  Tutor?
-  childProfile   Child?
-}
-
-// Enum for roles
-enum UserRole {
-  CHILD
-  TUTOR
-  ADMIN
-}
-
-// Tutor Profile - additional information for tutors
-model Tutor {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  phone     String?
-  
-  // A tutor can have multiple children
-  children  Child[]
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// Child Profile - additional information for children
-model Child {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  age       Int?
-  grade     String?
-  avatar    String?  // Avatar URL or identifier
-  
-  // A child can belong to a tutor (optional)
-  tutorId   String?
-  tutor     Tutor?   @relation(fields: [tutorId], references: [id], onDelete: SetNull)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+    id            String    @id @default(cuid())
+    name          String?
+    email         String?   @unique
+    emailVerified DateTime?
 }
