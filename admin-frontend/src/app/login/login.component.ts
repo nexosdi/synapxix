@@ -20,16 +20,18 @@ import { Router } from '@angular/router';
       <div class="login-box">
         <div class="brand-section">
           <div class="logo-container">
-            <img src="assets/logo.png" alt="Synapsis Logo" class="logo"
-                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-<<<<<<< HEAD
+            <img
+              src="assets/logo.png"
+              alt="Synapsis Logo"
+              class="logo"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
+            />
 
-=======
->>>>>>> 77a51fb (eliminar keycloak)
             <div class="logo-placeholder">
               <span class="logo-text">S</span>
             </div>
           </div>
+
           <h1 class="brand-name">Synapsis</h1>
           <p class="tagline">¡Donde aprender es divertido!</p>
         </div>
@@ -56,18 +58,13 @@ import { Router } from '@angular/router';
       </div>
     </div>
   `,
-  styleUrls: ['./login.component.css']
+  styleUrls: ['./login.component.css'],
 })
 export class LoginComponent {
-  gradientBackground = 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)';
+  gradientBackground =
+    'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)';
 
-<<<<<<< HEAD
-  constructor(
-    private router: Router
-  ) {
-=======
   constructor(private router: Router) {
->>>>>>> 77a51fb (eliminar keycloak)
     this.checkLoginStatus();
   }
 
@@ -86,13 +83,6 @@ export class LoginComponent {
       hsl(${hue3}, 75%, 70%) 100%)`;
   }
 
-<<<<<<< HEAD
-  async checkLoginStatus() {
-    return;
-  }
-
-  login() {
-=======
   checkLoginStatus() {
     const isLoggedIn = localStorage.getItem('demo_logged_in');
     if (isLoggedIn) {
@@ -102,7 +92,6 @@ export class LoginComponent {
 
   login() {
     localStorage.setItem('demo_logged_in', 'true');
->>>>>>> 77a51fb (eliminar keycloak)
     this.router.navigate(['/dashboard']);
   }
 }

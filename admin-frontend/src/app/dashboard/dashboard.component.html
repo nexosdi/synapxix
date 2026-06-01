@@ -37,10 +37,10 @@
         <div class="logo-small">S</div>
         <h1 class="app-title">Synapsis</h1>
       </div>
+
       <div class="user-section">
         <div class="user-avatar">{{ getUserInitial() }}</div>
         <span class="user-name">{{ username }}</span>
-
         <button class="logout-btn" (click)="logout()">Salir</button>
       </div>
     </header>
@@ -48,22 +48,13 @@
     <main class="dashboard-content">
       <section class="welcome-section">
         <h2 class="welcome-title">¡Hola, {{ username }}! 👋</h2>
-        <p class="welcome-subtitle">¿Listo para administrar tu plataforma hoy?</p>
+        <p class="welcome-subtitle">
+          ¿Listo para administrar tu plataforma hoy?
+        </p>
       </section>
-
-      <!-- Main Playground Area (removed in feature/chatbot branch) -->
-      <!-- Uncomment when playground component is available
-      <app-playground 
-        [categories]="categories" 
-        [difficulties]="difficulties">
-      </app-playground>
-      -->
     </main>
   </div>
-  
-<<<<<<< HEAD
-=======
-  <!-- AI Friend Chatbot Widget -->
+
+  <!-- AI Chatbot Widget -->
   <app-chatbot></app-chatbot>
->>>>>>> b757008 (feat(chatbot): mover implementación del chatbot desde santiago-front)
 </div>
