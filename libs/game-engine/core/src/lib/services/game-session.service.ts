@@ -51,10 +51,10 @@ export class GameSessionService {
   /**
    * Initializes a new gaming session
    */
-  public startSession(historyId: string, userId: string, totalGames = 0, category?: SubjectCategory): void {
+  public startSession(historyId: string, userId: string, totalGames = 0, category?: SubjectCategory, customSessionId?: string): void {
     // Basic local generation, eventually IDs and logic syncs deeply with backend DTOs
     const newSession: GameSession = {
-      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9), 
+      id: customSessionId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9)), 
       historyId,
       userId,
       status: 'playing',
@@ -86,6 +86,7 @@ export class GameSessionService {
       isCorrect: result.isCorrect,
       score: result.score,
       timeSpentMs: result.timeSpentMs,
+      completedQuickly: result.timeSpentMs < 60000,
       timestamp: new Date()
     };
 
@@ -100,10 +101,12 @@ export class GameSessionService {
     const session = this._currentSession();
     if (!session || session.status === 'completed') return;
 
+    const finishedAt = new Date();
+    
     this._currentSession.update((s: GameSession | null) => s ? {
       ...s,
       status: 'completed' as const,
-      finishedAt: new Date()
+      finishedAt
     } : null);
   }
 

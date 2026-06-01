@@ -17,7 +17,7 @@ import { GameFlowService } from '../services/game-flow.service';
 import { InteractiveContent } from '../models/history.model';
 import { BaseGameComponent } from './base-game.component';
 import { AnyGameResult } from '../models/game-result.model';
-import { GamePerformanceService } from '../services/game-performance.service';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'lib-game-runner',
@@ -69,9 +69,12 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
   private readonly historyService = inject(HistoryService);
   private readonly sessionService = inject(GameSessionService);
   protected readonly flowService = inject(GameFlowService);
-  private readonly performanceService = inject(GamePerformanceService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly http = inject(HttpClient);
+
+  // Default base URL for API, normally injected or from environment
+  private readonly apiUrl = '/api/game-session';
 
   private currentComponentRef: ComponentRef<BaseGameComponent> | null = null;
   private completionRedirectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -86,11 +89,18 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
     
     // If no more content
     if (!content) {
-      if (this.historyService.isJourneyComplete()) {
+      if (this.historyService.isJourneyComplete() && !this.flowService.isCompleted()) {
         this.flowService.completeJourney();
         this.sessionService.completeSession();
-        this.performanceService.flush();
         this.container?.clear();
+        
+        // Enviar a backend para completar la sesión real
+        const session = this.sessionService.currentSession();
+        if (session) {
+          this.http.post(`${this.apiUrl}/${session.id}/complete`, {}).subscribe({
+            error: (err) => console.error('Failed to complete session on backend', err)
+          });
+        }
         
         // Wait briefly so they read the finished message
         this.completionRedirectTimer = setTimeout(() => {
@@ -151,13 +161,25 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
       const totalGames = historyContext?.contentMap.length || 0;
       const category = historyContext?.category;
 
-      // Sin user, se fuerza a que sea null haciendo un return, hay que integrarlo a keycloak luego
+      // Auth0 / user logic: We use null for now until we define Auth0 / Keycloak 
       const userId: string | null = null;
-      if (!userId) {
-        console.error('GameRunner: no authenticated user, aborting session.');
-        return;
-      }
-      this.sessionService.startSession(historyId, userId, totalGames, category);
+      
+      // Enviamos la petición al backend para iniciar sesión.
+      // Cuando tengamos el session ID real, actualizamos el modelo.
+      this.http.post<{sessionId: string}>(`${this.apiUrl}/start`, { 
+        historyId, 
+        category, 
+        userId 
+      }).subscribe({
+        next: (res) => {
+          // Usamos el ID devuelto por el backend para mantener la sincronización exacta
+          this.sessionService.startSession(historyId, userId ?? '', totalGames, category, res.sessionId);
+        },
+        error: (err) => {
+          console.warn('Backend session start failed, continuing with local session', err);
+          this.sessionService.startSession(historyId, userId ?? '', totalGames, category);
+        }
+      });
     }
   }
 
@@ -170,7 +192,7 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
     this.flowService.clearAutoAdvance();
 
     // Prevent stale state from leaking into the next session
-    this.historyService.cleanup();
+    this.historyService.resetJourney();
   }
 
   private async renderContent(content: InteractiveContent): Promise<void> {
@@ -206,21 +228,12 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
         });
       }
       
-      // Wire up optional interaction events for better reaction timing
-      if (this.currentComponentRef.instance.firstInteraction) {
-        this.currentComponentRef.instance.firstInteraction.subscribe(() => {
-           this.performanceService.markFirstInteraction(content.id);
-        });
-      }
-
       // Transition LOADING → READY (the READY → PLAYING transition is handled by GameFlowService hooks)
       if (this.flowService.isLoading()) {
         this.flowService.contentReady();
-        // Performance tracking starts when PLAYING is entered (via hook)
         this.flowService.stateMachine.registerHooks('PLAYING', {
           onEnter: () => {
             this.playStartMs = performance.now();
-            this.performanceService.markPlayStart(content.id);
           },
         });
       }
@@ -242,13 +255,23 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
       : result.timeSpentMs;
     this.playStartMs = null;
 
+    const completedQuickly = realTimeSpentMs < 60000;
     const enrichedResult: AnyGameResult = { ...result, timeSpentMs: realTimeSpentMs };
 
-    // 3. Record the attempt + performance event
+    // 3. Record the attempt
     const currentSession = this.sessionService.currentSession();
     this.sessionService.submitAttempt(contentId, enrichedResult);
     if (currentSession) {
-      this.performanceService.recordPerformance(contentId, enrichedResult, currentSession);
+      // Enviar attempt a backend con completedQuickly
+      this.http.post(`${this.apiUrl}/${currentSession.id}/attempt`, {
+        contentId,
+        gameType: enrichedResult.gameType,
+        isCorrect: enrichedResult.isCorrect,
+        score: enrichedResult.score,
+        completedQuickly
+      }).subscribe({
+        error: (err) => console.error('Failed to submit attempt to backend', err)
+      });
     }
 
     // That's it! The flow service handles:

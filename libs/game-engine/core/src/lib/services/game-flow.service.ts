@@ -162,6 +162,9 @@ export class GameFlowService implements OnDestroy {
    * Mark the journey as completed.
    */
   public completeJourney(): boolean {
+    if (this._stateMachine.isCompleted()) {
+      return true;
+    }
     this.cancelAllTimers();
     return this._stateMachine.transitionTo('COMPLETED');
   }
