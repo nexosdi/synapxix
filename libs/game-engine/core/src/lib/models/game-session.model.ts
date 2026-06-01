@@ -21,6 +21,7 @@ export interface GameAttempt<TAnswer = any> {
   isCorrect: boolean;
   score: number;
   timeSpentMs: number;
+  completedQuickly?: boolean;
   timestamp: Date;
 }
 

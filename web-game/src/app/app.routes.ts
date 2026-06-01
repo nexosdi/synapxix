@@ -20,16 +20,14 @@ export const routes: Routes = [
   },
  { path: 'dashboard',
    component: DashboardComponent, 
-   canActivate: [AuthGuard] },
+ },
   {
     path: 'history/:historyId',
-    canActivate: [AuthGuard],
     providers: [
       HistoryService,
       MockHistoryDataProvider,
       { provide: HISTORY_DATA_PROVIDER, useExisting: MockHistoryDataProvider },
     ],
-    // canActivate: [AuthGuard],
     resolve: {
       historyReady: historyRouteResolver,
     },
