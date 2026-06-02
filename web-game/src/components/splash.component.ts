@@ -1,8 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService } from '@auth0/auth0-angular';
 import { HISTORY_MOCK } from '@nexosdi.synapxix/game-engine/core';
-import { firstValueFrom } from 'rxjs';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -26,34 +24,11 @@ import { CommonModule } from '@angular/common';
 })
 export class SplashComponent {
   private router = inject(Router);
-  private auth = inject(AuthService);
 
   async onPlayClick(): Promise<void> {
     const target = `/history/${HISTORY_MOCK.id}/map`;
     
-    // Verificamos si el usuario ya está autenticado
-    const isAuthenticated = await firstValueFrom(this.auth.isAuthenticated$);
-
-    if (!isAuthenticated) {
-      // loginWithRedirect no debe esperarse con firstValueFrom 
-      // porque causa que la aplicación se quede "colgada" antes de redirigir.
-      this.auth.loginWithRedirect({
-        appState: { target },
-      });
-      return;
-    }
-    // const isAuthenticated = await firstValueFrom(this.auth.isAuthenticated$);
-
-    // if (!isAuthenticated) {
-    //   await firstValueFrom(
-    //     this.auth.loginWithRedirect({
-    //       appState: { target },
-    //     })
-    //   );
-    //   return;
-    // }
-
-    // Si ya está autenticado, simplemente navegamos
+    // Bypassing authentication check for offline local testing
     this.router.navigateByUrl(target);
   }
 }

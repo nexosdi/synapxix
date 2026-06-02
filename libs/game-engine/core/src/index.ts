@@ -6,16 +6,12 @@ export * from './lib/models/game-session.model';
 export * from './lib/models/game-result.model';
 export * from './lib/models/game-state-machine';
 export * from './lib/models/game-flow-config';
-export * from './lib/models/performance-event.model';
 export * from './lib/services/history.service';
 export * from './lib/services/game-session.service';
 export * from './lib/services/game-flow.service';
 export * from './lib/services/history-route.resolver';
 export * from './lib/services/history-data-provider';
 export * from './lib/services/mock-history-data-provider';
-export * from './lib/services/performance-event-dispatcher';
-export * from './lib/services/console-event-dispatcher';
-export * from './lib/services/game-performance.service';
 export * from './lib/history-mock';
 
 // Game-specific models
