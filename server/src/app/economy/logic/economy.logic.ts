@@ -10,3 +10,14 @@ export const calculateGameReward = (victory: boolean, score: number): number => 
   const bonus = Math.floor(score / 10);
   return baseAmount + bonus;
 };
+
+export const calculateXP = (victory: boolean, score: number): number => {
+  const BASE_VICTORY = 50;
+  const BASE_LOSS = 10;
+  const baseAmount = victory ? BASE_VICTORY : BASE_LOSS;
+
+  const scoreDivisor = victory ? 20 : 50;
+  const bonus = Math.floor(score / scoreDivisor);
+
+  return baseAmount + bonus;
+};

@@ -12,25 +12,30 @@ export class EconomyRepository {
     });
   }
 
-  async createTransactionAndAwardCredits(userId: string, data: {
-    amount: number,
+  async createRewardTransaction(userId: string, data: {
+    creditsAwarded: number,
+    xpAwarded: number,
     gameSessionId: string,
-    type: RewardType,
+    rewardType: RewardType,
     auditDetails: any
   }) {
     return this.prisma.$transaction(async (tx) => {
       const updatedUser = await tx.app_user.update({
         where: { user_id: userId },
-        data: { credits: { increment: data.amount } }
+        data: {
+          credits: { increment: data.creditsAwarded },
+          experience_points: { increment: data.xpAwarded },
+        },
       });
 
       const economyTx = await tx.economyTransaction.create({
         data: {
           user_id: userId,
           game_session_id: data.gameSessionId,
-          amount: data.amount,
-          type: data.type
-        }
+          credits_awarded: data.creditsAwarded,
+          xp_awarded: data.xpAwarded,
+          reward_type: data.rewardType,
+        },
       });
 
       await tx.auditLog.create({
@@ -38,15 +43,37 @@ export class EconomyRepository {
           user_id: userId,
           table_name: 'economy_transaction',
           record_id: economyTx.transaction_id,
-          details: { 
-            ...data.auditDetails, 
+          details: {
+            ...data.auditDetails,
             new_balance: updatedUser.credits,
-            transaction_type: data.type 
-          }
-        }
+            new_experience_points: updatedUser.experience_points,
+            transaction_type: data.rewardType,
+          },
+        },
       });
 
-      return { transactionId: economyTx.transaction_id, balance: updatedUser.credits };
+      return {
+        transactionId: economyTx.transaction_id,
+        balance: {
+          credits: updatedUser.credits,
+          experience_points: updatedUser.experience_points,
+        },
+      };
+    });
+  }
+
+  async createTransactionAndAwardCredits(userId: string, data: {
+    amount: number,
+    gameSessionId: string,
+    type: RewardType,
+    auditDetails: any
+  }) {
+    return this.createRewardTransaction(userId, {
+      creditsAwarded: data.amount,
+      xpAwarded: 0,
+      gameSessionId: data.gameSessionId,
+      rewardType: data.type,
+      auditDetails: data.auditDetails,
     });
   }
 }
