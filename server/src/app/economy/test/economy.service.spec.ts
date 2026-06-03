@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EconomyService } from '../economy.service';
 import { EconomyRepository } from '../economy.repository';
 import { BadRequestException, ConflictException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 describe('EconomyService', () => {
   let service: EconomyService;
@@ -9,7 +10,7 @@ describe('EconomyService', () => {
 
   const mockRepository = {
     findTransactionBySessionId: jest.fn(),
-    createTransactionAndAwardCredits: jest.fn(),
+    createRewardTransaction: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -42,20 +43,36 @@ describe('EconomyService', () => {
       .toThrow(BadRequestException);
   });
 
+  it('should map Prisma P2002 to ConflictException (race-condition idempotency)', async () => {
+    mockRepository.findTransactionBySessionId.mockResolvedValue(null);
+    mockRepository.createRewardTransaction.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: 'test',
+      } as any)
+    );
+
+    const dto = { gameSessionId: '123', score: 10, victory: true };
+
+    await expect(service.processGameReward('user-1', dto))
+      .rejects
+      .toThrow(ConflictException);
+  });
+
   it('should successfully process and award credits', async () => {
     const dto = { gameSessionId: 'session-123', score: 100, victory: true };
     const userId = 'user-123';
     
     mockRepository.findTransactionBySessionId.mockResolvedValue(null);
-    mockRepository.createTransactionAndAwardCredits.mockResolvedValue({ 
+    mockRepository.createRewardTransaction.mockResolvedValue({ 
       transactionId: 'tx-456', 
-      balance: 110 
+      balance: { credits: 110, experience_points: 55 },
     });
 
     const result = await service.processGameReward(userId, dto) as any;
 
     expect(result.status).toBe('success');
-    expect(result.balance).toBe(110);
-    expect(mockRepository.createTransactionAndAwardCredits).toHaveBeenCalled();
+    expect(result.balance.credits).toBe(110);
+    expect(mockRepository.createRewardTransaction).toHaveBeenCalled();
   });
 });

@@ -1,8 +1,17 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
-import { calculateGameReward } from "./logic/economy.logic";
-import { EconomyRepository } from "./economy.repository";
-import { ClaimRewardDto } from "./dto/claim.reward.dto";
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { calculateGameReward, calculateXP } from './logic/economy.logic';
+import { EconomyRepository } from './economy.repository';
+import { ClaimRewardDto } from './dto/claim.reward.dto';
+import { ClaimRewardResponseDto } from './dto/claim-reward-response.dto';
 import { RewardType } from './logic/economy.logic';
+
 @Injectable()
 export class EconomyService {
   private readonly logger = new Logger(EconomyService.name);
@@ -15,36 +24,72 @@ export class EconomyService {
 
     this.validateSecurityLimits(userId, amountToAward);
 
-    const existing = await this.repository.findTransactionBySessionId(dto.gameSessionId);
+    const existing = await this.repository.findTransactionBySessionId(
+      dto.gameSessionId
+    );
     if (existing) {
-      throw new ConflictException(`Reward already claimed for session: ${dto.gameSessionId}`);
+      throw new ConflictException(
+        `Reward already claimed for session: ${dto.gameSessionId}`
+      );
     }
 
     try {
-      const result = await this.repository.createTransactionAndAwardCredits(userId, {
-        amount: amountToAward,
+      const xpToAward = calculateXP(dto.victory, dto.score);
+      const result = await this.repository.createRewardTransaction(userId, {
+        creditsAwarded: amountToAward,
+        xpAwarded: xpToAward,
         gameSessionId: dto.gameSessionId,
-        type: dto.victory ? RewardType.VICTORY : RewardType.PARTICIPATION,
-        auditDetails: { action: 'REWARD_CLAIMED', score: dto.score }
+        rewardType: dto.victory ? RewardType.VICTORY : RewardType.PARTICIPATION,
+        auditDetails: { action: 'REWARD_CLAIMED', score: dto.score },
       });
 
-      this.logger.log(`Credits awarded: User ${userId} (+${amountToAward})`);
-      return { status: 'success', ...result };
+      this.logger.log(
+        `Reward awarded: User ${userId} (+${amountToAward} credits, +${xpToAward} XP)`
+      );
+
+      const response: ClaimRewardResponseDto = {
+        status: 'success',
+        transactionId: result.transactionId,
+        balance: result.balance,
+        reward: {
+          credits: amountToAward,
+          xp: xpToAward,
+        },
+        processedAt: new Date().toISOString(),
+      };
+
+      return response;
     } catch (error) {
-      return this.handleError(error, userId);
+      this.handleError(error, userId);
     }
   }
 
   private validateSecurityLimits(userId: string, amount: number) {
     if (amount > this.MAX_REWARD_THRESHOLD) {
-      this.logger.warn(`Security Breach Attempt: User ${userId} requested ${amount}`);
+      this.logger.warn(
+        `Security Breach Attempt: User ${userId} requested ${amount}`
+      );
       throw new BadRequestException('Reward exceeds allowed limits');
     }
   }
 
-  private handleError(error: any, userId: string) {
-    if (error instanceof ConflictException || error instanceof BadRequestException) throw error;
-    this.logger.error(`Economy Error [User: ${userId}]: ${error.message}`, error.stack);
+  private handleError(error: any, userId: string): never {
+    if (error instanceof ConflictException || error instanceof BadRequestException) {
+      throw error;
+    }
+
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      throw new ConflictException('Reward already claimed for this session');
+    }
+
+    this.logger.error(
+      `Economy Error [User: ${userId}]: ${error?.message ?? error}`,
+      error?.stack
+    );
     throw new InternalServerErrorException('Transaction failed');
   }
 }
+
