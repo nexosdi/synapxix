@@ -1,5 +1,7 @@
 // src/teachers-forms/models/game-form.model.ts
-export interface IGameConfigForm {
-  data: any; // El gameInput que estamos editando
-  dataChange: any; // Para emitir cambios si usas signals o @Output
+import { EventEmitter } from '@angular/core';
+
+export interface IGameConfigForm<T = Record<string, unknown>> {
+  data: T;
+  dataChange: EventEmitter<T>;
 }

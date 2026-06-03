@@ -232,37 +232,6 @@ enum linkType {
   @@schema("auth")
 }
 
-model GameSession {
-  session_id        String    @id @default(uuid()) @db.Uuid
-  user_id           String?   @db.Uuid
-  history_id        String    @db.VarChar(150)
-  status            String    @default("playing") @db.VarChar(20)
-  category          String?   @db.VarChar(50)
-  started_at        DateTime  @default(now())
-  finished_at       DateTime?
-  
-  user              app_user? @relation("UserToGameSessions", fields: [user_id], references: [user_id])
-  attempts          GameAttempt[]
-
-  @@map("game_session")
-  @@schema("core")
-}
-
-model GameAttempt {
-  attempt_id        String      @id @default(uuid()) @db.Uuid
-  session_id        String      @db.Uuid
-  content_id        String      @db.VarChar(150)
-  game_type         String      @db.VarChar(50)
-  is_correct        Boolean
-  score             Int
-  completed_quickly Boolean?
-  created_at        DateTime    @default(now())
-
-  session           GameSession @relation(fields: [session_id], references: [session_id])
-
-  @@map("game_attempt")
-  @@schema("core")
-}
 
 model UserProfile {
   id            String    @id @default(uuid()) @db.Uuid

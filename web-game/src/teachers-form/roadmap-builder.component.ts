@@ -4,6 +4,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { gameFormRegistry } from './game-form-registry';
 import { History, InteractiveContent } from '@nexosdi.synapxix/game-engine/core';
+import { IGameConfigForm } from './models/game-form.model';
+import { GameInputDraft } from './models/teachers-draft.model';
+
+/** Draft step used during roadmap editing, before export to InteractiveContent */
+interface RoadmapStep {
+  id: string;
+  gameType: string;
+  gameInput: GameInputDraft;
+}
 
 @Component({
   selector: 'app-roadmap-builder',
@@ -98,9 +107,9 @@ export class RoadmapBuilderComponent {
   // Extrae los tipos automáticamente del registro
   readonly availableTypes = Object.keys(gameFormRegistry);
   
-  steps = signal<any[]>([]);
+  steps = signal<RoadmapStep[]>([]);
   editingIndex = signal<number | null>(null);
-  currentForm = signal<Type<any> | null>(null);
+  currentForm = signal<Type<IGameConfigForm> | null>(null);
   
   historyMetadata = { 
     name: '', 
@@ -109,7 +118,7 @@ export class RoadmapBuilderComponent {
     introText: 'Comienza tu aventura educativa.'
   };
   
-  tempGameInput: any = {};
+  tempGameInput: GameInputDraft = {};
 
   async createNewStep(type: string) {
     const newStep = { 
@@ -189,7 +198,7 @@ export class RoadmapBuilderComponent {
         type: 'text',
         content: { title: this.historyMetadata.introTitle, text: this.historyMetadata.introText }
       },
-      contentMap: this.steps(),
+      contentMap: this.steps() as unknown as InteractiveContent[],
       path: this.steps().map(s => s.id)
     };
 

@@ -51,7 +51,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   moleEmoji: string = '🐹';
   moleEmojis = ['🐹', '🐰', '🐻', '🐼', '🐨', '🦊', '🐸', '🐙'];
 
-  gameInterval: any;
+  gameInterval: ReturnType<typeof setInterval> | undefined;
   showPointsAnimation: boolean = false;
   pointsAnimationPosition = { top: 50, left: 50 };
 

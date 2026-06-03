@@ -20,25 +20,25 @@ export class ApiService {
    * @param endpoint Ruta sin /api (ej: 'categories', 'content/1')
    * @param params Parámetros opcionales (ej: { page: 1, limit: 10 })
    */
-  get<T>(endpoint: string, params?: any): Observable<T> {
+  get<T>(endpoint: string, params?: Record<string, string | number | boolean>): Observable<T> {
     let httpParams = new HttpParams();
     if (params) {
       Object.keys(params).forEach((key) => {
-        httpParams = httpParams.set(key, params[key]);
+        httpParams = httpParams.set(key, String(params[key]));
       });
     }
     return this.http.get<T>(`${this.apiUrl}/${endpoint}`, { params: httpParams });
   }
 
-  post<T>(endpoint: string, body: any): Observable<T> {
+  post<T>(endpoint: string, body: unknown): Observable<T> {
     return this.http.post<T>(`${this.apiUrl}/${endpoint}`, body);
   }
 
-  put<T>(endpoint: string, body: any): Observable<T> {
+  put<T>(endpoint: string, body: unknown): Observable<T> {
     return this.http.put<T>(`${this.apiUrl}/${endpoint}`, body);
   }
 
-  patch<T>(endpoint: string, body: any): Observable<T> {
+  patch<T>(endpoint: string, body: unknown): Observable<T> {
     return this.http.patch<T>(`${this.apiUrl}/${endpoint}`, body);
   }
 

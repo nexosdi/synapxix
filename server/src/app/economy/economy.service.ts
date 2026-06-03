@@ -5,7 +5,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { calculateGameReward, calculateXP } from './logic/economy.logic';
 import { EconomyRepository } from './economy.repository';
 import { ClaimRewardDto } from './dto/claim.reward.dto';
@@ -73,22 +73,21 @@ export class EconomyService {
     }
   }
 
-  private handleError(error: any, userId: string): never {
+  private handleError(error: unknown, userId: string): never {
     if (error instanceof ConflictException || error instanceof BadRequestException) {
       throw error;
     }
 
     if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error instanceof PrismaClientKnownRequestError &&
       error.code === 'P2002'
     ) {
       throw new ConflictException('Reward already claimed for this session');
     }
 
-    this.logger.error(
-      `Economy Error [User: ${userId}]: ${error?.message ?? error}`,
-      error?.stack
-    );
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+    this.logger.error(`Economy Error [User: ${userId}]: ${message}`, stack);
     throw new InternalServerErrorException('Transaction failed');
   }
 }
