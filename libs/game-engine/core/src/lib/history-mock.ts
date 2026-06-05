@@ -172,12 +172,12 @@ export const contentMap: InteractiveContent[] = [
     },
   },
   {
-    id: 'speak-photo-garden-1',
+    id: 'speak-photo-pixel-1',
     gameType: 'speak-about-photo',
     gameInput: {
       imageUrl: 'logo-pixelart2.png',
-      prompt: 'Describe the garden in one or two sentences.',
-      targetKeywords: ['flowers', 'sunlight', 'bench'],
+      prompt: 'Describe what you see in this pixel art image.',
+      targetKeywords: ['pixel', 'art', 'logo', 'game'],
       recording: {
         minDurationSec: 5,
         maxDurationSec: 20,
