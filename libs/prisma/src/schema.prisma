@@ -54,6 +54,7 @@ model app_user {
   experience_points Int                     @default(0)
   transactions      EconomyTransaction[]    @relation("UserToTransactions")
   gameSessions      GameSession[]           @relation("UserToGameSessions")
+  cognitiveMetrics  CognitiveMetric[]       @relation("UserToMetrics")
   userProfile       UserProfile?
 
   @@map("app_user")
@@ -88,6 +89,7 @@ model GameSession {
   user               app_user?    @relation("UserToGameSessions", fields: [user_id], references: [user_id], onDelete: SetNull)
   attempts           GameAttempt[]
   economyTransaction EconomyTransaction? @relation("TransactionToGameSession")
+  cognitiveMetrics   CognitiveMetric[]   @relation("SessionToMetrics")
 
   @@map("game_session")
   @@schema("core")
@@ -166,6 +168,25 @@ model Archetype {
   @@map("archetype")
   @@schema("psychometrics")
 }
+
+model CognitiveMetric {
+  metric_id        String      @id @default(uuid()) @db.Uuid
+  session_id       String      @db.Uuid
+  user_id          String?     @db.Uuid
+  accuracy         Float
+  reaction_time    Float
+  cognitive_load   Float
+  memory_retention Float?
+  attention_span   Float?
+  created_at       DateTime    @default(now())
+
+  session          GameSession @relation("SessionToMetrics", fields: [session_id], references: [session_id], onDelete: Cascade)
+  user             app_user?   @relation("UserToMetrics", fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("cognitive_metric")
+  @@schema("psychometrics")
+}
+
 
 
 
