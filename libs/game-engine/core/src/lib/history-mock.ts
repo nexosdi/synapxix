@@ -175,7 +175,7 @@ export const contentMap: InteractiveContent[] = [
     id: 'speak-photo-garden-1',
     gameType: 'speak-about-photo',
     gameInput: {
-      imageUrl: 'assets/images/garden.jpg',
+      imageUrl: 'logo-pixelart2.png',
       prompt: 'Describe the garden in one or two sentences.',
       targetKeywords: ['flowers', 'sunlight', 'bench'],
       recording: {
