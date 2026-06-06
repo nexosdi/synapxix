@@ -12,7 +12,7 @@ export class EvaluativeService {
    * Process the session attempts mathematically to evaluate cognitive performance,
    * then persist the metrics transactionally to avoid DB bottlenecks.
    */
-  async evaluateAndPersist(dto: EvaluateSessionDto) {
+  async evaluateAndPersist(dto: EvaluateSessionDto & { userId: string }) {
     this.logger.log(`Evaluating session: ${dto.sessionId}`);
 
     const { accuracy, reactionTime, cognitiveLoad, memoryRetention, attentionSpan } = this.calculateMetrics(dto.attempts);

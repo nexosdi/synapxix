@@ -1,8 +1,16 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { EvaluativeService } from './evaluative.service';
 import { EvaluateSessionDto } from './dto/evaluate-session.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
+export const GetUser = createParamDecorator((data: string | undefined, ctx: ExecutionContext) => {
+  const request = ctx.switchToHttp().getRequest();
+  if (data) return request.user?.[data];
+  return request.user;
+});
 
 @Controller('evaluative')
+@UseGuards(JwtAuthGuard)
 export class EvaluativeController {
   constructor(private readonly evaluativeService: EvaluativeService) {}
 
@@ -12,8 +20,11 @@ export class EvaluativeController {
    */
   @Post('evaluate')
   @HttpCode(HttpStatus.OK)
-  async evaluateSession(@Body() evaluateSessionDto: EvaluateSessionDto) {
-    const metric = await this.evaluativeService.evaluateAndPersist(evaluateSessionDto);
+  async evaluateSession(
+    @GetUser('user_id') userId: string,
+    @Body() dto: EvaluateSessionDto,
+  ) {
+    const metric = await this.evaluativeService.evaluateAndPersist({ ...dto, userId });
     return {
       success: true,
       message: 'Cognitive metrics evaluated and persisted successfully',

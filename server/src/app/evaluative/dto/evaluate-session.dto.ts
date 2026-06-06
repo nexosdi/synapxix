@@ -27,10 +27,6 @@ export class EvaluateSessionDto {
   @IsString()
   sessionId: string;
 
-  @IsString()
-  @IsOptional()
-  userId?: string;
-
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => GameAttemptRecordDto)
