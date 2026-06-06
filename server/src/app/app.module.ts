@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
@@ -6,9 +7,28 @@ import { AuthModule } from './auth/auth.module';
 import { LearningModule } from './learning/learning.module';
 import { EconomyModule } from './economy/economy.module';
 import { GameSessionModule } from './game-session/game-session.module';
+import { ResearchModule } from './modules/research/research.module';
 
+/**
+ * Root application module.
+ *
+ * - ConfigModule.forRoot({ isGlobal: true }) loads the .env file and makes
+ *   ConfigService injectable across ALL modules without needing to import
+ *   ConfigModule again. This is required by AiProvider (research module).
+ *
+ * - ResearchModule handles AI-powered pedagogical analysis via AiProvider.
+ *   The AiProvider is ready to be injected in any module that imports
+ *   ResearchModule (it exports ResearchService which depends on AiProvider).
+ */
 @Module({
-  imports: [AuthModule, LearningModule, EconomyModule, GameSessionModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    AuthModule,
+    LearningModule,
+    EconomyModule,
+    GameSessionModule,
+    ResearchModule,
+  ],
   controllers: [AppController],
   providers: [AppService, JwtAuthGuard],
 })
