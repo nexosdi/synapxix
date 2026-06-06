@@ -13,26 +13,8 @@ CREATE TABLE "psychometrics"."cognitive_metric" (
     CONSTRAINT "cognitive_metric_pkey" PRIMARY KEY ("metric_id")
 );
 
--- CreateTable
-CREATE TABLE "auth"."user_profile" (
-    "id" UUID NOT NULL,
-    "theme" VARCHAR(20) NOT NULL DEFAULT 'dark',
-    "language" VARCHAR(10) NOT NULL DEFAULT 'es',
-    "notifications" BOOLEAN NOT NULL DEFAULT true,
-    "user_id" UUID NOT NULL,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "user_profile_pkey" PRIMARY KEY ("id")
-);
-
--- CreateIndex
-CREATE UNIQUE INDEX "user_profile_user_id_key" ON "auth"."user_profile"("user_id");
-
 -- AddForeignKey
 ALTER TABLE "psychometrics"."cognitive_metric" ADD CONSTRAINT "cognitive_metric_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES "core"."game_session"("session_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "psychometrics"."cognitive_metric" ADD CONSTRAINT "cognitive_metric_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."app_user"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "auth"."user_profile" ADD CONSTRAINT "user_profile_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."app_user"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
