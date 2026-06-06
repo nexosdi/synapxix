@@ -5,6 +5,7 @@ import { AiProvider } from '../modules/research/providers/ai.provider';
 export class ExercisesService {
   constructor(private readonly aiProvider: AiProvider) {}
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async evaluateAudio(expectedText: string, file: any) {
     if (!file) {
       throw new BadRequestException('Audio file is required');
@@ -27,7 +28,7 @@ export class ExercisesService {
       // Parse the JSON string from Gemini (might be wrapped in markdown block)
       const cleanJson = result.replace(/```json/g, '').replace(/```/g, '').trim();
       return JSON.parse(cleanJson);
-    } catch (e) {
+    } catch {
       return {
         isCorrect: false,
         score: 0,

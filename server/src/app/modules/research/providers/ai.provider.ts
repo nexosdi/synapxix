@@ -25,6 +25,7 @@ export class AiProvider {
   async analyzePedagogicalAction(
     systemPrompt: string, 
     context: string, 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     studentInput: any
   ): Promise<string> {
     try {
@@ -45,6 +46,7 @@ export class AiProvider {
       const response = await result.response;
       
       return response.text();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       this.logger.error(`Gemini AI Provider Error: ${error.message}`);
       throw new InternalServerErrorException('Failed to generate pedagogical action analysis.');
@@ -93,6 +95,7 @@ export class AiProvider {
       const response = await result.response;
       
       return response.text();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       this.logger.error(`Gemini AI Audio Provider Error: ${error.message}`);
       throw new InternalServerErrorException('Failed to generate audio evaluation.');

@@ -10,6 +10,7 @@ export class ExercisesController {
   @UseInterceptors(FileInterceptor('audio'))
   async evaluateReadAloud(
     @Body('expectedText') expectedText: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @UploadedFile() file: any,
   ) {
     return this.exercisesService.evaluateAudio(expectedText, file);

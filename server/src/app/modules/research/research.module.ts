@@ -1,13 +1,13 @@
-import { Module } from "@nestjs/common";
-import { ResearchService } from "./research.service";
-import { ResearchController } from "./research.controller";
-import { AiProvider } from "./providers/ai.provider";
-import { LearningService } from "../../learning/learning.service";
-import { LearningModule } from "../../learning/learning.module";
+import { Module } from '@nestjs/common';
+import { ResearchController } from './research.controller';
+import { ResearchService } from './research.service';
+import { AiProvider } from './providers/ai.provider';
+import { ConfigModule } from '@nestjs/config';
+
 @Module({
-    imports: [LearningModule],
-    providers: [ResearchService, AiProvider],
-    controllers: [ResearchController],
-    exports: [ResearchService, AiProvider],
+  imports: [ConfigModule],
+  controllers: [ResearchController],
+  providers: [ResearchService, AiProvider],
+  exports: [AiProvider],
 })
 export class ResearchModule {}
