@@ -7,9 +7,19 @@ import { LearningModule } from './learning/learning.module';
 import { EconomyModule } from './economy/economy.module';
 import { GameSessionModule } from './game-session/game-session.module';
 import { EvaluativeModule } from './evaluative/evaluative.module';
+import { ExercisesModule } from './exercises/exercises.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [AuthModule, LearningModule, EconomyModule, GameSessionModule, EvaluativeModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    AuthModule, 
+    LearningModule, 
+    EconomyModule, 
+    GameSessionModule, 
+    EvaluativeModule,
+    ExercisesModule
+  ],
   controllers: [AppController],
   providers: [AppService, JwtAuthGuard],
 })
