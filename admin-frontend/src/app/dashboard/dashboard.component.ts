@@ -1,41 +1,57 @@
 import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { switchMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { PlaygroundComponent, Category, Difficulty } from './playground/playground.component';
+import { switchMap } from 'rxjs/operators';
 import { ApiService } from '../core/services/api.service';
+import { ChatbotComponent } from './chatbot/chatbot.component';
+
+interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  bgColorClass: string;
+}
+
+interface Difficulty {
+  id: string;
+  name: string;
+  stars: number;
+  baseClass: string;
+  shadowClass: string;
+  ageText: string;
+}
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, PlaygroundComponent],
+  imports: [CommonModule, ChatbotComponent],
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.css']
+  styleUrls: ['./dashboard.component.css'],
 })
 export class DashboardComponent implements OnInit, OnDestroy {
-  username: string = '';
+  username: string = 'Usuario';
   loading: boolean = true;
 
   categories: Category[] = [
     { id: 'linguistic', name: 'Lingüística', icon: '📚', bgColorClass: 'bg-secondary-container' },
     { id: 'logical_mathematical', name: 'Lógica', icon: '🧮', bgColorClass: 'bg-tertiary-container' },
     { id: 'spatial', name: 'Espacial', icon: '🗺️', bgColorClass: 'bg-primary-container' },
-    { id: 'musical', name: 'Musical', icon: '🎵', bgColorClass: 'bg-error-container' }
+    { id: 'musical', name: 'Musical', icon: '🎵', bgColorClass: 'bg-error-container' },
   ];
 
   difficulties: Difficulty[] = [
     { id: 'visual_summary', name: 'Visual', stars: 1, baseClass: 'bg-primary-container', shadowClass: 'shadow-primary', ageText: 'Resumen visual' },
     { id: 'interactive_quiz', name: 'Interactiva', stars: 2, baseClass: 'bg-secondary-container', shadowClass: 'shadow-secondary', ageText: 'Quiz rápido' },
-    { id: 'project_challenge', name: 'Desafío', stars: 3, baseClass: 'bg-tertiary-container', shadowClass: 'shadow-tertiary', ageText: 'Proyecto mini' }
+    { id: 'project_challenge', name: 'Desafío', stars: 3, baseClass: 'bg-tertiary-container', shadowClass: 'shadow-tertiary', ageText: 'Proyecto mini' },
   ];
 
   gameScore: number = 0;
   moleVisible: boolean = false;
   molePosition = { top: 50, left: 50 };
   moleEmoji: string = '🐹';
-  gameInterval: any;
   moleEmojis = ['🐹', '🐰', '🐻', '🐼', '🐨', '🦊', '🐸', '🐙'];
 
+  gameInterval: ReturnType<typeof setInterval> | undefined;
   showPointsAnimation: boolean = false;
   pointsAnimationPosition = { top: 50, left: 50 };
 
@@ -50,38 +66,33 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  async ngOnInit() {
-    try {
-      this.username = 'Usuario';
-      this.loading = false;
-      this.startMoleGame();
-      this.cdr.detectChanges();
+  ngOnInit() {
+    this.username = 'Usuario';
+    this.loading = false;
 
-      const userId = 'test-user';
+    this.startMoleGame();
+    this.cdr.detectChanges();
 
-      this.apiService.post('learning/bootstrap', {}).pipe(
-        switchMap(() => this.apiService.post('learning/users', {
-          userId: userId,
-          name: this.username
-        }))
-      ).subscribe({
-        next: () => console.log('[Dashboard] Learning environment synced.'),
-        error: (err: any) => console.error('[Dashboard] Sync error:', err)
+    const userId = 'demo-user';
+
+    this.apiService
+      .post('learning/bootstrap', {})
+      .pipe(
+        switchMap(() =>
+          this.apiService.post('learning/users', {
+            userId,
+            name: this.username,
+          })
+        )
+      )
+      .subscribe({
+        next: () => console.log('[Dashboard] synced'),
+        error: (err) => console.error(err),
       });
-
-    } catch (err) {
-      console.error('[Dashboard] Initialization error:', err);
-      this.loading = false;
-      this.username = 'Usuario Synapsis';
-      this.startMoleGame();
-      this.cdr.detectChanges();
-    }
   }
 
   ngOnDestroy() {
-    if (this.gameInterval) {
-      clearInterval(this.gameInterval);
-    }
+    if (this.gameInterval) clearInterval(this.gameInterval);
   }
 
   logout() {
@@ -100,10 +111,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   showMole() {
     this.molePosition = {
       top: Math.random() * 70 + 10,
-      left: Math.random() * 70 + 10
+      left: Math.random() * 70 + 10,
     };
 
-    this.moleEmoji = this.moleEmojis[Math.floor(Math.random() * this.moleEmojis.length)];
+    this.moleEmoji =
+      this.moleEmojis[Math.floor(Math.random() * this.moleEmojis.length)];
+
     this.moleVisible = true;
 
     setTimeout(() => {
@@ -112,18 +125,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   catchMole() {
-    if (this.moleVisible) {
-      this.gameScore += 10;
-      this.moleVisible = false;
+    if (!this.moleVisible) return;
 
-      localStorage.setItem('synapsis_game_score', this.gameScore.toString());
+    this.gameScore += 10;
+    this.moleVisible = false;
 
-      this.pointsAnimationPosition = { ...this.molePosition };
-      this.showPointsAnimation = true;
+    localStorage.setItem('synapsis_game_score', String(this.gameScore));
 
-      setTimeout(() => {
-        this.showPointsAnimation = false;
-      }, 1000);
-    }
+    this.pointsAnimationPosition = { ...this.molePosition };
+    this.showPointsAnimation = true;
+
+    setTimeout(() => {
+      this.showPointsAnimation = false;
+    }, 1000);
   }
 }

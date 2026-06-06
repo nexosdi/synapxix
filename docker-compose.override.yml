@@ -1,0 +1,11 @@
+# Override: solo levanta la DB de la app en dev local.
+# Ignora Keycloak, postgres-keycloak y Neo4j para arrancar rápido.
+services:
+  postgres-keycloak:
+    profiles: ["keycloak"]   # solo se levanta si pasás --profile keycloak
+
+  keycloak:
+    profiles: ["keycloak"]
+
+  neo4j:
+    profiles: ["neo4j"]      # solo se levanta si pasás --profile neo4j

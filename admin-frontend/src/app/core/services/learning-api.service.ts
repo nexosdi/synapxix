@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
-import { Observable } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { Observable, switchMap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +14,7 @@ export class LearningApiService {
    * Registra la selección de categoría y dificultad del usuario en el sistema de aprendizaje
    */
   registerGameSelection(categoryId: string, difficultyId: string): Observable<any> {
-    const userId = 'test-user';
+    const userId = 'demo-user';
 
     return this.apiService.post('learning/preferences', {
       userId: userId,

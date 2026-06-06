@@ -33,5 +33,6 @@
     "Nexos",
     "nexosdi",
     "Synapxix"
-  ]
+  ],
+  "vsicons.presets.nestjs": true
 }

@@ -51,25 +51,63 @@ model app_user {
   notifications     Notification[]
   contentProgress   UserContentProgress[]
   credits           Int                     @default(0)
+  experience_points Int                     @default(0)
   transactions      EconomyTransaction[]    @relation("UserToTransactions")
   gameSessions      GameSession[]           @relation("UserToGameSessions")
+  cognitiveMetrics  CognitiveMetric[]       @relation("UserToMetrics")
   userProfile       UserProfile?
 
   @@map("app_user")
   @@schema("auth")
 }
 
-model EconomyTransaction{
-  transaction_id    String @id @default(uuid()) @db.Uuid
-  user_id String @db.Uuid
-  game_session_id String @unique @db.VarChar(150)
-  amount Int
-  type String @default("GAME_VICTORY") @db.VarChar(50)
-  created_at DateTime @default(now())
+model EconomyTransaction {
+  transaction_id     String      @id @default(uuid()) @db.Uuid
+  user_id            String      @db.Uuid
+  game_session_id    String      @unique @db.Uuid
+  credits_awarded    Int
+  xp_awarded         Int         @default(0)
+  reward_type        String      @default("GAME_VICTORY") @db.VarChar(50)
+  created_at         DateTime    @default(now())
 
-  user app_user @relation("UserToTransactions", fields: [user_id], references: [user_id])
+  user               app_user    @relation("UserToTransactions", fields: [user_id], references: [user_id], onDelete: Cascade)
+  gameSession        GameSession @relation("TransactionToGameSession", fields: [game_session_id], references: [session_id], onDelete: Cascade)
 
-  @@map ("economy_transaction")
+  @@map("economy_transaction")
+  @@schema("core")
+}
+
+model GameSession {
+  session_id         String       @id @default(uuid()) @db.Uuid
+  user_id            String?      @db.Uuid
+  history_id         String       @db.VarChar(150)
+  status             String       @default("playing") @db.VarChar(20)
+  category           String?      @db.VarChar(50)
+  started_at         DateTime     @default(now())
+  finished_at        DateTime?
+  
+  user               app_user?    @relation("UserToGameSessions", fields: [user_id], references: [user_id], onDelete: SetNull)
+  attempts           GameAttempt[]
+  economyTransaction EconomyTransaction? @relation("TransactionToGameSession")
+  cognitiveMetrics   CognitiveMetric[]   @relation("SessionToMetrics")
+
+  @@map("game_session")
+  @@schema("core")
+}
+
+model GameAttempt {
+  attempt_id        String      @id @default(uuid()) @db.Uuid
+  session_id        String      @db.Uuid
+  content_id        String      @db.VarChar(150)
+  game_type         String      @db.VarChar(50)
+  is_correct        Boolean
+  score             Int
+  completed_quickly Boolean?
+  created_at        DateTime    @default(now())
+
+  session           GameSession @relation(fields: [session_id], references: [session_id])
+
+  @@map("game_attempt")
   @@schema("core")
 }
 
@@ -130,6 +168,25 @@ model Archetype {
   @@map("archetype")
   @@schema("psychometrics")
 }
+
+model CognitiveMetric {
+  metric_id        String      @id @default(uuid()) @db.Uuid
+  session_id       String      @db.Uuid
+  user_id          String?     @db.Uuid
+  accuracy         Float
+  reaction_time    Float
+  cognitive_load   Float
+  memory_retention Float?
+  attention_span   Float?
+  created_at       DateTime    @default(now())
+
+  session          GameSession @relation("SessionToMetrics", fields: [session_id], references: [session_id], onDelete: Cascade)
+  user             app_user?   @relation("UserToMetrics", fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("cognitive_metric")
+  @@schema("psychometrics")
+}
+
 
 
 
@@ -196,37 +253,6 @@ enum linkType {
   @@schema("auth")
 }
 
-model GameSession {
-  session_id        String    @id @default(uuid()) @db.Uuid
-  user_id           String?   @db.Uuid
-  history_id        String    @db.VarChar(150)
-  status            String    @default("playing") @db.VarChar(20)
-  category          String?   @db.VarChar(50)
-  started_at        DateTime  @default(now())
-  finished_at       DateTime?
-  
-  user              app_user? @relation("UserToGameSessions", fields: [user_id], references: [user_id])
-  attempts          GameAttempt[]
-
-  @@map("game_session")
-  @@schema("core")
-}
-
-model GameAttempt {
-  attempt_id        String      @id @default(uuid()) @db.Uuid
-  session_id        String      @db.Uuid
-  content_id        String      @db.VarChar(150)
-  game_type         String      @db.VarChar(50)
-  is_correct        Boolean
-  score             Int
-  completed_quickly Boolean?
-  created_at        DateTime    @default(now())
-
-  session           GameSession @relation(fields: [session_id], references: [session_id])
-
-  @@map("game_attempt")
-  @@schema("core")
-}
 
 model UserProfile {
   id            String    @id @default(uuid()) @db.Uuid

@@ -1,91 +1,100 @@
-# MB-401
 ## Economy Engine
 
  * This module manages the transactional logic for virtual credits within the platform. It handles everything from validating game sessions and performance-based rewards to ensuring data integrity through atomic transactions and audit logs.
 --------------------------------------------------------------------------------------------------------------------
 ### Key Features:
 
-- Atomicity: Uses Prisma's $transaction to ensure the user's balance and the transaction log are updated simultaneously.
+- Atomicity: Uses Prisma's `$transaction` to ensure the user's balance and the reward transaction log are updated simultaneously.
 
-- Idempotency: Prevents duplicate claims by validating a unique game_session_id.
+- Idempotency: Prevents duplicate claims by enforcing a unique `game_session_id` and handling Prisma `P2002` (race-condition safe).
 
-- Security: Implements maximum threshold validation to prevent anomalies or potential score fraud.
+- Security: Implements maximum threshold validation (`MAX_REWARD_THRESHOLD`) to block reward anomalies or potential score fraud.
 
-- Auditing: Automatic recording of every movement within the audit schema of the database.
+- Auditing: Automatic recording of every movement within the `audit_log` schema (for traceability/support).
 
-It is worth noting that I aimed to make efficient use of the previously established schema.prisma. I updated tables as necessary to complete this task, incorporating constructive feedback from the last meeting and focusing on clean code and testing.
+It is worth noting that I focused on deterministic reward calculation and clean separation between business logic (pure functions) and persistence (repository + Prisma), to maximize reliability under real game conditions.
 
 --------------------------------------------------------------------------------------------------------------------
-
 ### Module Architecture:
 
 I separated business logic from persistence:
-- Controller: Defines endpoints and applies security guards (JWT, currently commented out).
-- Service: Orchestrates business logic, security validations, and exception handling.
-- Logic: Pure functions (no dependencies) for credit calculations, facilitating unit testing.
-- Repository: Data access layer that encapsulates Prisma queries.
+- Controller: Defines the `POST /economy/claim-reward` endpoint and routes authenticated requests to the service.
+- Service: Orchestrates business logic, security validations (threshold + idempotency), and exception handling.
+- Logic: Pure functions (no dependencies) for credit + XP calculations to enable fast unit testing.
+- Repository: Data access layer that encapsulates Prisma queries and executes the atomic `$transaction`.
 - DTO: Data Transfer Objects with strict validation.
 --------------------------------------------------------------------------------------------------------------------
+### Integration of the Motor of Economy ↔ Game Results & Testing
 
-### Testing:
+#### Objective Principal
 
-To ensure reliability in this new engine, I implemented unit and logic tests covering:
+Link the internal Economy Engine with the practical outputs of the games and ensure its reliability through automatic tests.
 
-- Logic: Verification of correct calculations for victories, losses, and score bonuses.
+#### Integration Behavior
 
-- Service-Security: Blocking rewards that exceed the MAX_REWARD_THRESHOLD.
+The claim flow is designed to be triggered by the game results pipeline (game-engine → economy dispatcher → backend endpoint). When a game finishes, the engine receives `(gameSessionId, score, victory)` and:
 
-- Service-Integrity: Preventing duplicate claims for the same session.
+**Tables (what each one does, in simple terms):**
 
-- Service-Flow: Validation of the successful process and return of the new balance.
+- **app_user**: stores the user balance and updates it on reward claim (`credits` + `experience_points`).
+- **economy_transaction**: records the awarded reward for each `game_session_id` (idempotency + history).
+- **audit_log**: stores a detailed audit entry for the transaction (traceability). 
 
-#### To test:
-Navigate from the project root to /server and run: npx jest server/src/app/economy
-![terminal](image-2.png)
-#### On Postman:
-![201](image.png)
-POST: http://localhost:3000/api/economy/claim-reward
-JSON: {
-"gameSessionId": "a343c07a-0f93-4513-ac06-984a5651d135",
-"score": 850,
-"victory": true
-}
 
-This ID was generated via prisma.studio. It is important to emphasize that currently, the following lines in the controller must be commented out:
 
-- import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+1. Calculates credits + XP deterministically.
+2. Enforces `MAX_REWARD_THRESHOLD` (security).
+3. Prevents duplicate claims for the same `gameSessionId` (idempotency + Prisma `P2002`).
+4. Persists everything atomically via Prisma `$transaction`:
+   - update balance (`app_user`)
+   - create economy transaction (`economy_transaction`)
+   - write audit entry (`audit_log`)
 
-- @UseGuards(JwtAuthGuard)
+#### Testing Coverage (Definition of Done)
 
-- @GetUser('user_id') userId: string,
-Also add:
+To meet the reliability criteria, the economy test suite covers both ideal and boundary scenarios:
 
-- const UserId = 'a343c07a-0f93-4513-ac06-984a5651d135';
-before the return.
+- **Unit tests (Logic / Pure Functions)**
+  - Victory vs participation base rules
+  - Bonus calculation with `floor()` behavior
+  - Edge cases: `score=0` and `score=1000`
+  - Determinism: same inputs → same outputs
 
-Please do not forget to remove these changes once the review is finished, as the auth module is not active.
+- **Unit tests (Service)**
+  - Security: rewards above `MAX_REWARD_THRESHOLD` are blocked (`400 BadRequest`)
+  - Idempotency: duplicate sessions are rejected (`409 Conflict`)
+  - Race-condition safety: Prisma `P2002` mapped to `409 Conflict`
+  - Happy path: returns the updated balance + awarded reward
 
-I implemented the most complete logic possible, integrating JWT and testing as much as I could.
+- **Repository tests (Integrity of atomic transaction via mock Prisma)**
+  - `$transaction` includes balance update + economy transaction + audit log
+  - Rollback expectation when audit step fails
+  - FK/unique constraint error handling
 
-### Schema.prisma Configuration:
-The module interacts with the following tables:
+- **Controller tests (delegation + error propagation)**
+  - Correct delegation to service
+  - Proper propagation of `400/409`
+  - Participation vs victory scenarios
 
-- auth.app_user: Updates the credits field.
+- **Stress tests (Concurrency simulation)**
+  - 10 concurrent claims on the same session → 1 success and 9 conflicts (simulated idempotency)
+  - Burst calls across different sessions → successful execution
 
-- core.economy_transaction: Records the reward history (new).
+#### To test (Jest/Nx)
 
-- audit.audit_log: Stores the operation trace for compliance and support.
---------------------------------------------------------------------------------------------------------------------
+From the project root (workspace):
+- `npx nx test server --all --skip-nx-cache`
 
-### OTHERS:
+Note: whithin Nx workspaces, the legacy command, `npx jest server/src/app/economy` may not properly resolve the graph or targets. Using Nx is the recommended path.
 
-To modify reward logic: economy.logic.ts. Current values:
+#### Local Test Result (pattern Economy)
 
-- Base victory: 100 credits.
+`npx nx test server --testNamePattern=Economy --runInBand`
+- 1 skipped
+- 6 passed
+- 48 total tests
+- 41 passed
 
-- Base Loss: 20 credits.
-
-- Bonus: +1 credit per 10 score points.
 --------------------------------------------------------------------------------------------------------------------
 ### Perez Sofia.
 
