@@ -8,6 +8,6 @@ import { LearningModule } from "../../learning/learning.module";
     imports: [LearningModule],
     providers: [ResearchService, AiProvider],
     controllers: [ResearchController],
-    exports: [ResearchService],
+    exports: [ResearchService, AiProvider],
 })
 export class ResearchModule {}
