@@ -9,6 +9,7 @@ import { EconomyModule } from './economy/economy.module';
 import { GameSessionModule } from './game-session/game-session.module';
 import { ResearchModule } from './modules/research/research.module';
 import { EvaluativeModule } from './evaluative/evaluative.module';
+import { ExercisesModule } from './exercises/exercises.module';
 
 /**
  * Root application module.
@@ -30,6 +31,7 @@ import { EvaluativeModule } from './evaluative/evaluative.module';
     GameSessionModule,
     ResearchModule,
     EvaluativeModule,
+    ExercisesModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtAuthGuard],

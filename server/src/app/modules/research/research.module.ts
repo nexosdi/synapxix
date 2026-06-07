@@ -1,9 +1,10 @@
-import { Module } from "@nestjs/common";
-import { ResearchService } from "./research.service";
-import { ResearchController } from "./research.controller";
-import { AiProvider } from "./providers/ai.provider";
-import { LearningService } from "../../learning/learning.service";
-import { LearningModule } from "../../learning/learning.module";
+import { Module } from '@nestjs/common';
+import { ResearchService } from './research.service';
+import { ResearchController } from './research.controller';
+import { AiProvider } from './providers/ai.provider';
+import { LearningService } from '../../learning/learning.service';
+import { LearningModule } from '../../learning/learning.module';
+import { ConfigModule } from '@nestjs/config';
 
 /**
  * ResearchModule — AI-powered pedagogical analysis.
@@ -20,9 +21,9 @@ import { LearningModule } from "../../learning/learning.module";
  * so that ConfigService is available for AiProvider to read GOOGLE_GEN_AI_KEY.
  */
 @Module({
-    imports: [LearningModule],
-    providers: [ResearchService, AiProvider],
-    controllers: [ResearchController],
-    exports: [ResearchService],
+  imports: [ConfigModule],
+  controllers: [ResearchController],
+  providers: [ResearchService, AiProvider],
+  exports: [AiProvider],
 })
 export class ResearchModule {}
