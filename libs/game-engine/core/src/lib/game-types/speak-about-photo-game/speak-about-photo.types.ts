@@ -25,6 +25,7 @@ export interface SpeakAboutPhotoSubmissionPayload {
   audioBlob: Blob;
   durationSec: number;
   locale: string;
+  prompt: string;
 }
 
 export interface SpeakAboutPhotoSubmissionResponse {

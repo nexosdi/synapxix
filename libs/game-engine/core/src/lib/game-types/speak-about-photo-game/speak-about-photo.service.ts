@@ -8,7 +8,7 @@ import {
   SpeakAboutPhotoSubmissionResponse,
 } from './speak-about-photo.types';
 
-const API_BASE = '/api/exercises/speak-about-photo';
+const API_BASE = '/api/exercises';
 const REQUEST_TIMEOUT_MS = 30_000;
 
 
@@ -41,9 +41,10 @@ export class SpeakAboutPhotoService {
     form.append('contentId', payload.contentId);
     form.append('durationSec', String(payload.durationSec));
     form.append('locale', payload.locale);
+    form.append('expectedText', payload.prompt);
 
     return this.http
-      .post<SpeakAboutPhotoSubmissionResponse>(`${API_BASE}/submit`, form)
+      .post<SpeakAboutPhotoSubmissionResponse>(`${API_BASE}/read-aloud`, form)
       .pipe(
         timeout(REQUEST_TIMEOUT_MS),
         catchError((err) => throwError(() => this.mapHttpError(err))),

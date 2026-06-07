@@ -189,6 +189,7 @@ export class ReadAloudGameComponent implements OnDestroy, BaseGameComponent {
         audioBlob:  this.recordedBlob,
         durationSec: this.timer(),
         locale:     view.locale,
+        expectedText: view.text,
       })
       .subscribe({
         next: () => {

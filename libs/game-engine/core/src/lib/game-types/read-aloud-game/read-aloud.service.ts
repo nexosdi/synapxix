@@ -12,7 +12,7 @@ import {
 const SUBMISSION_TIMEOUT_MS = 15_000;
 
 
-const API_BASE = '/api/exercises/read-aloud';
+const API_BASE = '/api/exercises';
 
 
 @Injectable({ providedIn: 'root' })
@@ -44,9 +44,10 @@ export class ReadAloudService {
     form.append('contentId', payload.contentId);
     form.append('durationSec', String(payload.durationSec));
     form.append('locale', payload.locale);
+    form.append('expectedText', payload.expectedText);
 
     return this.http
-      .post<ReadAloudSubmissionResponse>(`${API_BASE}/submit`, form)
+      .post<ReadAloudSubmissionResponse>(`${API_BASE}/read-aloud`, form)
       .pipe(
         timeout(SUBMISSION_TIMEOUT_MS),
         catchError((err) => throwError(() => this.mapHttpError(err))),

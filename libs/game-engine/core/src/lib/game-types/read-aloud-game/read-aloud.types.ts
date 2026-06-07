@@ -34,6 +34,7 @@ export interface ReadAloudSubmissionPayload {
   audioBlob: Blob;
   durationSec: number;
   locale: string;
+  expectedText: string;
 }
 
 export interface ReadAloudSubmissionResponse {

@@ -154,6 +154,7 @@ export class SpeakAboutPhotoGameComponent implements OnDestroy, BaseGameComponen
         audioBlob:   this.recordedBlob,
         durationSec: this.timer(),
         locale:      view.locale,
+        prompt:      view.prompt,
       })
       .subscribe({
         next: () => {
