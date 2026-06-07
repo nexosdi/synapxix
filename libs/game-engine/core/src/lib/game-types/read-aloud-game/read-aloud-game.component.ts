@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   inject,
@@ -41,6 +42,7 @@ function getSupportedMimeType(): string {
 @Component({
   selector: 'lib-read-aloud-game',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './read-aloud-game.component.html',
   styleUrl: './read-aloud-game.component.scss',
 })
@@ -275,13 +277,15 @@ export class ReadAloudGameComponent implements OnDestroy, BaseGameComponent {
   private startTimer(maxDurationSec: number): void {
     this.timer.set(0);
 
-    this.timerIntervalId = setInterval(() => {
-      this.timer.update((t) => t + 1);
+    this.ngZone.runOutsideAngular(() => {
+      this.timerIntervalId = setInterval(() => {
+        this.timer.update((t) => t + 1);
 
-      if (this.timer() >= maxDurationSec) {
-        this.stopRecording();
-      }
-    }, 1000);
+        if (this.timer() >= maxDurationSec) {
+          this.ngZone.run(() => this.stopRecording());
+        }
+      }, 1000);
+    });
   }
 
   private stopTimer(): void {

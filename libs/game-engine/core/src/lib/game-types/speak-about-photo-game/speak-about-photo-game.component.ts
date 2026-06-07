@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   inject,
@@ -41,6 +42,7 @@ function getSupportedMimeType(): string {
 @Component({
   selector: 'lib-speak-about-photo-game',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './speak-about-photo-game.component.html',
   styleUrl: './speak-about-photo-game.component.scss',
 })
