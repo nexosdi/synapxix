@@ -135,4 +135,28 @@ describe('EconomyRepository — Integration Tests', () => {
       ).rejects.toThrow(Prisma.PrismaClientKnownRequestError);
     });
   });
+  describe('getBalance', () => {
+  it('should return credits and experience_points for a valid user', async () => {
+    (prismaService.app_user.findUnique as jest.Mock).mockResolvedValue({
+      credits: 215,
+      experience_points: 1057,
+    });
+
+    const result = await repository.getBalance('user-1');
+
+    expect(result).toEqual({ credits: 215, experience_points: 1057 });
+    expect(prismaService.app_user.findUnique).toHaveBeenCalledWith({
+      where: { user_id: 'user-1' },
+      select: { credits: true, experience_points: true },
+    });
+  });
+
+  it('should return null when user does not exist', async () => {
+    (prismaService.app_user.findUnique as jest.Mock).mockResolvedValue(null);
+
+    const result = await repository.getBalance('ghost-user');
+
+    expect(result).toBeNull();
+  });
+});
 });

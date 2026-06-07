@@ -1,24 +1,37 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from "@nexosdi.synapxix/prisma";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '@nexosdi.synapxix/prisma';
 import { RewardType } from './logic/economy.logic';
 
 @Injectable()
 export class EconomyRepository {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findTransactionBySessionId(sessionId: string) {
     return this.prisma.economyTransaction.findUnique({
-      where: { game_session_id: sessionId }
+      where: { game_session_id: sessionId },
     });
   }
 
-  async createRewardTransaction(userId: string, data: {
-    creditsAwarded: number,
-    xpAwarded: number,
-    gameSessionId: string,
-    rewardType: RewardType,
-    auditDetails: any
-  }) {
+  async getBalance(userId: string) {
+    return this.prisma.app_user.findUnique({
+      where: { user_id: userId },
+      select: {
+        credits: true,
+        experience_points: true,
+      },
+    });
+  }
+
+  async createRewardTransaction(
+    userId: string,
+    data: {
+      creditsAwarded: number;
+      xpAwarded: number;
+      gameSessionId: string;
+      rewardType: RewardType;
+      auditDetails: Record<string, unknown>;
+    }
+  ) {
     return this.prisma.$transaction(async (tx) => {
       const updatedUser = await tx.app_user.update({
         where: { user_id: userId },
@@ -59,21 +72,6 @@ export class EconomyRepository {
           experience_points: updatedUser.experience_points,
         },
       };
-    });
-  }
-
-  async createTransactionAndAwardCredits(userId: string, data: {
-    amount: number,
-    gameSessionId: string,
-    type: RewardType,
-    auditDetails: any
-  }) {
-    return this.createRewardTransaction(userId, {
-      creditsAwarded: data.amount,
-      xpAwarded: 0,
-      gameSessionId: data.gameSessionId,
-      rewardType: data.type,
-      auditDetails: data.auditDetails,
     });
   }
 }

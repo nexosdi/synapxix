@@ -2,14 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EconomyController } from '../economy.controller';
 import { EconomyService } from '../economy.service';
 import { ClaimRewardDto } from '../dto/claim.reward.dto';
-import { BadRequestException, ConflictException } from '@nestjs/common';
-
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 describe('EconomyController', () => {
   let controller: EconomyController;
   let service: EconomyService;
 
   const mockService = {
     processGameReward: jest.fn(),
+    getBalance: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -111,4 +111,26 @@ describe('EconomyController', () => {
       expect(service.processGameReward).toHaveBeenCalledWith('user-abc', dto);
     });
   });
+  describe('GET /economy/balance', () => {
+  it('should return balance for authenticated user', async () => {
+    mockService.getBalance.mockResolvedValue({
+      credits: 215,
+      experience_points: 1057,
+    });
+
+    const result = await controller.getBalance('user-1');
+
+    expect(result).toEqual({ credits: 215, experience_points: 1057 });
+    expect(service.getBalance).toHaveBeenCalledWith('user-1');
+  });
+
+  it('should propagate NotFoundException for unknown user', async () => {
+    mockService.getBalance.mockRejectedValue(
+      new NotFoundException('User not found')
+    );
+
+    await expect(controller.getBalance('ghost-user'))
+      .rejects.toThrow(NotFoundException);
+  });
+});
 });
