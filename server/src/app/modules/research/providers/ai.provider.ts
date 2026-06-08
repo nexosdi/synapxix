@@ -2,6 +2,25 @@ import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { ConfigService } from '@nestjs/config';
 
+/**
+ * AiProvider — Central abstraction layer for AI model interactions.
+ *
+ * This provider wraps the Google Generative AI SDK (Gemini 2.5 Flash) and
+ * isolates the business logic from the specific external API implementation.
+ *
+ * Dependencies:
+ *   - ConfigService (from @nestjs/config) — reads the GOOGLE_GEN_AI_KEY
+ *     environment variable. ConfigModule must be registered globally in
+ *     AppModule with `ConfigModule.forRoot({ isGlobal: true })`.
+ *
+ * Usage:
+ *   This provider is registered in ResearchModule and can be injected into
+ *   any service within that module. To use it from another module, import
+ *   ResearchModule or register AiProvider directly in your module's providers.
+ *
+ * @see ResearchModule — registers and uses this provider
+ * @see ResearchService — consumes analyzePedagogicalAction()
+ */
 @Injectable()
 export class AiProvider {
   private readonly logger = new Logger(AiProvider.name);
@@ -22,6 +41,15 @@ export class AiProvider {
     });
   }
 
+  /**
+   * Analyzes a student's game activity using AI to generate pedagogical insights.
+   *
+   * @param systemPrompt - Instructions that define the AI's role and analysis criteria
+   * @param context - Simplified description of the game activity being evaluated
+   * @param studentInput - Raw student performance data (success, duration, content)
+   * @returns AI-generated pedagogical analysis as a text string
+   * @throws InternalServerErrorException if the AI API call fails
+   */
   async analyzePedagogicalAction(
     systemPrompt: string, 
     context: string, 

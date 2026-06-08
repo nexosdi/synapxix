@@ -1,14 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../../../web-game/src/environments/environment';
 import { EconomyDispatcher, EconomyClaimPayload } from './economy-dispatcher';
 
 
 @Injectable({ providedIn: 'root' })
 export class HttpEconomyDispatcher implements EconomyDispatcher {
   private readonly http = inject(HttpClient);
-  private readonly endpoint = `${environment.apiUrl}/economy/claim-reward`;
+  private readonly endpoint = '/api/economy/claim-reward';
 
   async dispatch(payload: EconomyClaimPayload): Promise<void> {
     try {
