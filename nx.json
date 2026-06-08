@@ -58,7 +58,6 @@
       "style": "css"
     }
   },
-  "nxCloudId": "6910f9e549ab9a471cdd5a42",
   "plugins": [
     {
       "plugin": "@nx/webpack/plugin",
