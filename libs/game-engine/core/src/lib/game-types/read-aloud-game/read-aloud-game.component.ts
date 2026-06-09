@@ -1,144 +1,221 @@
-import { Component, computed, input, output, signal, OnDestroy } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  NgZone,
+  OnDestroy,
+  output,
+  signal,
+} from '@angular/core';
+import { Subscription } from 'rxjs';
 import { AnyGameResult } from '../../models/game-result.model';
 import { BaseGameComponent } from '../../components/base-game.component';
 import {
+  ReadAloudGameData,
   ReadAloudInteractiveContent,
   toReadAloudGameModel,
 } from './read-aloud-game.model';
+import { ReadAloudService } from './read-aloud.service';
+import {
+  RecordingError,
+  RecordingErrorType,
+  RecordingState,
+} from './read-aloud.types';
+
+
+const PREFERRED_MIME_TYPES = [
+  'audio/webm;codecs=opus',
+  'audio/webm',
+  'audio/ogg;codecs=opus',
+  'audio/ogg',
+  'audio/mp4',
+] as const;
+
+
+function getSupportedMimeType(): string {
+  return PREFERRED_MIME_TYPES.find((t) => MediaRecorder.isTypeSupported(t)) ?? '';
+}
+
 
 @Component({
   selector: 'lib-read-aloud-game',
   standalone: true,
-  template: `
-    @if (viewModel(); as view) {
-    <section
-      class="relative mx-auto flex max-w-xl flex-col gap-8 rounded-[3rem] border-b-[12px] border-slate-200 bg-white p-10 shadow-[0_25px_60px_rgba(27,149,251,0.15)] animate-in fade-in zoom-in duration-500"
-    >
-      @if (isFinished()) {
-        <div class="absolute inset-0 z-20 flex items-center justify-center rounded-[3rem] bg-white/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div class="flex flex-col items-center gap-4 rounded-[2.5rem] bg-yellow-300 px-12 py-8 shadow-xl border-b-8 border-yellow-500 scale-110 animate-in bounce-in">
-            <h3 class="text-4xl font-black text-[#1b95fb]">SUPER VOICE! 🎙️</h3>
-          </div>
-        </div>
-      }
-
-      <header class="space-y-4 text-center">
-        <div class="inline-block px-6 py-2 rounded-full bg-[#1b95fb]/10 text-[#1b95fb] text-xs font-black uppercase tracking-[0.2em]">
-          Mission: Speak Up!
-        </div>
-        <h2 class="text-balance text-4xl font-black text-slate-800 leading-tight">Read Aloud</h2>
-      </header>
-
-      <div class="relative group">
-        <div class="absolute -top-3 -left-3 bg-yellow-300 text-[#1b95fb] font-black px-4 py-1 rounded-full shadow-lg z-10 text-sm">
-          READ THIS:
-        </div>
-        <p class="rounded-[2.5rem] border-4 border-dashed border-[#1b95fb]/30 bg-slate-50 px-10 py-12 text-3xl font-black text-slate-700 shadow-inner leading-relaxed text-center italic">
-          "{{ view.text }}"
-        </p>
-      </div>
-
-      <div class="flex flex-col items-center gap-6">
-        
-        <div class="relative">
-          @if (isRecording()) {
-            <div class="absolute inset-0 rounded-full border-4 border-red-500 animate-ping opacity-20"></div>
-          }
-          
-          <button
-            (click)="toggleRecording(view.recording.maxDurationSec)"
-            class="group relative flex h-32 w-32 items-center justify-center rounded-full border-b-[8px] transition-all active:translate-y-2 active:border-b-0 shadow-2xl"
-            [class.bg-red-500]="isRecording()"
-            [class.border-red-800]="isRecording()"
-            [class.bg-[#1b95fb]]="!isRecording()"
-            [class.border-[#0d47a1]]="!isRecording()"
-          >
-            @if (isRecording()) {
-              <div class="h-10 w-10 animate-pulse rounded-lg bg-white"></div>
-            } @else {
-              <span class="text-5xl text-white">🎤</span>
-            }
-          </button>
-        </div>
-
-        <div class="text-center">
-          <p class="text-xl font-black tracking-widest" 
-             [class.text-red-500]="isRecording()" 
-             [class.text-[#1b95fb]]="!isRecording()">
-            {{ isRecording() ? formatTime(timer()) : 'Tap to start' }}
-          </p>
-          <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-            {{ isRecording() ? 'Recording now...' : 'Ready when you are' }}
-          </p>
-        </div>
-      </div>
-
-      <footer class="grid grid-cols-2 gap-4 pt-4 border-t-2 border-slate-50">
-        <div class="text-center bg-slate-50 p-3 rounded-2xl border-2 border-slate-100">
-           <p class="text-[10px] font-black text-slate-400 uppercase">Min Req.</p>
-           <p class="text-lg font-black text-[#1b95fb]">{{ view.recording.minDurationSec }}s</p>
-        </div>
-        <div class="text-center bg-slate-50 p-3 rounded-2xl border-2 border-slate-100">
-           <p class="text-[10px] font-black text-slate-400 uppercase">Max Time</p>
-           <p class="text-lg font-black text-slate-600">{{ view.recording.maxDurationSec }}s</p>
-        </div>
-      </footer>
-    </section>
-    }
-  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './read-aloud-game.component.html',
+  styleUrl: './read-aloud-game.component.scss',
 })
 export class ReadAloudGameComponent implements OnDestroy, BaseGameComponent {
   readonly answerSubmitted = output<AnyGameResult>();
-  
+
+
   readonly content = input.required<ReadAloudInteractiveContent>();
+
+
   readonly disabled = input<boolean>(false);
+
+
   readonly viewModel = computed(() => toReadAloudGameModel(this.content()));
 
-  // Signals para el estado
-  isRecording = signal(false);
-  isFinished = signal(false);
-  timer = signal(0);
-  
-  private intervalId?: any;
+  private readonly readAloudService = inject(ReadAloudService);
 
-  toggleRecording(maxSec: number) {
-    if (this.disabled() || this.isFinished()) return;
 
-    if (!this.isRecording()) {
-      this.startRecording(maxSec);
-    } else {
-      this.stopAndFinish();
+  private readonly ngZone = inject(NgZone);
+
+  readonly state = signal<RecordingState>('idle');
+
+
+  readonly timer = signal<number>(0);
+
+
+  readonly audioUrl = signal<string | null>(null);
+
+
+  readonly recordingError = signal<RecordingError | null>(null);
+
+  readonly canSubmit = computed(
+    () => this.timer() >= (this.viewModel()?.recording.minDurationSec ?? 0),
+  );
+
+
+  readonly errorTitle = computed(() => {
+    const type = this.recordingError()?.type;
+    if (!type) return 'Something went wrong';
+
+    const titles: Record<RecordingErrorType, string> = {
+      permissionDenied:    'Microphone Access Denied',
+      microphoneNotFound:  'No Microphone Found',
+      recorderError:       'Recording Error',
+      networkError:        'Connection Problem',
+      serverError:         'Server Error',
+      timeout:             'Request Timed Out',
+    };
+    return titles[type];
+  });
+
+
+  readonly errorIcon = computed(() => {
+    const type = this.recordingError()?.type;
+    if (!type) return '❌';
+
+    const icons: Record<RecordingErrorType, string> = {
+      permissionDenied:    '🔒',
+      microphoneNotFound:  '🎙️',
+      recorderError:       '⚠️',
+      networkError:        '📡',
+      serverError:         '🖥️',
+      timeout:             '⏱',
+    };
+    return icons[type];
+  });
+
+  private mediaStream:    MediaStream    | null = null;
+  private mediaRecorder:  MediaRecorder  | null = null;
+  private audioChunks:    Blob[]                = [];
+  private recordedBlob:   Blob           | null = null;
+  private timerIntervalId: ReturnType<typeof setInterval> | null = null;
+  private submissionSub:  Subscription   | null = null;
+
+  async startRecording(view: ReadAloudGameData): Promise<void> {
+    if (this.disabled()) return;
+
+    this.clearAudioUrl();
+    this.recordingError.set(null);
+    this.state.set('requestingPermission');
+
+    let stream: MediaStream;
+
+    try {
+      stream = await this.readAloudService.requestMicrophonePermission();
+    } catch (err: unknown) {
+      this.state.set('error');
+      this.recordingError.set(err as RecordingError);
+      return;
+    }
+
+    this.mediaStream = stream;
+    this.audioChunks  = [];
+    this.recordedBlob = null;
+
+    try {
+      this.mediaRecorder = new MediaRecorder(stream, {
+        mimeType: getSupportedMimeType(),
+      });
+    } catch {
+      this.handleRecorderInitError();
+      return;
+    }
+
+    this.bindMediaRecorderEvents();
+    this.mediaRecorder.start(/* timeslice */ 100); // collect chunks every 100 ms
+    this.state.set('recording');
+    this.startTimer(view.recording.maxDurationSec);
+  }
+
+
+  stopRecording(): void {
+    this.stopTimer();
+    if (this.mediaRecorder?.state !== 'inactive') {
+      this.mediaRecorder?.stop(); // triggers onstop → 'recorded' state
     }
   }
 
-  private startRecording(maxSec: number) {
-    this.isRecording.set(true);
+
+  cancelRecording(): void {
+    this.stopTimer();
+
+    if (this.mediaRecorder?.state !== 'inactive') {
+      // Nullify handlers before stopping to discard the chunks cleanly
+      this.mediaRecorder!.ondataavailable = null;
+      this.mediaRecorder!.onstop          = null;
+      this.mediaRecorder!.stop();
+    }
+
+    this.stopMediaStream();
+    this.audioChunks  = [];
+    this.recordedBlob = null;
     this.timer.set(0);
-
-    this.intervalId = setInterval(() => {
-      this.timer.update(t => t + 1);
-      
-      // Auto-stop si llegamos al máximo del mock
-      if (this.timer() >= maxSec) {
-        this.stopAndFinish();
-      }
-    }, 1000);
+    this.state.set('idle');
   }
 
-  private stopAndFinish() {
-    if (this.intervalId) clearInterval(this.intervalId);
-    
-    this.isRecording.set(false);
-    this.isFinished.set(true);
-    
-    this.answerSubmitted.emit({
-      gameType: 'read-aloud',
-      answer: { audioUrl: '', recognizedText: '' },
-      isCorrect: true,
-      score: 100,
-      timeSpentMs: this.timer() * 1000
-    });
+
+  submitRecording(view: ReadAloudGameData): void {
+    if (!this.recordedBlob || !this.canSubmit() || this.disabled()) return;
+
+    this.state.set('submitting');
+
+    this.submissionSub = this.readAloudService
+      .submitRecording({
+        contentId:  this.content().id,
+        audioBlob:  this.recordedBlob,
+        durationSec: this.timer(),
+        locale:     view.locale,
+        expectedText: view.text,
+      })
+      .subscribe({
+        next: () => {
+          this.state.set('success');
+          this.emitResult();
+        },
+        error: (err: RecordingError) => {
+          this.state.set('error');
+          this.recordingError.set(err);
+        },
+      });
   }
+
+
+  resetToIdle(): void {
+    this.submissionSub?.unsubscribe();
+    this.clearAudioUrl();
+    this.recordingError.set(null);
+    this.audioChunks  = [];
+    this.recordedBlob = null;
+    this.timer.set(0);
+    this.state.set('idle');
+  }
+
 
   formatTime(sec: number): string {
     const minutes = Math.floor(sec / 60);
@@ -146,7 +223,119 @@ export class ReadAloudGameComponent implements OnDestroy, BaseGameComponent {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }
 
-  ngOnDestroy() {
-    if (this.intervalId) clearInterval(this.intervalId);
+  ngOnDestroy(): void {
+    this.stopTimer();
+    this.stopMediaStream();
+    this.clearAudioUrl();
+    this.submissionSub?.unsubscribe();
+    this.destroyMediaRecorder();
+  }
+
+  private bindMediaRecorderEvents(): void {
+    if (!this.mediaRecorder) return;
+
+    this.mediaRecorder.ondataavailable = (event: BlobEvent) => {
+      if (event.data.size > 0) {
+        this.audioChunks.push(event.data);
+      }
+    };
+
+    this.mediaRecorder.onstop = () => {
+      this.ngZone.run(() => {
+        const mimeType   = this.mediaRecorder?.mimeType ?? 'audio/webm';
+        this.recordedBlob = new Blob(this.audioChunks, { type: mimeType });
+        const objectUrl  = URL.createObjectURL(this.recordedBlob);
+        this.audioUrl.set(objectUrl);
+        this.state.set('recorded');
+        this.stopMediaStream();
+      });
+    };
+
+    this.mediaRecorder.onerror = () => {
+      this.ngZone.run(() => {
+        this.stopTimer();
+        this.stopMediaStream();
+        this.state.set('error');
+        this.recordingError.set({
+          type:    'recorderError',
+          message: 'A recording error occurred. Please try again.',
+        });
+      });
+    };
+  }
+
+  private handleRecorderInitError(): void {
+    this.state.set('error');
+    this.recordingError.set({
+      type:    'recorderError',
+      message: 'Could not initialize the recorder. Please try a different browser.',
+    });
+    this.stopMediaStream();
+  }
+
+
+  private startTimer(maxDurationSec: number): void {
+    this.timer.set(0);
+
+    this.ngZone.runOutsideAngular(() => {
+      this.timerIntervalId = setInterval(() => {
+        this.timer.update((t) => t + 1);
+
+        if (this.timer() >= maxDurationSec) {
+          this.ngZone.run(() => this.stopRecording());
+        }
+      }, 1000);
+    });
+  }
+
+  private stopTimer(): void {
+    if (this.timerIntervalId !== null) {
+      clearInterval(this.timerIntervalId);
+      this.timerIntervalId = null;
+    }
+  }
+
+
+  private stopMediaStream(): void {
+    this.mediaStream?.getTracks().forEach((track) => track.stop());
+    this.mediaStream = null;
+  }
+
+
+  private clearAudioUrl(): void {
+    const url = this.audioUrl();
+    if (url) {
+      URL.revokeObjectURL(url);
+      this.audioUrl.set(null);
+    }
+  }
+
+
+  private destroyMediaRecorder(): void {
+    if (!this.mediaRecorder) return;
+
+    this.mediaRecorder.ondataavailable = null;
+    this.mediaRecorder.onstop          = null;
+    this.mediaRecorder.onerror         = null;
+
+    if (this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.stop();
+    }
+
+    this.mediaRecorder = null;
+  }
+
+
+  private emitResult(): void {
+    this.answerSubmitted.emit({
+      gameType:     'read-aloud',
+      answer: {
+        audioUrl:       this.audioUrl() ?? '',
+        recognizedText: '',
+      },
+      isCorrect:    true,
+      score:        100,
+      timeSpentMs:  this.timer() * 1000,
+    });
   }
 }

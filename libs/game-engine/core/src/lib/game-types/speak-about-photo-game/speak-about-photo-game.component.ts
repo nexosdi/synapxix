@@ -1,137 +1,297 @@
-import { Component, computed, input, output, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  NgZone,
+  OnDestroy,
+  output,
+  signal,
+} from '@angular/core';
+import { Subscription } from 'rxjs';
 import { AnyGameResult } from '../../models/game-result.model';
 import { BaseGameComponent } from '../../components/base-game.component';
 import {
+  SpeakAboutPhotoGameData,
   SpeakAboutPhotoInteractiveContent,
   toSpeakAboutPhotoGameModel,
 } from './speak-about-photo-game.model';
+import { SpeakAboutPhotoService } from './speak-about-photo.service';
+import {
+  RecordingError,
+  RecordingErrorType,
+  RecordingState,
+} from './speak-about-photo.types';
+
+
+const PREFERRED_MIME_TYPES = [
+  'audio/webm;codecs=opus',
+  'audio/webm',
+  'audio/ogg;codecs=opus',
+  'audio/ogg',
+  'audio/mp4',
+] as const;
+
+
+function getSupportedMimeType(): string {
+  return PREFERRED_MIME_TYPES.find((t) => MediaRecorder.isTypeSupported(t)) ?? '';
+}
+
 
 @Component({
   selector: 'lib-speak-about-photo-game',
   standalone: true,
-  imports: [FormsModule],
-  template: `
-    @if (viewModel(); as view) {
-    <section
-      class="relative mx-auto flex max-w-3xl flex-col gap-8 rounded-[3rem] border-b-[12px] border-slate-200 bg-white p-10 shadow-[0_25px_60px_rgba(27,149,251,0.15)] animate-in fade-in zoom-in duration-500"
-    >
-      @if (isFinished()) {
-        <div class="absolute inset-0 z-20 flex items-center justify-center rounded-[3rem] bg-white/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div class="flex flex-col items-center gap-4 rounded-[2.5rem] bg-yellow-300 px-12 py-8 shadow-xl border-b-8 border-yellow-500 scale-110 animate-in bounce-in">
-            <h3 class="text-4xl font-black text-[#1b95fb]">FANTASTIC! 📸</h3>
-            <p class="text-[#1b95fb] font-bold italic uppercase">Mission Accomplished</p>
-          </div>
-        </div>
-      }
-
-      <header class="space-y-4 text-center">
-        <div class="inline-block px-6 py-2 rounded-full bg-[#1b95fb]/10 text-[#1b95fb] text-xs font-black uppercase tracking-[0.2em]">
-          Oral & Written Challenge
-        </div>
-        
-        <h2 class="text-balance text-4xl font-black text-slate-800 leading-tight">
-          {{ view.prompt }}
-        </h2>
-      </header>
-
-      @if (view.imageUrl) {
-      <figure class="overflow-hidden rounded-[2.5rem] border-8 border-slate-50 shadow-2xl relative group">
-        <img [src]="view.imageUrl" alt="Analyze this" class="h-full w-full object-cover max-h-[300px]" />
-        <div class="absolute bottom-4 right-4 bg-white/90 px-4 py-2 rounded-full text-xs font-black text-[#1b95fb] shadow-lg">
-          LOOK CLOSELY 👀
-        </div>
-      </figure>
-      }
-
-      <div class="space-y-6">
-        <div class="relative">
-          <textarea
-            [(ngModel)]="userInput"
-            (ngModelChange)="onTextChange(view.targetKeywords)"
-            placeholder="What's happening in the photo?"
-            class="w-full px-8 py-6 bg-slate-50 border-b-4 border-slate-200 text-slate-700 font-bold text-xl rounded-[2rem] focus:bg-white focus:border-[#1b95fb] outline-none transition-all min-h-[120px] resize-none placeholder:text-slate-300"
-          ></textarea>
-        </div>
-
-        <div class="space-y-3">
-          <p class="text-center text-sm font-black text-slate-400 uppercase tracking-widest">
-            Keywords Discovered: {{ foundKeywords().size }} / {{ view.scoring.keywordsRequired }}
-          </p>
-          
-          <div class="flex flex-wrap justify-center gap-3">
-            @for (keyword of view.targetKeywords; track keyword) {
-              @if (foundKeywords().has(keyword.toLowerCase())) {
-                <span class="px-6 py-2 rounded-full bg-emerald-500 text-white font-black text-sm shadow-lg animate-in zoom-in duration-300 border-b-4 border-emerald-700">
-                  ⭐ {{ keyword }}
-                </span>
-              } @else {
-                <span class="px-6 py-2 rounded-full bg-slate-100 text-slate-300 font-black text-sm border-b-4 border-slate-200">
-                  ???
-                </span>
-              }
-            }
-          </div>
-        </div>
-
-        <button
-          (click)="checkVictory(view.scoring.keywordsRequired)"
-          [disabled]="foundKeywords().size < view.scoring.keywordsRequired"
-          class="w-full py-6 text-white font-black text-2xl rounded-full border-b-8 transition-all shadow-xl disabled:bg-slate-200 disabled:border-slate-300 disabled:text-slate-400 disabled:shadow-none"
-          [class.bg-[#1b95fb]]="foundKeywords().size >= view.scoring.keywordsRequired"
-          [class.border-[#0d47a1]]="foundKeywords().size >= view.scoring.keywordsRequired"
-          [class.hover:bg-[#1b95fb]/90]="foundKeywords().size >= view.scoring.keywordsRequired"
-          [class.active:translate-y-2]="foundKeywords().size >= view.scoring.keywordsRequired"
-          [class.active:border-b-0]="foundKeywords().size >= view.scoring.keywordsRequired"
-        >
-          FINISH MISSION
-        </button>
-      </div>
-
-      <footer class="text-center pt-4 border-t-2 border-slate-50">
-        <p class="text-slate-300 font-bold text-[10px] uppercase tracking-[0.3em]">
-          Synapxix Educational Engine
-        </p>
-      </footer>
-    </section>
-    }
-  `
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './speak-about-photo-game.component.html',
+  styleUrl: './speak-about-photo-game.component.scss',
 })
-export class SpeakAboutPhotoGameComponent implements BaseGameComponent {
+export class SpeakAboutPhotoGameComponent implements OnDestroy, BaseGameComponent {
   readonly answerSubmitted = output<AnyGameResult>();
-  
   readonly content = input.required<SpeakAboutPhotoInteractiveContent>();
   readonly disabled = input<boolean>(false);
   readonly viewModel = computed(() => toSpeakAboutPhotoGameModel(this.content()));
 
-  userInput = '';
-  foundKeywords = signal<Set<string>>(new Set());
-  isFinished = signal(false);
+  private readonly speakAboutPhotoService = inject(SpeakAboutPhotoService);
+  private readonly ngZone = inject(NgZone);
 
-  onTextChange(targets: string[]) {
-    const text = this.userInput.toLowerCase();
-    const newlyFound = new Set<string>();
+  readonly state = signal<RecordingState>('idle');
+  readonly timer = signal<number>(0);
+  readonly audioUrl = signal<string | null>(null);
+  readonly recordingError = signal<RecordingError | null>(null);
 
-    targets.forEach(word => {
-      if (text.includes(word.toLowerCase())) {
-        newlyFound.add(word.toLowerCase());
-      }
-    });
+  readonly canSubmit = computed(
+    () => this.timer() >= (this.viewModel()?.recording.minDurationSec ?? 0),
+  );
 
-    this.foundKeywords.set(newlyFound);
+  readonly errorTitle = computed(() => {
+    const type = this.recordingError()?.type;
+    if (!type) return 'Something went wrong';
+
+    const titles: Record<RecordingErrorType, string> = {
+      permissionDenied:   'Microphone Access Denied',
+      microphoneNotFound: 'No Microphone Found',
+      recorderError:      'Recording Error',
+      networkError:       'Connection Problem',
+      serverError:        'Server Error',
+      timeout:            'Request Timed Out',
+    };
+    return titles[type];
+  });
+
+  private mediaStream:     MediaStream   | null = null;
+  private mediaRecorder:   MediaRecorder | null = null;
+  private audioChunks:     Blob[]               = [];
+  private recordedBlob:    Blob          | null = null;
+  private timerIntervalId: ReturnType<typeof setInterval> | null = null;
+  private submissionSub:   Subscription  | null = null;
+
+  async startRecording(view: SpeakAboutPhotoGameData): Promise<void> {
+    if (this.disabled()) return;
+
+    this.clearAudioUrl();
+    this.recordingError.set(null);
+    this.state.set('requestingPermission');
+
+    let stream: MediaStream;
+
+    try {
+      stream = await this.speakAboutPhotoService.requestMicrophonePermission();
+    } catch (err: unknown) {
+      this.state.set('error');
+      this.recordingError.set(err as RecordingError);
+      return;
+    }
+
+    this.mediaStream  = stream;
+    this.audioChunks  = [];
+    this.recordedBlob = null;
+
+    try {
+      this.mediaRecorder = new MediaRecorder(stream, {
+        mimeType: getSupportedMimeType(),
+      });
+    } catch {
+      this.handleRecorderInitError();
+      return;
+    }
+
+    this.bindMediaRecorderEvents();
+    this.mediaRecorder.start(100);
+    this.state.set('recording');
+    this.startTimer(view.recording.maxDurationSec);
   }
 
-  checkVictory(required: number) {
-    if (this.disabled()) return;
-    if (this.foundKeywords().size >= required) {
-      this.isFinished.set(true);
-      this.answerSubmitted.emit({
-        gameType: 'speak-about-photo',
-        answer: { audioUrl: '', recognizedText: this.userInput },
-        isCorrect: true,
-        score: this.foundKeywords().size * 30,
-        timeSpentMs: 0
-      });
+  stopRecording(): void {
+    this.stopTimer();
+    if (this.mediaRecorder?.state !== 'inactive') {
+      this.mediaRecorder?.stop();
     }
+  }
+
+  cancelRecording(): void {
+    this.stopTimer();
+
+    if (this.mediaRecorder?.state !== 'inactive') {
+      this.mediaRecorder!.ondataavailable = null;
+      this.mediaRecorder!.onstop          = null;
+      this.mediaRecorder!.stop();
+    }
+
+    this.stopMediaStream();
+    this.audioChunks  = [];
+    this.recordedBlob = null;
+    this.timer.set(0);
+    this.state.set('idle');
+  }
+
+  submitRecording(view: SpeakAboutPhotoGameData): void {
+    if (!this.recordedBlob || !this.canSubmit() || this.disabled()) return;
+
+    this.state.set('submitting');
+
+    this.submissionSub = this.speakAboutPhotoService
+      .submitResponse({
+        contentId:   this.content().id,
+        audioBlob:   this.recordedBlob,
+        durationSec: this.timer(),
+        locale:      view.locale,
+        prompt:      view.prompt,
+      })
+      .subscribe({
+        next: () => {
+          this.state.set('success');
+          this.emitResult();
+        },
+        error: (err: RecordingError) => {
+          this.state.set('error');
+          this.recordingError.set(err);
+        },
+      });
+  }
+
+  resetToIdle(): void {
+    this.submissionSub?.unsubscribe();
+    this.clearAudioUrl();
+    this.recordingError.set(null);
+    this.audioChunks  = [];
+    this.recordedBlob = null;
+    this.timer.set(0);
+    this.state.set('idle');
+  }
+
+  formatTime(sec: number): string {
+    const minutes = Math.floor(sec / 60);
+    const seconds = sec % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  ngOnDestroy(): void {
+    this.stopTimer();
+    this.stopMediaStream();
+    this.clearAudioUrl();
+    this.submissionSub?.unsubscribe();
+    this.destroyMediaRecorder();
+  }
+
+  private bindMediaRecorderEvents(): void {
+    if (!this.mediaRecorder) return;
+
+    this.mediaRecorder.ondataavailable = (event: BlobEvent) => {
+      if (event.data.size > 0) {
+        this.audioChunks.push(event.data);
+      }
+    };
+
+    this.mediaRecorder.onstop = () => {
+      this.ngZone.run(() => {
+        const mimeType    = this.mediaRecorder?.mimeType ?? 'audio/webm';
+        this.recordedBlob = new Blob(this.audioChunks, { type: mimeType });
+        const objectUrl   = URL.createObjectURL(this.recordedBlob);
+        this.audioUrl.set(objectUrl);
+        this.state.set('recorded');
+        this.stopMediaStream();
+      });
+    };
+
+    this.mediaRecorder.onerror = () => {
+      this.ngZone.run(() => {
+        this.stopTimer();
+        this.stopMediaStream();
+        this.state.set('error');
+        this.recordingError.set({
+          type:    'recorderError',
+          message: 'A recording error occurred. Please try again.',
+        });
+      });
+    };
+  }
+
+  private handleRecorderInitError(): void {
+    this.state.set('error');
+    this.recordingError.set({
+      type:    'recorderError',
+      message: 'Could not initialize the recorder. Please try a different browser.',
+    });
+    this.stopMediaStream();
+  }
+
+  private startTimer(maxDurationSec: number): void {
+    this.timer.set(0);
+
+    this.timerIntervalId = setInterval(() => {
+      this.timer.update((t) => t + 1);
+
+      if (this.timer() >= maxDurationSec) {
+        this.stopRecording();
+      }
+    }, 1000);
+  }
+
+  private stopTimer(): void {
+    if (this.timerIntervalId !== null) {
+      clearInterval(this.timerIntervalId);
+      this.timerIntervalId = null;
+    }
+  }
+
+  private stopMediaStream(): void {
+    this.mediaStream?.getTracks().forEach((track) => track.stop());
+    this.mediaStream = null;
+  }
+
+  private clearAudioUrl(): void {
+    const url = this.audioUrl();
+    if (url) {
+      URL.revokeObjectURL(url);
+      this.audioUrl.set(null);
+    }
+  }
+
+  private destroyMediaRecorder(): void {
+    if (!this.mediaRecorder) return;
+
+    this.mediaRecorder.ondataavailable = null;
+    this.mediaRecorder.onstop          = null;
+    this.mediaRecorder.onerror         = null;
+
+    if (this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.stop();
+    }
+
+    this.mediaRecorder = null;
+  }
+
+  private emitResult(): void {
+    this.answerSubmitted.emit({
+      gameType:    'speak-about-photo',
+      answer: {
+        audioUrl:       this.audioUrl() ?? '',
+        recognizedText: '',
+      },
+      isCorrect:   true,
+      score:       100,
+      timeSpentMs: this.timer() * 1000,
+    });
   }
 }

@@ -1,0 +1,275 @@
+@if (viewModel(); as view) {
+  <div class="page-wrapper">
+
+
+    <span class="deco-circle deco-circle--yellow" aria-hidden="true"></span>
+    <span class="deco-circle deco-circle--green"  aria-hidden="true"></span>
+    <span class="deco-circle deco-circle--purple" aria-hidden="true"></span>
+    <span class="deco-circle deco-circle--pink"   aria-hidden="true"></span>
+    <span class="deco-circle deco-circle--blue"   aria-hidden="true"></span>
+
+    <section
+      class="exercise-card relative overflow-hidden"
+      aria-labelledby="speak-photo-title"
+    >
+
+      @if (state() === 'success') {
+        <div
+          class="absolute inset-0 z-20 flex items-center justify-center bg-white/80 backdrop-blur-sm animate-in fade-in duration-300"
+          role="status"
+          aria-live="assertive"
+        >
+          <div class="flex flex-col items-center gap-3 rounded-2xl bg-emerald-400 px-12 py-8 shadow-xl shadow-emerald-400/40">
+            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-white/25">
+              <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+            <h3 class="text-2xl font-black italic text-white">Great job!</h3>
+            <p class="text-sm font-semibold text-white/80">Your recording was submitted</p>
+          </div>
+        </div>
+      }
+
+
+      <div class="speak-photo-header px-8 pt-8 pb-7">
+        <div class="mb-4 flex items-center justify-between">
+          <span class="game-badge">
+            <span class="h-1.5 w-1.5 rounded-full bg-white" aria-hidden="true"></span>
+            Speak About Photo
+          </span>
+          <img
+            src="/logo.png"
+            alt="Synapxix"
+            class="h-11 w-11 rounded-xl object-contain mix-blend-screen opacity-90"
+            aria-hidden="true"
+          />
+        </div>
+        <h2 id="speak-photo-title" class="text-3xl font-black italic text-white leading-snug">
+          {{ view.prompt }}
+        </h2>
+        <p class="mt-1.5 text-sm font-semibold text-white/70">
+          Look at the image below and describe it out loud!
+        </p>
+      </div>
+
+
+      <div class="flex flex-col gap-6 p-8">
+
+
+        <figure class="photo-frame">
+          <img
+            [src]="view.imageUrl"
+            alt="Image to describe"
+            class="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+          />
+        </figure>
+
+
+        <div class="flex flex-col items-center gap-4">
+
+          @if (state() === 'idle') {
+            <div class="flex flex-col items-center gap-4">
+              <button
+                id="start-recording-btn"
+                type="button"
+                (click)="startRecording(view)"
+                [disabled]="disabled()"
+                class="mic-btn mic-btn--idle flex h-28 w-28 items-center justify-center focus:outline-none focus-visible:ring-4 focus-visible:ring-pink-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Start recording"
+              >
+                <svg class="h-11 w-11 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4z"/>
+                  <path d="M19 10a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V19h-2a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.07A7 7 0 0 0 19 10z"/>
+                </svg>
+              </button>
+              <div class="text-center">
+                <p class="text-base font-bold text-gray-700">Tap to start recording</p>
+                <p class="text-sm font-semibold text-gray-400 mt-0.5">Your microphone will activate</p>
+              </div>
+            </div>
+          }
+
+          @if (state() === 'requestingPermission') {
+            <div
+              class="flex flex-col items-center gap-3"
+              role="status"
+              aria-live="polite"
+              aria-label="Requesting microphone access"
+            >
+              <div class="flex h-28 w-28 items-center justify-center rounded-full bg-pink-50">
+                <div class="h-8 w-8 rounded-full border-2 border-pink-200 border-t-pink-500 animate-spin" aria-hidden="true"></div>
+              </div>
+              <div class="text-center">
+                <p class="text-base font-bold text-gray-700">Requesting microphone…</p>
+                <p class="text-sm font-semibold text-gray-400 mt-0.5">Check the browser popup</p>
+              </div>
+            </div>
+          }
+
+          @if (state() === 'recording') {
+            <div class="flex flex-col items-center gap-3">
+              <div
+                class="relative"
+                role="status"
+                aria-live="polite"
+                [attr.aria-label]="'Recording: ' + formatTime(timer())"
+              >
+                <span class="absolute inset-0 rounded-full bg-rose-300/30 animate-ping" aria-hidden="true"></span>
+                <button
+                  id="stop-recording-btn"
+                  type="button"
+                  (click)="stopRecording()"
+                  [disabled]="disabled()"
+                  class="mic-btn mic-btn--recording relative flex h-28 w-28 items-center justify-center focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-300 disabled:opacity-40"
+                  aria-label="Stop recording"
+                >
+                  <span class="h-9 w-9 rounded-xl bg-white" aria-hidden="true"></span>
+                </button>
+              </div>
+
+              <div class="flex flex-col items-center gap-1.5">
+                <div class="waveform" aria-hidden="true">
+                  <span class="waveform__bar"></span>
+                  <span class="waveform__bar"></span>
+                  <span class="waveform__bar"></span>
+                  <span class="waveform__bar"></span>
+                  <span class="waveform__bar"></span>
+                </div>
+                <p class="font-mono text-xl font-black text-rose-500">{{ formatTime(timer()) }}</p>
+                <p class="text-sm font-semibold text-gray-400">Tap the button to stop</p>
+              </div>
+
+              <button
+                id="cancel-recording-btn"
+                type="button"
+                (click)="cancelRecording()"
+                class="text-xs font-bold text-gray-400 underline underline-offset-2 hover:text-gray-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 rounded"
+                aria-label="Cancel recording"
+              >
+                Cancel
+              </button>
+            </div>
+          }
+
+          @if (state() === 'recorded') {
+            <div class="flex w-full flex-col gap-3">
+              <div class="rounded-2xl bg-purple-50/60 p-4 ring-1 ring-purple-100">
+                <p class="mb-2 text-[10px] font-black uppercase tracking-widest text-purple-400">
+                  Your recording
+                </p>
+                <audio
+                  id="playback-audio"
+                  [src]="audioUrl()"
+                  controls
+                  class="w-full"
+                  aria-label="Listen to your recording before submitting"
+                ></audio>
+                <p class="mt-1.5 text-right text-xs font-bold text-gray-400">{{ formatTime(timer()) }}</p>
+              </div>
+
+              @if (!canSubmit()) {
+                <p class="text-center text-xs font-bold text-amber-500" role="alert">
+                  Minimum {{ viewModel()!.recording.minDurationSec }}s required — you recorded {{ timer() }}s
+                </p>
+              }
+
+              <div class="grid grid-cols-2 gap-3">
+                <button
+                  id="re-record-btn"
+                  type="button"
+                  (click)="resetToIdle()"
+                  [disabled]="disabled()"
+                  class="btn-secondary py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 disabled:opacity-40"
+                  aria-label="Discard and record again"
+                >
+                  Re-record
+                </button>
+                <button
+                  id="submit-recording-btn"
+                  type="button"
+                  (click)="submitRecording(view)"
+                  [disabled]="disabled() || !canSubmit()"
+                  class="btn-submit py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-300"
+                  [attr.aria-label]="canSubmit() ? 'Submit your recording' : 'Record at least ' + viewModel()!.recording.minDurationSec + ' seconds to submit'"
+                >
+                  Submit ✨
+                </button>
+              </div>
+            </div>
+          }
+
+          @if (state() === 'submitting') {
+            <div
+              class="flex flex-col items-center gap-3"
+              role="status"
+              aria-live="polite"
+              aria-label="Submitting your recording, please wait"
+            >
+              <div class="flex h-28 w-28 items-center justify-center rounded-full bg-pink-50">
+                <div class="h-8 w-8 rounded-full border-2 border-pink-200 border-t-pink-500 animate-spin" aria-hidden="true"></div>
+              </div>
+              <div class="text-center">
+                <p class="text-base font-bold text-gray-700">Submitting…</p>
+                <p class="text-sm font-semibold text-gray-400 mt-0.5">Please wait</p>
+              </div>
+            </div>
+          }
+
+          @if (state() === 'error' && recordingError()) {
+            <div class="flex w-full flex-col gap-3" role="alert" aria-live="assertive">
+              <div class="rounded-2xl bg-rose-50 p-4 ring-1 ring-rose-100">
+                <div class="flex items-start gap-3">
+                  <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-rose-100">
+                    <svg class="h-4 w-4 text-rose-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    </svg>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-sm font-black text-rose-700">{{ errorTitle() }}</p>
+                    <p class="mt-0.5 text-xs font-semibold leading-relaxed text-rose-500">{{ recordingError()!.message }}</p>
+                  </div>
+                </div>
+              </div>
+
+              @if (
+                recordingError()!.type !== 'permissionDenied' &&
+                recordingError()!.type !== 'microphoneNotFound'
+              ) {
+                <button
+                  id="retry-btn"
+                  type="button"
+                  (click)="resetToIdle()"
+                  class="btn-submit w-full py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-300"
+                  aria-label="Try again"
+                >
+                  Try again
+                </button>
+              }
+            </div>
+          }
+
+        </div>
+
+
+        @if (state() === 'idle' || state() === 'recording' || state() === 'recorded') {
+          <div
+            class="flex items-center gap-3 rounded-2xl bg-white/60 px-4 py-3 ring-1 ring-white/80"
+            aria-label="Recording requirements"
+          >
+            <div class="flex-1 text-center">
+              <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">Minimum</p>
+              <p class="text-sm font-black text-pink-500">{{ view.recording.minDurationSec }}s</p>
+            </div>
+            <div class="h-8 w-px bg-gray-200" aria-hidden="true"></div>
+            <div class="flex-1 text-center">
+              <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">Maximum</p>
+              <p class="text-sm font-black text-blue-400">{{ view.recording.maxDurationSec }}s</p>
+            </div>
+          </div>
+        }
+
+      </div>
+    </section>
+  </div>
+}
