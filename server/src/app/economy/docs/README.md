@@ -1,100 +1,116 @@
-## Economy Engine
+# Economy Module — Rewards & Store System (Week 2)
 
- * This module manages the transactional logic for virtual credits within the platform. It handles everything from validating game sessions and performance-based rewards to ensuring data integrity through atomic transactions and audit logs.
---------------------------------------------------------------------------------------------------------------------
-### Key Features:
+## Context
 
-- Atomicity: Uses Prisma's `$transaction` to ensure the user's balance and the reward transaction log are updated simultaneously.
+Extension of the existing economy module. The engine already credited balances via `POST /economy/claim-reward`. This week adds the ability to safely debit them through a virtual store where users can purchase cosmetic items (avatars and banners).
 
-- Idempotency: Prevents duplicate claims by enforcing a unique `game_session_id` and handling Prisma `P2002` (race-condition safe).
+---
 
-- Security: Implements maximum threshold validation (`MAX_REWARD_THRESHOLD`) to block reward anomalies or potential score fraud.
+## New endpoint
 
-- Auditing: Automatic recording of every movement within the `audit_log` schema (for traceability/support).
+### `POST /economy/purchase`
 
-It is worth noting that I focused on deterministic reward calculation and clean separation between business logic (pure functions) and persistence (repository + Prisma), to maximize reliability under real game conditions.
+Requires JWT. The `userId` is always extracted from the token, never from the request body.
 
---------------------------------------------------------------------------------------------------------------------
-### Module Architecture:
+**Request body:**
+```json
+{ "itemId": "uuid" }
+```
 
-I separated business logic from persistence:
-- Controller: Defines the `POST /economy/claim-reward` endpoint and routes authenticated requests to the service.
-- Service: Orchestrates business logic, security validations (threshold + idempotency), and exception handling.
-- Logic: Pure functions (no dependencies) for credit + XP calculations to enable fast unit testing.
-- Repository: Data access layer that encapsulates Prisma queries and executes the atomic `$transaction`.
-- DTO: Data Transfer Objects with strict validation.
---------------------------------------------------------------------------------------------------------------------
-### Integration of the Motor of Economy ↔ Game Results & Testing
+**Response 201:**
+```json
+{
+  "status": "success",
+  "purchaseId": "uuid",
+  "itemId": "uuid",
+  "itemName": "Dragon Avatar",
+  "itemType": "avatar",
+  "creditsSpent": 200,
+  "newBalance": 300,
+  "processedAt": "2026-06-12T18:00:00.000Z"
+}
+```
 
-#### Objective Principal
+**Error responses:**
 
-Link the internal Economy Engine with the practical outputs of the games and ensure its reliability through automatic tests.
+| Code | Cause |
+|------|-------|
+| 400 | Insufficient funds |
+| 404 | Item not found or inactive |
+| 409 | User already owns the item |
+| 500 | Internal error (transaction failed) |
 
-#### Integration Behavior
+---
 
-The claim flow is designed to be triggered by the game results pipeline (game-engine → economy dispatcher → backend endpoint). When a game finishes, the engine receives `(gameSessionId, score, victory)` and:
+## New tables (migration)
 
-**Tables (what each one does, in simple terms):**
+```bash
+npx prisma migrate dev --name add_store_and_inventory
+```
 
-- **app_user**: stores the user balance and updates it on reward claim (`credits` + `experience_points`).
-- **economy_transaction**: records the awarded reward for each `game_session_id` (idempotency + history).
-- **audit_log**: stores a detailed audit entry for the transaction (traceability). 
+**`store_item`** — store catalog with name, type (`avatar` | `banner`), price, and active/inactive status.
 
+**`user_inventory`** — tracks which items each user owns. Has a `@@unique([user_id, store_item_id])` constraint that acts as a concurrency safety net.
 
+**`purchase_transaction`** — purchase ledger. Stores balance before and after each transaction for full traceability.
 
-1. Calculates credits + XP deterministically.
-2. Enforces `MAX_REWARD_THRESHOLD` (security).
-3. Prevents duplicate claims for the same `gameSessionId` (idempotency + Prisma `P2002`).
-4. Persists everything atomically via Prisma `$transaction`:
-   - update balance (`app_user`)
-   - create economy transaction (`economy_transaction`)
-   - write audit entry (`audit_log`)
+---
 
-#### Testing Coverage (Definition of Done)
+## Purchase flow
 
-To meet the reliability criteria, the economy test suite covers both ideal and boundary scenarios:
+```
+1. Verify item exists and is active                    → 404 if not
+2. Fetch current user balance                          → 404 if user not found
+3. validatePurchase(balance, price)                    → 400 if insufficient
+4. Verify user does not already own the item           → 409 if owned
+5. prisma.$transaction:
+   a. updateMany WHERE credits >= price → decrement    → INSUFFICIENT_FUNDS if count=0
+   b. findUnique to get post-decrement balance
+   c. userInventory.create                             → P2002 if race condition
+   d. purchaseTransaction.create
+   e. auditLog.create
+```
 
-- **Unit tests (Logic / Pure Functions)**
-  - Victory vs participation base rules
-  - Bonus calculation with `floor()` behavior
-  - Edge cases: `score=0` and `score=1000`
-  - Determinism: same inputs → same outputs
+If any step inside the `$transaction` fails, Prisma rolls back everything.
 
-- **Unit tests (Service)**
-  - Security: rewards above `MAX_REWARD_THRESHOLD` are blocked (`400 BadRequest`)
-  - Idempotency: duplicate sessions are rejected (`409 Conflict`)
-  - Race-condition safety: Prisma `P2002` mapped to `409 Conflict`
-  - Happy path: returns the updated balance + awarded reward
+---
 
-- **Repository tests (Integrity of atomic transaction via mock Prisma)**
-  - `$transaction` includes balance update + economy transaction + audit log
-  - Rollback expectation when audit step fails
-  - FK/unique constraint error handling
+## Concurrency protection
 
-- **Controller tests (delegation + error propagation)**
-  - Correct delegation to service
-  - Proper propagation of `400/409`
-  - Participation vs victory scenarios
+Three layers in execution order:
 
-- **Stress tests (Concurrency simulation)**
-  - 10 concurrent claims on the same session → 1 success and 9 conflicts (simulated idempotency)
-  - Burst calls across different sessions → successful execution
+1. **In-memory pre-check** — `validatePurchase` compares balance against price before touching the DB.
+2. **DB double-check** — `updateMany WHERE credits >= price` ensures the decrement only happens if the balance is still sufficient at the exact moment of the UPDATE. If another request drained the balance between step 1 and this one, `count` returns 0 and `INSUFFICIENT_FUNDS` is thrown.
+3. **Unique constraint** — `@@unique([user_id, store_item_id])` on `user_inventory` guarantees that two concurrent requests that pass both previous checks can only insert one row. The second receives P2002 → 409.
 
-#### To test (Jest/Nx)
+---
 
-From the project root (workspace):
-- `npx nx test server --all --skip-nx-cache`
+## Tests
 
-Note: whithin Nx workspaces, the legacy command, `npx jest server/src/app/economy` may not properly resolve the graph or targets. Using Nx is the recommended path.
+```bash
+# Unit + repository tests
+npx jest server/src/app/economy/test/economy.purchase.spec.ts --runInBand
 
-#### Local Test Result (pattern Economy)
+# Stress & concurrency tests
+npx jest server/src/app/economy/test/economy.stress.spec.ts --runInBand
+```
 
-`npx nx test server --testNamePattern=Economy --runInBand`
-- 1 skipped
-- 6 passed
-- 48 total tests
-- 41 passed
+**`economy.purchase.spec.ts`** — 32 tests:
+- Pure logic for `validatePurchase` (5 cases)
+- Service: happy path, all error cases, Prisma error mapping, `INSUFFICIENT_FUNDS`, `USER_NOT_FOUND` (10 cases)
+- Repository: `findActiveStoreItem`, `findUserInventoryItem`, `createPurchaseTransaction` atomicity, rollback, P2002/P2003 propagation (17 cases)
 
---------------------------------------------------------------------------------------------------------------------
+**`economy.stress.spec.ts`** — 11 tests:
+- Concurrency: 10 and 50 simultaneous requests for the same item → only 1 succeeds
+- Burst: 100 requests for different items → all succeed
+- Balance edge cases: exact balance, balance-1, balance 0
+- Inactive/non-existent item
+- Rollback on DB crash
+- Sequential idempotency
+- Double-check: balance drained between pre-check and transaction
+
+**Total: 43 tests, 0 failures.**
+
+---
+
 ### Perez Sofia.
-

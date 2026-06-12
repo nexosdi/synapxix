@@ -52,9 +52,9 @@ describe('EconomyRepository — Integration Tests', () => {
         const txClient = {
           app_user: {
             update: jest.fn().mockResolvedValue({
-              user_id: 'user-1',
               credits: 110,
               experience_points: 0,
+
             }),
           },
           economyTransaction: {
