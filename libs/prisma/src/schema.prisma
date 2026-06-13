@@ -56,7 +56,10 @@ model app_user {
   gameSessions      GameSession[]           @relation("UserToGameSessions")
   cognitiveMetrics  CognitiveMetric[]       @relation("UserToMetrics")
   userProfile       UserProfile?
-
+  
+  inventory    UserInventory[]       @relation("UserToInventory")
+  purchases    PurchaseTransaction[] @relation("UserToPurchases")
+  
   @@map("app_user")
   @@schema("auth")
 }
@@ -108,6 +111,53 @@ model GameAttempt {
   session           GameSession @relation(fields: [session_id], references: [session_id])
 
   @@map("game_attempt")
+  @@schema("core")
+}
+model StoreItem {
+  store_item_id String   @id @default(uuid()) @db.Uuid
+  name          String   @db.VarChar(150)
+  type          String   @db.VarChar(20)   // "avatar" | "banner"
+  price         Int                         // en créditos virtuales
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+
+  inventory     UserInventory[]
+  purchases     PurchaseTransaction[]
+
+  @@map("store_item")
+  @@schema("core")
+}
+
+model UserInventory {
+  inventory_id  String    @id @default(uuid()) @db.Uuid
+  user_id       String    @db.Uuid
+  store_item_id String    @db.Uuid
+  acquired_at   DateTime  @default(now())
+
+  user          app_user  @relation("UserToInventory", fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  item          StoreItem @relation(fields: [store_item_id], references: [store_item_id], onDelete: Cascade)
+
+  // Safety net contra concurrencia: solo 1 fila por (user, item)
+  @@unique([user_id, store_item_id])
+  @@map("user_inventory")
+  @@schema("core")
+}
+
+model PurchaseTransaction {
+  purchase_id    String    @id @default(uuid()) @db.Uuid
+  user_id        String    @db.Uuid
+  store_item_id  String    @db.Uuid
+  credits_spent  Int
+  balance_before Int
+  balance_after  Int
+  created_at     DateTime  @default(now())
+
+  user           app_user  @relation("UserToPurchases", fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  item           StoreItem @relation(fields: [store_item_id], references: [store_item_id], onDelete: Cascade)
+
+  @@map("purchase_transaction")
   @@schema("core")
 }
 
