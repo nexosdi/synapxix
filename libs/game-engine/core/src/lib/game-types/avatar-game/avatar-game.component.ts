@@ -94,7 +94,7 @@ export class AvatarGameComponent implements BaseGameComponent {
       gameType: 'avatar',
       answer: { selectedAvatarId: id },
       isCorrect: true,
-      score: 50,
+      score: 100,
       timeSpentMs: 0
     });
   }

@@ -157,7 +157,7 @@ export class CategorizationGameComponent implements OnInit, BaseGameComponent {
           gameType: 'categorization',
           answer: { categoryMapping: {} },
           isCorrect: true,
-          score: this.totalCount() * 25,
+          score: 100,
           timeSpentMs: 0
         });
       }

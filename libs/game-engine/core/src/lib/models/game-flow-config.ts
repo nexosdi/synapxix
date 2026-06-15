@@ -17,5 +17,5 @@ export interface GameFlowConfig {
 export const DEFAULT_FLOW_CONFIG: GameFlowConfig = {
   readyToPlayDelayMs: 300,
   answerToFeedbackDelayMs: 800,
-  feedbackAutoAdvanceMs: 4500,
+  feedbackAutoAdvanceMs: 0,
 };

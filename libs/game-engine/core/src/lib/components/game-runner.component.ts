@@ -8,6 +8,8 @@ import {
   effect,
   inject,
   ComponentRef,
+  signal,
+  computed,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { resolveGameLoader } from '../game-registry';
@@ -40,11 +42,103 @@ import { HttpClient } from '@angular/common/http';
       </div>
     }
 
-    <!-- Feedback bar -->
+    <!-- Feedback overlay — Synapxix branded modal -->
     @if (flowService.isFeedback()) {
-      <div class="fixed top-0 left-0 w-full p-4 bg-green-600 text-white flex justify-between z-50">
-        <span>Respuesta registrada.</span>
-        <button (click)="onManualAdvance()" class="bg-white text-green-600 px-4 py-1 rounded font-bold shadow">Continuar</button>
+      <div
+        class="fixed inset-0 flex items-center justify-center p-4"
+        style="z-index: 9999; background: rgba(30,0,60,0.55); backdrop-filter: blur(8px);"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Exercise Result"
+      >
+        <div
+          class="relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl"
+          style="background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); border: 1.5px solid rgba(255,255,255,0.7);"
+        >
+          <!-- Colored header -->
+          <div
+            class="relative px-8 pt-10 pb-8 flex flex-col items-center gap-4 text-white overflow-hidden"
+            [style.background]="feedbackResult()?.isCorrect
+              ? 'linear-gradient(135deg, #5b21b6 0%, #2e1065 100%)'
+              : 'linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%)'"
+          >
+            <!-- Logo in corner -->
+            <img
+              src="/logo.png"
+              alt="Synapxix"
+              class="absolute top-4 right-4 h-8 w-8 object-contain mix-blend-screen opacity-90"
+              aria-hidden="true"
+            />
+
+            <!-- Decorative background elements -->
+            <div class="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl"></div>
+            <div class="absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-black/10 blur-2xl"></div>
+
+            <!-- Premium Icon Badge -->
+            <div class="relative z-10 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white shadow-2xl ring-8 ring-white/20"
+                 [class.shadow-emerald-900]="feedbackResult()?.isCorrect"
+                 [class.shadow-rose-900]="!feedbackResult()?.isCorrect"
+                 style="transform: rotate(-3deg);">
+              @if (feedbackResult()?.isCorrect) {
+                <!-- Success Star Icon -->
+                <svg class="h-10 w-10 text-emerald-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <div class="absolute -top-1 -right-1 h-5 w-5 animate-ping rounded-full bg-emerald-400 opacity-60"></div>
+              } @else {
+                <!-- Try Again Icon -->
+                <svg class="h-10 w-10 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              }
+            </div>
+
+            <h3 class="relative z-10 mt-2 text-3xl font-black italic text-center tracking-tight text-white drop-shadow-md">
+              {{ feedbackResult()?.isCorrect ? 'Excellent!' : 'Keep it up!' }}
+            </h3>
+            
+            <!-- Score badges -->
+            <div class="relative z-10 flex gap-3 mt-2 w-full justify-center">
+              <div class="flex flex-col items-center bg-black/20 backdrop-blur-md rounded-2xl px-6 py-3 border border-white/10 shadow-inner w-1/2">
+                <span class="text-[10px] font-black uppercase tracking-widest text-white/70 mb-1">Score</span>
+                <div class="flex items-baseline gap-1">
+                  <span class="text-3xl font-black text-white">{{ feedbackResult()?.score ?? 0 }}</span>
+                  <span class="text-sm font-bold text-white/50">/100</span>
+                </div>
+              </div>
+              <div class="flex flex-col items-center bg-white/20 backdrop-blur-md rounded-2xl px-6 py-3 border border-white/30 shadow-lg w-1/2">
+                <span class="text-[10px] font-black uppercase tracking-widest text-white/90 mb-1">Experience</span>
+                <span class="text-3xl font-black text-white drop-shadow-sm">+{{ feedbackXp() }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feedback text body -->
+          <div class="px-8 py-6 flex flex-col gap-5">
+            @if (feedbackResult()?.feedback) {
+              <div class="rounded-2xl px-5 py-4 ring-1"
+                [style]="feedbackResult()?.isCorrect
+                  ? 'background:rgba(52,211,153,0.08);border-color:rgba(52,211,153,0.25)'
+                  : 'background:rgba(248,113,113,0.08);border-color:rgba(248,113,113,0.25)'"
+              >
+                <p class="text-[10px] font-black uppercase tracking-widest mb-1.5"
+                  [style.color]="feedbackResult()?.isCorrect ? '#059669' : '#dc2626'"
+                >AI Feedback</p>
+                <p class="text-sm font-semibold text-gray-700 leading-relaxed">{{ feedbackResult()?.feedback }}</p>
+              </div>
+            }
+
+            <button
+              id="feedback-continue-btn"
+              type="button"
+              (click)="onManualAdvance()"
+              class="w-full py-4 rounded-2xl text-white text-sm font-black tracking-wide shadow-lg transition-transform active:scale-95"
+              style="background: linear-gradient(135deg,#b794f4 0%,#f687b3 45%,#fbd38d 100%);"
+            >
+              Continue →
+            </button>
+          </div>
+        </div>
       </div>
     }
 
@@ -82,6 +176,15 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
   private playStartMs: number | null = null;
   /** Tracks the ID of the content currently being loaded defensively against concurrent renders */
   private pendingRenderId: string | null = null;
+
+  /** Stores the last result emitted by a game so the feedback modal can display real AI data */
+  protected readonly feedbackResult = signal<AnyGameResult | null>(null);
+
+  /** XP to display in the feedback modal: 50% of score, minimum 5 */
+  protected readonly feedbackXp = computed(() => {
+    const score = this.feedbackResult()?.score ?? 0;
+    return Math.max(5, Math.round(score * 0.5));
+  });
 
   private readonly renderEffect = effect(() => {
     // Reactively listen to content changes
@@ -258,7 +361,10 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
     const completedQuickly = realTimeSpentMs < 60000;
     const enrichedResult: AnyGameResult = { ...result, timeSpentMs: realTimeSpentMs };
 
-    // 3. Record the attempt
+    // 3. Store result so the feedback modal can show real AI data
+    this.feedbackResult.set(enrichedResult);
+
+    // 4. Record the attempt
     const currentSession = this.sessionService.currentSession();
     this.sessionService.submitAttempt(contentId, enrichedResult);
     if (currentSession) {
@@ -275,10 +381,11 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
     }
 
     // That's it! The flow service handles:
-    // ANSWERING →(800ms)→ FEEDBACK →(4500ms)→ ADVANCING (auto)
+    // ANSWERING →(800ms)→ FEEDBACK →(wait for manual advance)→ ADVANCING
   }
 
   public onManualAdvance(): void {
+    this.feedbackResult.set(null); // Prevent stale state leaking to next game
     this.flowService.advanceNext();
   }
 }

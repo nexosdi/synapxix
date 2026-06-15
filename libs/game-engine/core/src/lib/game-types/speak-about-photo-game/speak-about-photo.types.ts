@@ -29,7 +29,8 @@ export interface SpeakAboutPhotoSubmissionPayload {
 }
 
 export interface SpeakAboutPhotoSubmissionResponse {
-  sessionId: string;
+  isCorrect: boolean;
   score: number;
-  recognizedText: string;
+  feedback: string;
+  rawResult?: string;
 }
