@@ -38,7 +38,8 @@ export interface ReadAloudSubmissionPayload {
 }
 
 export interface ReadAloudSubmissionResponse {
-  pronunciationScore?: number;
-  completenessScore?: number;
-  recognizedText?: string;
+  isCorrect: boolean;
+  score: number;
+  feedback: string;
+  rawResult?: string;
 }

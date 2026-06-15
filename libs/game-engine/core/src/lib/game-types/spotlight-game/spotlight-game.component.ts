@@ -98,7 +98,7 @@ export class SpotlightGameComponent implements OnInit, BaseGameComponent {
         gameType: 'spotlight',
         answer: { selectedAreas: this.targets().map(t => t.id) },
         isCorrect: true,
-        score: this.targets().length * 30,
+        score: 100,
         timeSpentMs: 0
       });
     }

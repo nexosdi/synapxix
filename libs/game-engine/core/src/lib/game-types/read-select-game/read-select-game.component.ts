@@ -114,7 +114,7 @@ export class ReadSelectGameComponent implements BaseGameComponent {
       gameType: 'read-select',
       answer: { selectedOptionId: Array.from(this.foundWords()).join(',') },
       isCorrect: true, // Victory state reached
-      score: this.foundWords().size * 10,
+      score: 100,
       timeSpentMs: 0
     });
   }

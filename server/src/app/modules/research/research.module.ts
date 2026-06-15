@@ -21,7 +21,7 @@ import { ConfigModule } from '@nestjs/config';
  * so that ConfigService is available for AiProvider to read GOOGLE_GEN_AI_KEY.
  */
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule, LearningModule],
   controllers: [ResearchController],
   providers: [ResearchService, AiProvider],
   exports: [AiProvider],
