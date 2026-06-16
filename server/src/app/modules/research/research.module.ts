@@ -1,10 +1,15 @@
 import { Module } from '@nestjs/common';
+import { CacheModule } from '@nestjs/cache-manager';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { redisStore } from 'cache-manager-redis-yet';
 import { ResearchService } from './research.service';
 import { ResearchController } from './research.controller';
 import { AiProvider } from './providers/ai.provider';
-import { LearningService } from '../../learning/learning.service';
 import { LearningModule } from '../../learning/learning.module';
-import { ConfigModule } from '@nestjs/config';
+import { PrismaModule } from '@nexosdi.synapxix/prisma';
+import { AiPromptRepository } from './repositories/ai-prompt.repository';
+import { AiPromptService } from './services/ai-prompt.service';
+import { AiCacheInterceptor } from './interceptors/ai-cache.interceptor';
 
 /**
  * ResearchModule — AI-powered pedagogical analysis.
@@ -21,9 +26,33 @@ import { ConfigModule } from '@nestjs/config';
  * so that ConfigService is available for AiProvider to read GOOGLE_GEN_AI_KEY.
  */
 @Module({
-  imports: [ConfigModule],
+  imports: [
+    ConfigModule,
+    PrismaModule,
+    CacheModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (config: ConfigService) => ({
+        store: await redisStore({
+          socket: {
+            host: config.get<string>('REDIS_HOST', 'localhost'),
+            port: config.get<number>('REDIS_PORT', 6379),
+          },
+          password: config.get<string>('REDIS_PASSWORD'), // Optional password for Redis
+        }),
+        ttl: config.get<number>('CACHE_TTL_SECONDS', 300) * 1000,
+        max: config.get<number>('CACHE_MAX_ENTRIES', 100),
+      }),
+      inject: [ConfigService],
+    }),
+  ],
   controllers: [ResearchController],
-  providers: [ResearchService, AiProvider],
-  exports: [AiProvider],
+  providers: [
+    ResearchService,
+    AiProvider,
+    AiPromptRepository,
+    AiPromptService,
+    AiCacheInterceptor,
+  ],
+  exports: [AiProvider, AiPromptService],
 })
 export class ResearchModule {}

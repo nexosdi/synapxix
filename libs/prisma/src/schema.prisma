@@ -1,14 +1,15 @@
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL") 
+  url      = env("DATABASE_URL")
   schemas  = ["audit", "auth", "communication", "core", "knowledge", "psychometrics"]
 }
+
 model Institution {
-  institution_id String @id @default(uuid()) @db.Uuid
+  institution_id String      @id @default(uuid()) @db.Uuid
   name           String?     @db.VarChar(150)
   description    String?
   created_at     DateTime    @default(now())
@@ -19,8 +20,8 @@ model Institution {
 }
 
 model Structure {
-  structure_id   String @id @default(uuid()) @db.Uuid
-  institution_id String @db.Uuid
+  structure_id   String          @id @default(uuid()) @db.Uuid
+  institution_id String          @db.Uuid
   name           String          @db.VarChar(150)
   parent_id      String?         @db.Uuid
   description    String?
@@ -35,26 +36,26 @@ model Structure {
 }
 
 model app_user {
-  user_id           String                  @id @default(uuid()) @db.Uuid
-  username          String                  @db.VarChar(150)
-  email             String                  @db.VarChar(150)
-  firstname         String                  @db.VarChar(150)
-  lastname          String                  @db.VarChar(150)
-  role              String                  @default("user") @db.VarChar(150)
-  created_at        DateTime                @default(now())
-  active            Boolean                 @default(true)
+  user_id           String                @id @default(uuid()) @db.Uuid
+  username          String                @db.VarChar(150)
+  email             String                @db.VarChar(150)
+  firstname         String                @db.VarChar(150)
+  lastname          String                @db.VarChar(150)
+  role              String                @default("user") @db.VarChar(150)
+  created_at        DateTime              @default(now())
+  active            Boolean               @default(true)
   auditLogs         AuditLog[]
   sessions          Session[]
-  linksFrom         UserLink[]              @relation("UserLinkFrom")
-  linksTo           UserLink[]              @relation("UserLinkTo")
+  linksFrom         UserLink[]            @relation("UserLinkFrom")
+  linksTo           UserLink[]            @relation("UserLinkTo")
   userStructures    UserStructure[]
   notifications     Notification[]
   contentProgress   UserContentProgress[]
-  credits           Int                     @default(0)
-  experience_points Int                     @default(0)
-  transactions      EconomyTransaction[]    @relation("UserToTransactions")
-  gameSessions      GameSession[]           @relation("UserToGameSessions")
-  cognitiveMetrics  CognitiveMetric[]       @relation("UserToMetrics")
+  credits           Int                   @default(0)
+  experience_points Int                   @default(0)
+  transactions      EconomyTransaction[]  @relation("UserToTransactions")
+  gameSessions      GameSession[]         @relation("UserToGameSessions")
+  cognitiveMetrics  CognitiveMetric[]     @relation("UserToMetrics")
   userProfile       UserProfile?
 
   @@map("app_user")
@@ -62,31 +63,31 @@ model app_user {
 }
 
 model EconomyTransaction {
-  transaction_id     String      @id @default(uuid()) @db.Uuid
-  user_id            String      @db.Uuid
-  game_session_id    String      @unique @db.Uuid
-  credits_awarded    Int
-  xp_awarded         Int         @default(0)
-  reward_type        String      @default("GAME_VICTORY") @db.VarChar(50)
-  created_at         DateTime    @default(now())
+  transaction_id  String   @id @default(uuid()) @db.Uuid
+  user_id         String   @db.Uuid
+  game_session_id String   @unique @db.Uuid
+  credits_awarded Int
+  xp_awarded      Int      @default(0)
+  reward_type     String   @default("GAME_VICTORY") @db.VarChar(50)
+  created_at      DateTime @default(now())
 
-  user               app_user    @relation("UserToTransactions", fields: [user_id], references: [user_id], onDelete: Cascade)
-  gameSession        GameSession @relation("TransactionToGameSession", fields: [game_session_id], references: [session_id], onDelete: Cascade)
+  user        app_user    @relation("UserToTransactions", fields: [user_id], references: [user_id], onDelete: Cascade)
+  gameSession GameSession @relation("TransactionToGameSession", fields: [game_session_id], references: [session_id], onDelete: Cascade)
 
   @@map("economy_transaction")
   @@schema("core")
 }
 
 model GameSession {
-  session_id         String       @id @default(uuid()) @db.Uuid
-  user_id            String?      @db.Uuid
-  history_id         String       @db.VarChar(150)
-  status             String       @default("playing") @db.VarChar(20)
-  category           String?      @db.VarChar(50)
-  started_at         DateTime     @default(now())
-  finished_at        DateTime?
-  
-  user               app_user?    @relation("UserToGameSessions", fields: [user_id], references: [user_id], onDelete: SetNull)
+  session_id  String    @id @default(uuid()) @db.Uuid
+  user_id     String?   @db.Uuid
+  history_id  String    @db.VarChar(150)
+  status      String    @default("playing") @db.VarChar(20)
+  category    String?   @db.VarChar(50)
+  started_at  DateTime  @default(now())
+  finished_at DateTime?
+
+  user               app_user?           @relation("UserToGameSessions", fields: [user_id], references: [user_id], onDelete: SetNull)
   attempts           GameAttempt[]
   economyTransaction EconomyTransaction? @relation("TransactionToGameSession")
   cognitiveMetrics   CognitiveMetric[]   @relation("SessionToMetrics")
@@ -96,25 +97,25 @@ model GameSession {
 }
 
 model GameAttempt {
-  attempt_id        String      @id @default(uuid()) @db.Uuid
-  session_id        String      @db.Uuid
-  content_id        String      @db.VarChar(150)
-  game_type         String      @db.VarChar(50)
+  attempt_id        String   @id @default(uuid()) @db.Uuid
+  session_id        String   @db.Uuid
+  content_id        String   @db.VarChar(150)
+  game_type         String   @db.VarChar(50)
   is_correct        Boolean
   score             Int
   completed_quickly Boolean?
-  created_at        DateTime    @default(now())
+  created_at        DateTime @default(now())
 
-  session           GameSession @relation(fields: [session_id], references: [session_id])
+  session GameSession @relation(fields: [session_id], references: [session_id])
 
   @@map("game_attempt")
   @@schema("core")
 }
 
 model UserLink {
-  link_id      String @id @default(uuid()) @db.Uuid
-  id_user_from String? @db.Uuid
-  id_user_to   String? @db.Uuid
+  link_id      String    @id @default(uuid()) @db.Uuid
+  id_user_from String?   @db.Uuid
+  id_user_to   String?   @db.Uuid
   link_type    linkType
   created_at   DateTime  @default(now())
   userFrom     app_user? @relation("UserLinkFrom", fields: [id_user_from], references: [user_id])
@@ -126,8 +127,8 @@ model UserLink {
 }
 
 model UserStructure {
-  user_id      String @db.Uuid
-  structure_id String @db.Uuid
+  user_id      String    @db.Uuid
+  structure_id String    @db.Uuid
   structure    Structure @relation(fields: [structure_id], references: [structure_id])
   user         app_user  @relation(fields: [user_id], references: [user_id])
 
@@ -137,8 +138,8 @@ model UserStructure {
 }
 
 model Session {
-  session_id String @id @default(uuid()) @db.Uuid
-  user_id    String? @db.Uuid
+  session_id String    @id @default(uuid()) @db.Uuid
+  user_id    String?   @db.Uuid
   token      String
   created_at DateTime  @default(now())
   expires_at DateTime
@@ -149,52 +150,49 @@ model Session {
 }
 
 model Dimension {
-  dimension_id String @id @default(uuid()) @db.Uuid
+  dimension_id String      @id @default(uuid()) @db.Uuid
   name         String      @db.VarChar(150)
   description  String?
   archetypes   Archetype[] @relation("ArchetypeToDimension")
-  
+
   @@map("dimension")
   @@schema("psychometrics")
 }
 
 model Archetype {
-  archetype_id String                     @id @default(uuid()) @db.Uuid
-  dimension_id String?  @db.Uuid
-  name         String                  @db.VarChar(150)
+  archetype_id String     @id @default(uuid()) @db.Uuid
+  dimension_id String?    @db.Uuid
+  name         String     @db.VarChar(150)
   description  String?
-  dimension    Dimension?              @relation("ArchetypeToDimension", fields: [dimension_id], references: [dimension_id])
+  dimension    Dimension? @relation("ArchetypeToDimension", fields: [dimension_id], references: [dimension_id])
 
   @@map("archetype")
   @@schema("psychometrics")
 }
 
 model CognitiveMetric {
-  metric_id        String      @id @default(uuid()) @db.Uuid
-  session_id       String      @db.Uuid
-  user_id          String?     @db.Uuid
+  metric_id        String   @id @default(uuid()) @db.Uuid
+  session_id       String   @db.Uuid
+  user_id          String?  @db.Uuid
   accuracy         Float
   reaction_time    Float
   cognitive_load   Float
   memory_retention Float?
   attention_span   Float?
-  created_at       DateTime    @default(now())
+  created_at       DateTime @default(now())
 
-  session          GameSession @relation("SessionToMetrics", fields: [session_id], references: [session_id], onDelete: Cascade)
-  user             app_user?   @relation("UserToMetrics", fields: [user_id], references: [user_id], onDelete: Cascade)
+  session GameSession @relation("SessionToMetrics", fields: [session_id], references: [session_id], onDelete: Cascade)
+  user    app_user?   @relation("UserToMetrics", fields: [user_id], references: [user_id], onDelete: Cascade)
 
   @@map("cognitive_metric")
   @@schema("psychometrics")
 }
 
-
-
-
 model Content {
-  content_id      String @id @default(uuid()) @db.Uuid
+  content_id      String                @id @default(uuid()) @db.Uuid
   title           String
   description     String?
-  prerequisite_id String? @db.Uuid
+  prerequisite_id String?               @db.Uuid
   created_at      DateTime              @default(now())
   prerequisite    Content?              @relation("ContentPrerequisite", fields: [prerequisite_id], references: [content_id])
   prerequisites   Content[]             @relation("ContentPrerequisite")
@@ -205,8 +203,8 @@ model Content {
 }
 
 model UserContentProgress {
-  user_id     String @db.Uuid
-  content_id  String @db.Uuid
+  user_id     String   @db.Uuid
+  content_id  String   @db.Uuid
   completed   Boolean  @default(false)
   progress    Float?
   last_update DateTime @default(now())
@@ -219,8 +217,8 @@ model UserContentProgress {
 }
 
 model AuditLog {
-  audit_id   String @id @default(uuid()) @db.Uuid
-  user_id    String?  @db.Uuid
+  audit_id   String    @id @default(uuid()) @db.Uuid
+  user_id    String?   @db.Uuid
   table_name String    @db.VarChar(100)
   record_id  String?   @db.Uuid
   timestamp  DateTime  @default(now())
@@ -232,8 +230,8 @@ model AuditLog {
 }
 
 model Notification {
-  notification_id String @id @default(uuid()) @db.Uuid
-  user_id         String?  @db.Uuid
+  notification_id String    @id @default(uuid()) @db.Uuid
+  user_id         String?   @db.Uuid
   title           String    @db.VarChar(150)
   message         String?
   read            Boolean   @default(false)
@@ -245,25 +243,41 @@ model Notification {
 }
 
 enum linkType {
-  STUDENT  @map("1")
+  STUDENT   @map("1")
   ASSISTANT @map("2")
-  TEACHER @map("3")
-  DIRECTOR @map("4")
+  TEACHER   @map("3")
+  DIRECTOR  @map("4")
 
   @@schema("auth")
 }
 
-
 model UserProfile {
-  id            String    @id @default(uuid()) @db.Uuid
-  theme         String    @default("dark") @db.VarChar(20)
-  language      String    @default("es") @db.VarChar(10)
-  notifications Boolean   @default(true)
-  userId        String    @unique @map("user_id") @db.Uuid
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id            String   @id @default(uuid()) @db.Uuid
+  theme         String   @default("dark") @db.VarChar(20)
+  language      String   @default("es") @db.VarChar(10)
+  notifications Boolean  @default(true)
+  userId        String   @unique @map("user_id") @db.Uuid
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  user          app_user  @relation(fields: [userId], references: [user_id], onDelete: Cascade)
+  user app_user @relation(fields: [userId], references: [user_id], onDelete: Cascade)
 
   @@map("user_profile")
   @@schema("auth")
+}
+
+model AiPrompt {
+  prompt_id  String   @id @default(uuid()) @db.Uuid
+  game_type  String   @db.VarChar(50)
+  category   String   @db.VarChar(50)
+  name       String   @db.VarChar(150)
+  content    String   @db.Text
+  version    Int      @default(1)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([game_type, category, version])
+  @@index([game_type, category, is_active])
+  @@map("ai_prompt")
+  @@schema("core")
 }

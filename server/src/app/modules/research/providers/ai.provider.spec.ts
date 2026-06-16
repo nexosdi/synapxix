@@ -37,6 +37,7 @@ jest.useFakeTimers();
 describe('AiProvider', () => {
   let provider: AiProvider;
   let configService: ConfigService;
+  let aiPromptService: any;
 
   /**
    * Build a fresh AiProvider before each test, with a stubbed ConfigService
@@ -56,7 +57,17 @@ describe('AiProvider', () => {
       }),
     } as unknown as ConfigService;
 
-    provider = new AiProvider(configService);
+    aiPromptService = {
+      getPrompt: jest.fn().mockImplementation((gameType, cat, defaultPrompt) => {
+        if (cat === 'AUDIO_EVALUATION') {
+          return `{"isCorrect": true}`; // Simple mock for testing
+        }
+        return defaultPrompt;
+      }),
+      invalidatePromptCache: jest.fn(),
+    };
+
+    provider = new AiProvider(configService, aiPromptService);
   });
 
   afterEach(() => {
@@ -79,7 +90,7 @@ describe('AiProvider', () => {
       }),
     } as unknown as ConfigService;
 
-    expect(() => new AiProvider(badConfig)).toThrow(
+    expect(() => new AiProvider(badConfig, aiPromptService)).toThrow(
       'Google Generative AI API key is not set',
     );
   });
