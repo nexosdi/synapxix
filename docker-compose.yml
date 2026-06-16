@@ -119,6 +119,24 @@ services:
       timeout: 5s
       retries: 5
 
+  # Redis Cache (AI Response & Prompt Cache)
+  redis:
+    image: redis:7-alpine
+    container_name: synapxix-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme}
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379" # Bound to localhost for security
+    volumes:
+      - redis_data:/data
+    networks:
+      - keycloak-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_keycloak_data:
     driver: local
@@ -127,6 +145,8 @@ volumes:
   neo4j_data:
     driver: local
   neo4j_logs:
+    driver: local
+  redis_data:
     driver: local
 
 networks:

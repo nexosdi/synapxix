@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { ConfigService } from '@nestjs/config';
 import { withRetry } from './retry.util';
+import { AiPromptService } from '../services/ai-prompt.service';
 
 /**
  * AiProvider — Central abstraction layer for AI model interactions.
@@ -43,7 +44,10 @@ export class AiProvider {
   /** Base delay (ms) for the first retry; subsequent delays grow exponentially. */
   private readonly baseDelayMs: number;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly aiPromptService: AiPromptService,
+  ) {
     const apiKey = this.configService.get<string>('GOOGLE_GEN_AI_KEY')?.trim();
 
     if (!apiKey) {
@@ -139,6 +143,7 @@ export class AiProvider {
    * @param expectedText - The text the student was supposed to read
    * @param mimeType     - The MIME type of the audio file (e.g. 'audio/webm', 'audio/wav')
    * @param base64Audio  - The raw audio data encoded as a base64 string
+   * @param gameType     - The specific game type context (e.g. 'read-aloud')
    * @returns AI-generated evaluation as a JSON string
    * @throws InternalServerErrorException if the AI returns an empty response
    *         or if all retry attempts are exhausted
@@ -146,12 +151,13 @@ export class AiProvider {
   async analyzeAudio(
     expectedText: string,
     mimeType: string,
-    base64Audio: string
+    base64Audio: string,
+    gameType = 'read-aloud'
   ): Promise<string> {
-    const prompt = `
+    const defaultPrompt = `
       You are an AI teacher evaluating a student's reading aloud exercise.
       The student was supposed to read the following text:
-      "${expectedText}"
+      "{EXPECTED_TEXT}"
       
       Listen to the attached audio file of the student reading.
       Evaluate if they read the text correctly.
@@ -162,6 +168,9 @@ export class AiProvider {
         "feedback": "Your pedagogical feedback here"
       }
     `;
+
+    const promptTemplate = await this.aiPromptService.getPrompt(gameType, 'AUDIO_EVALUATION', defaultPrompt);
+    const prompt = promptTemplate.replace('{EXPECTED_TEXT}', expectedText);
 
     try {
       const result = await withRetry(

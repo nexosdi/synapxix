@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ProcessGameActivityDto } from './models/game-input.model';
 import { AiProvider } from './providers/ai.provider';
 import { LearningService } from '../../learning/learning.service';
+import { AiPromptService } from './services/ai-prompt.service';
 
 @Injectable()
 export class ResearchService {
@@ -9,13 +10,15 @@ export class ResearchService {
 
   constructor(
     private readonly aiProvider: AiProvider,
-    private readonly learningService: LearningService
+    private readonly learningService: LearningService,
+    private readonly aiPromptService: AiPromptService,
   ) {}
 
   async processActivity(data: ProcessGameActivityDto) {
     const { gameType, gameInput, studentResult, studentId } = data;
 
-    const systemPrompt = this.generateSystemPrompt(gameType);
+    const defaultPrompt = `You are a pedagogical analyst evaluating a ${gameType} activity`;
+    const systemPrompt = await this.aiPromptService.getPrompt(gameType, 'SYSTEM_ANALYSIS', defaultPrompt);
     const simplifiedContext = this.getSimplifiedContext(gameType, gameInput);
 
     const aiAnalysis = await this.aiProvider.analyzePedagogicalAction(
@@ -61,11 +64,7 @@ export class ResearchService {
     return contextMap[type]?.() || 'General learning activity';
   }
 
-  private generateSystemPrompt(type: string): string {
-    return `You are a pedagogical analyst evaluating a ${type} activity`;
-  }
-
-  private calculateDimensionImpact(result: any) {
+  private calculateDimensionImpact(result: any): Record<string, number> {
     return {
       logic: result.success ? 0.9 : 0.4,
       creativity: result.duration < 60 ? 0.8 : 0.4,

@@ -6,6 +6,7 @@ This module processes game results using AI with the goal of transforming raw st
 
 It acts as a bridge between the learning interface and language models, processing the game results already defined by the other team members to then define the child's archetype.
 
+For details on how the module caches responses and prompts using Redis, see [CACHE_STRATEGY.md](./docs/CACHE_STRATEGY.md).
 
 ------------------------------------------------------------------------------------
 
