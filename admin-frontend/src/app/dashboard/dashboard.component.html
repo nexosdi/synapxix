@@ -1,60 +1,165 @@
-<div class="dashboard-container">
-  <!-- Score Display -->
-  <div class="score-display" *ngIf="!loading">
-    <span class="score-label">🎯 Puntos:</span>
-    <span class="score-value">{{ gameScore }}</span>
-  </div>
+<div class="dashboard">
 
-  <!-- Mole Game Element -->
-  <div
-    class="mole"
-    *ngIf="moleVisible && !loading"
-    [style.top.%]="molePosition.top"
-    [style.left.%]="molePosition.left"
-    (click)="catchMole()"
-  >
-    {{ moleEmoji }}
-  </div>
+  <!-- ── Navbar ─────────────────────────────────────────────── -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <a class="navbar__brand" href="#">
+      <img class="navbar__logo" src="/logo.png" alt="Synapxix logo" />
+      <span class="navbar__name">Synapxix</span>
+    </a>
 
-  <div
-    class="points-animation"
-    *ngIf="showPointsAnimation"
-    [style.top.%]="pointsAnimationPosition.top"
-    [style.left.%]="pointsAnimationPosition.left"
-  >
-    +10
-  </div>
-
-  <!-- Loading State -->
-  <div *ngIf="loading" class="loading-state">
-    <div class="spinner"></div>
-    <p class="loading-text">Cargando tu aventura...</p>
-  </div>
-
-  <div *ngIf="!loading">
-    <header class="dashboard-header">
-      <div class="header-left">
-        <div class="logo-small">S</div>
-        <h1 class="app-title">Synapsis</h1>
+    <div class="navbar__actions">
+      <!-- Credits badge -->
+      <div class="badge badge--credits" aria-label="{{ credits() }} credits">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm.31 14.71v.79c0 .55-.45 1-1 1s-1-.45-1-1v-.81c-1.17-.28-2.19-1.01-2.77-2.08-.19-.35-.05-.79.31-.96l.01-.01c.34-.16.74-.03.93.3.37.68 1.07 1.1 1.85 1.1h.01c1.14 0 1.84-.64 1.84-1.43 0-.64-.42-1.24-1.9-1.62-1.82-.46-3.28-1.31-3.28-3 0-1.37 1.07-2.47 2.73-2.75V5.5c0-.55.45-1 1-1s1 .45 1 1v.76c.9.21 1.66.73 2.16 1.48.22.33.1.78-.25.97l-.02.01c-.33.17-.74.06-.96-.26-.32-.47-.84-.75-1.43-.75h-.01c-1.02 0-1.64.56-1.64 1.28 0 .65.49 1.09 1.97 1.49 1.96.51 3.21 1.39 3.21 3.13 0 1.44-1.04 2.56-2.79 2.83z"/>
+        </svg>
+        {{ credits() }}
       </div>
 
-      <div class="user-section">
-        <div class="user-avatar">{{ getUserInitial() }}</div>
-        <span class="user-name">{{ username }}</span>
-        <button class="logout-btn" (click)="logout()">Salir</button>
+      <!-- XP badge -->
+      <div class="badge badge--xp" aria-label="{{ experiencePoints() }} experience points">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+        </svg>
+        {{ experiencePoints() }} XP
       </div>
-    </header>
 
-    <main class="dashboard-content">
-      <section class="welcome-section">
-        <h2 class="welcome-title">¡Hola, {{ username }}! 👋</h2>
-        <p class="welcome-subtitle">
-          ¿Listo para administrar tu plataforma hoy?
-        </p>
+      <!-- User avatar -->
+      <div class="navbar__avatar" role="button" aria-label="User profile">
+        {{ getUserInitial() }}
+      </div>
+
+      <button class="btn-logout" id="logout-btn" (click)="logout()">Log out</button>
+    </div>
+  </nav>
+
+  <!-- ── Main ───────────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- Loading screen -->
+    @if (loading()) {
+      <div class="loading-screen" aria-live="polite" aria-label="Loading dashboard">
+        <div class="spinner" role="status"></div>
+        <p>Loading your profile...</p>
+      </div>
+    }
+
+    @if (!loading()) {
+      <!-- ── Hero ──────────────────────────────────────────── -->
+      <section class="hero" aria-label="Welcome section">
+        <h1 class="hero__greeting">Welcome back, {{ username() }}</h1>
+        <p class="hero__subtitle">Here's your cognitive progress at a glance.</p>
+
+        <!-- XP Level progress bar -->
+        <div class="xp-bar" aria-label="Level {{ level() }} — XP progress">
+          <span class="xp-bar__label">Lvl {{ level() }}</span>
+          <div class="xp-bar__track" role="progressbar"
+               [attr.aria-valuenow]="xpProgressPercent()"
+               aria-valuemin="0" aria-valuemax="100">
+            <div class="xp-bar__fill" [style.width.%]="xpProgressPercent()"></div>
+          </div>
+          <span class="xp-bar__text">{{ xpInCurrentLevel() }} / 500 XP</span>
+        </div>
       </section>
-    </main>
-  </div>
+
+      <!-- ── Stats ─────────────────────────────────────────── -->
+      <section class="stats-grid" aria-label="Account statistics">
+        <!-- Credits card -->
+        <div class="stat-card stat-card--credits">
+          <div class="stat-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm.31 14.71v.79c0 .55-.45 1-1 1s-1-.45-1-1v-.81c-1.17-.28-2.19-1.01-2.77-2.08-.19-.35-.05-.79.31-.96l.01-.01c.34-.16.74-.03.93.3.37.68 1.07 1.1 1.85 1.1h.01c1.14 0 1.84-.64 1.84-1.43 0-.64-.42-1.24-1.9-1.62-1.82-.46-3.28-1.31-3.28-3 0-1.37 1.07-2.47 2.73-2.75V5.5c0-.55.45-1 1-1s1 .45 1 1v.76c.9.21 1.66.73 2.16 1.48.22.33.1.78-.25.97l-.02.01c-.33.17-.74.06-.96-.26-.32-.47-.84-.75-1.43-.75h-.01c-1.02 0-1.64.56-1.64 1.28 0 .65.49 1.09 1.97 1.49 1.96.51 3.21 1.39 3.21 3.13 0 1.44-1.04 2.56-2.79 2.83z"/>
+            </svg>
+          </div>
+          <div class="stat-card__value">{{ credits() }}</div>
+          <div class="stat-card__label">Credits</div>
+        </div>
+
+        <!-- XP card -->
+        <div class="stat-card stat-card--xp">
+          <div class="stat-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+            </svg>
+          </div>
+          <div class="stat-card__value">{{ experiencePoints() }}</div>
+          <div class="stat-card__label">Experience</div>
+        </div>
+
+        <!-- Level card -->
+        <div class="stat-card stat-card--level">
+          <div class="stat-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+              <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V18H9v2h6v-2h-2v-2.1a5.01 5.01 0 003.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zm-15 3V7h2v3.82C4.84 10.4 4 9.3 4 8zm16 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/>
+            </svg>
+          </div>
+          <div class="stat-card__value">{{ level() }}</div>
+          <div class="stat-card__label">Level</div>
+        </div>
+      </section>
+
+      <!-- ── Cognitive charts ──────────────────────────────── -->
+      <section aria-label="Cognitive metrics">
+        <div class="section-header">
+          <div class="section-header__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+              <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="section-header__title">Cognitive Performance</h2>
+            <p class="section-header__subtitle">Based on your latest session results</p>
+          </div>
+        </div>
+
+        <div class="charts-card">
+          <app-cognitive-charts
+            [memory]="cognitiveMetrics().memory"
+            [reading]="cognitiveMetrics().reading"
+            [speech]="cognitiveMetrics().speech"
+          />
+        </div>
+      </section>
+
+      <!-- ── Exercise categories ───────────────────────────── -->
+      <section aria-label="Exercise categories">
+        <div class="section-header">
+          <div class="section-header__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+              <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="section-header__title">Exercise Categories</h2>
+            <p class="section-header__subtitle">Choose a module to start practicing</p>
+          </div>
+        </div>
+
+        <div class="categories-grid">
+          @for (cat of categories; track cat.id) {
+            <button
+              class="category-card"
+              [id]="'category-' + cat.id"
+              [attr.aria-label]="'Navigate to ' + cat.name + ' exercises'"
+              [style]="'--cat-gradient: ' + cat.gradient"
+              (click)="navigateTo(cat.historyId)"
+            >
+              <div class="category-card__shine"></div>
+              <div class="category-card__icon-wrap" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="white" width="24" height="24">
+                  <path [attr.d]="cat.svgPath"/>
+                </svg>
+              </div>
+              <h3 class="category-card__name">{{ cat.name }}</h3>
+              <p class="category-card__desc">{{ cat.description }}</p>
+              <span class="category-card__tag">{{ cat.tag }}</span>
+            </button>
+          }
+        </div>
+      </section>
+    }
+  </main>
 
   <!-- AI Chatbot Widget -->
-  <app-chatbot></app-chatbot>
+  <app-chatbot />
 </div>
