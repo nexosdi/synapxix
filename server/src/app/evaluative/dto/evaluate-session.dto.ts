@@ -32,3 +32,30 @@ export class EvaluateSessionDto {
   @Type(() => GameAttemptRecordDto)
   attempts: GameAttemptRecordDto[];
 }
+
+export class EvaluateAiInputDto {
+  @IsString()
+  sessionId: string;
+
+  @IsString()
+  gameType: string;
+
+  @IsString()
+  promptOrContext: string;
+
+  @IsOptional()
+  @IsString()
+  studentTextResponse?: string;
+
+  @IsOptional()
+  @IsString()
+  expectedText?: string;
+
+  @IsOptional()
+  @IsString()
+  audioMimeType?: string;
+
+  @IsOptional()
+  @IsString()
+  audioBase64?: string;
+}

@@ -22,6 +22,7 @@ import {
   RecordingError,
   RecordingErrorType,
   RecordingState,
+  ReadAloudSubmissionResponse,
 } from './read-aloud.types';
 
 
@@ -116,6 +117,7 @@ export class ReadAloudGameComponent implements OnDestroy, BaseGameComponent {
   private recordedBlob:   Blob           | null = null;
   private timerIntervalId: ReturnType<typeof setInterval> | null = null;
   private submissionSub:  Subscription   | null = null;
+  private lastApiResponse: ReadAloudSubmissionResponse | null = null;
 
   async startRecording(view: ReadAloudGameData): Promise<void> {
     if (this.disabled()) return;
@@ -194,7 +196,8 @@ export class ReadAloudGameComponent implements OnDestroy, BaseGameComponent {
         expectedText: view.text,
       })
       .subscribe({
-        next: () => {
+        next: (response: ReadAloudSubmissionResponse) => {
+          this.lastApiResponse = response;
           this.state.set('success');
           this.emitResult();
         },
@@ -327,15 +330,17 @@ export class ReadAloudGameComponent implements OnDestroy, BaseGameComponent {
 
 
   private emitResult(): void {
+    const res = this.lastApiResponse;
     this.answerSubmitted.emit({
-      gameType:     'read-aloud',
+      gameType:    'read-aloud',
       answer: {
         audioUrl:       this.audioUrl() ?? '',
         recognizedText: '',
       },
-      isCorrect:    true,
-      score:        100,
-      timeSpentMs:  this.timer() * 1000,
+      isCorrect:   res?.isCorrect ?? true,
+      score:       res?.score     ?? 100,
+      timeSpentMs: this.timer() * 1000,
+      feedback:    res?.feedback,
     });
   }
 }

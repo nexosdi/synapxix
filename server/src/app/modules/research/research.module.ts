@@ -28,6 +28,7 @@ import { AiCacheInterceptor } from './interceptors/ai-cache.interceptor';
 @Module({
   imports: [
     ConfigModule,
+    LearningModule,
     PrismaModule,
     CacheModule.registerAsync({
       imports: [ConfigModule],

@@ -22,6 +22,7 @@ import {
   RecordingError,
   RecordingErrorType,
   RecordingState,
+  SpeakAboutPhotoSubmissionResponse,
 } from './speak-about-photo.types';
 
 
@@ -85,6 +86,7 @@ export class SpeakAboutPhotoGameComponent implements OnDestroy, BaseGameComponen
   private recordedBlob:    Blob          | null = null;
   private timerIntervalId: ReturnType<typeof setInterval> | null = null;
   private submissionSub:   Subscription  | null = null;
+  private lastApiResponse: SpeakAboutPhotoSubmissionResponse | null = null;
 
   async startRecording(view: SpeakAboutPhotoGameData): Promise<void> {
     if (this.disabled()) return;
@@ -159,7 +161,8 @@ export class SpeakAboutPhotoGameComponent implements OnDestroy, BaseGameComponen
         prompt:      view.prompt,
       })
       .subscribe({
-        next: () => {
+        next: (response: SpeakAboutPhotoSubmissionResponse) => {
+          this.lastApiResponse = response;
           this.state.set('success');
           this.emitResult();
         },
@@ -283,15 +286,17 @@ export class SpeakAboutPhotoGameComponent implements OnDestroy, BaseGameComponen
   }
 
   private emitResult(): void {
+    const res = this.lastApiResponse;
     this.answerSubmitted.emit({
       gameType:    'speak-about-photo',
       answer: {
         audioUrl:       this.audioUrl() ?? '',
         recognizedText: '',
       },
-      isCorrect:   true,
-      score:       100,
+      isCorrect:   res?.isCorrect ?? true,
+      score:       res?.score     ?? 100,
       timeSpentMs: this.timer() * 1000,
+      feedback:    res?.feedback,
     });
   }
 }

@@ -136,7 +136,7 @@ export class FillInTheBlanksGameComponent implements BaseGameComponent {
         gameType: 'fill-in-the-blanks',
         answer: { blanks: answerRecord },
         isCorrect: true, // Full victory reached
-        score: correctCount * 10,
+        score: 100,
         timeSpentMs: 0
       });
     }
