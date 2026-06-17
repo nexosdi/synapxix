@@ -13,6 +13,13 @@ import { AiPromptService } from '../services/ai-prompt.service';
  * (HTTP 429, 500, 503) to improve resilience against rate limits and
  * temporary service outages.
  *
+ * Streaming support:
+ *   The provider also exposes streaming variants of its core methods
+ *   (`streamPedagogicalAction`, `streamAudio`) that use the SDK's
+ *   `generateContentStream()` API. These return an AsyncGenerator that
+ *   yields text chunks as they arrive from the model, enabling SSE
+ *   endpoints to push tokens to the frontend in real time.
+ *
  * Dependencies:
  *   - ConfigService (from @nestjs/config) — reads the GOOGLE_GEN_AI_KEY
  *     environment variable and optional retry tuning variables.
@@ -208,6 +215,163 @@ export class AiProvider {
       );
       throw new InternalServerErrorException(
         'Failed to generate audio evaluation.',
+      );
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Streaming methods — SSE support
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Streaming variant of analyzePedagogicalAction().
+   *
+   * Uses `generateContentStream()` from the Google Generative AI SDK to
+   * yield text chunks as they are produced by the model. The initial
+   * connection is wrapped in retry logic for transient errors; once the
+   * stream is established, chunks flow through without further retries.
+   *
+   * @param systemPrompt - Instructions that define the AI's role and analysis criteria
+   * @param context      - Simplified description of the game activity being evaluated
+   * @param studentInput - Raw student performance data (success, duration, content)
+   * @yields Text chunks as they arrive from the model
+   * @throws InternalServerErrorException if the stream cannot be established
+   *         after exhausting all retry attempts
+   */
+  async *streamPedagogicalAction(
+    systemPrompt: string,
+    context: string,
+    studentInput: any,
+  ): AsyncGenerator<string> {
+    const prompt = `
+      ${systemPrompt}
+      
+      GAME CONTEXT:
+      ${context}
+      
+      STUDENT PERFORMANCE:
+      ${JSON.stringify(studentInput)}
+      
+      TASK: Analyze the student's response based on the game context. 
+      Identify strengths, weaknesses, and potential archetypes.
+    `;
+
+    try {
+      // Retry only the initial connection — once the stream opens, we consume it directly
+      const streamResult = await withRetry(
+        () => this.model.generateContentStream(prompt),
+        { maxRetries: this.maxRetries, baseDelayMs: this.baseDelayMs },
+        this.logger,
+      );
+
+      let hasContent = false;
+
+      for await (const chunk of streamResult.stream) {
+        const text = chunk.text();
+        if (text) {
+          hasContent = true;
+          yield text;
+        }
+      }
+
+      if (!hasContent) {
+        this.logger.error('AI stream returned no content for streamPedagogicalAction');
+        throw new InternalServerErrorException('AI stream returned no content');
+      }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
+
+      this.logger.error(
+        `[streamPedagogicalAction] Streaming failed: ${error.message}`,
+      );
+      throw new InternalServerErrorException(
+        'Failed to stream pedagogical action analysis.',
+      );
+    }
+  }
+
+  /**
+   * Streaming variant of analyzeAudio().
+   *
+   * Uses `generateContentStream()` with multimodal input (text + audio)
+   * to yield evaluation chunks as they are produced by the model.
+   *
+   * @param expectedText - The text the student was supposed to read
+   * @param mimeType     - The MIME type of the audio file (e.g. 'audio/webm', 'audio/wav')
+   * @param base64Audio  - The raw audio data encoded as a base64 string
+   * @param gameType     - The specific game type context (e.g. 'read-aloud')
+   * @yields Text chunks as they arrive from the model
+   * @throws InternalServerErrorException if the stream cannot be established
+   *         after exhausting all retry attempts
+   */
+  async *streamAudio(
+    expectedText: string,
+    mimeType: string,
+    base64Audio: string,
+    gameType = 'read-aloud',
+  ): AsyncGenerator<string> {
+    const defaultPrompt = `
+      You are an AI teacher evaluating a student's reading aloud exercise.
+      The student was supposed to read the following text:
+      "{EXPECTED_TEXT}"
+      
+      Listen to the attached audio file of the student reading.
+      Evaluate if they read the text correctly.
+      Respond ONLY with a JSON object in the following format:
+      {
+        "isCorrect": boolean,
+        "score": number, // 0 to 100
+        "feedback": "Your pedagogical feedback here"
+      }
+    `;
+
+    const promptTemplate = await this.aiPromptService.getPrompt(gameType, 'AUDIO_EVALUATION', defaultPrompt);
+    const prompt = promptTemplate.replace('{EXPECTED_TEXT}', expectedText);
+
+    try {
+      const streamResult = await withRetry(
+        () =>
+          this.model.generateContentStream([
+            prompt,
+            {
+              inlineData: {
+                data: base64Audio,
+                mimeType: mimeType,
+              },
+            },
+          ]),
+        { maxRetries: this.maxRetries, baseDelayMs: this.baseDelayMs },
+        this.logger,
+      );
+
+      let hasContent = false;
+
+      for await (const chunk of streamResult.stream) {
+        const text = chunk.text();
+        if (text) {
+          hasContent = true;
+          yield text;
+        }
+      }
+
+      if (!hasContent) {
+        this.logger.error('AI stream returned no content for streamAudio');
+        throw new InternalServerErrorException('AI stream returned no content');
+      }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
+
+      this.logger.error(
+        `[streamAudio] Streaming failed: ${error.message}`,
+      );
+      throw new InternalServerErrorException(
+        'Failed to stream audio evaluation.',
       );
     }
   }

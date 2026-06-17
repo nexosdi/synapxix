@@ -1,8 +1,9 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, createParamDecorator, ExecutionContext, Res } from '@nestjs/common';
 import { EvaluativeService } from './evaluative.service';
 import { EvaluateSessionDto, EvaluateAiInputDto } from './dto/evaluate-session.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AiProvider } from '../modules/research/providers/ai.provider';
+import { Response } from 'express';
 
 export const GetUser = createParamDecorator((data: string | undefined, ctx: ExecutionContext) => {
   const request = ctx.switchToHttp().getRequest();
@@ -11,7 +12,6 @@ export const GetUser = createParamDecorator((data: string | undefined, ctx: Exec
 });
 
 @Controller('evaluative')
-@UseGuards(JwtAuthGuard)
 export class EvaluativeController {
   constructor(
     private readonly evaluativeService: EvaluativeService,
@@ -23,6 +23,7 @@ export class EvaluativeController {
    * Expects an exact structure of game data (EvaluateSessionDto).
    */
   @Post('evaluate')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async evaluateSession(
     @GetUser('user_id') userId: string,
@@ -41,6 +42,7 @@ export class EvaluativeController {
    * and translate them into standard cognitive metrics.
    */
   @Post('evaluate-ai')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async evaluateAiSession(
     @GetUser('user_id') userId: string,
@@ -76,4 +78,66 @@ export class EvaluativeController {
       data: metric,
     };
   }
+
+  /**
+   * SSE streaming endpoint for AI-driven evaluations.
+   *
+   * Streams AI-generated tokens in real time using Server-Sent Events.
+   * Dispatches to the appropriate streaming method based on the payload:
+   *   - Audio analysis (if audioBase64, expectedText, and audioMimeType are present)
+   *   - Semantic/pedagogical analysis (otherwise)
+   *
+   * No authentication guard — Auth0 is not yet enabled.
+   *
+   * @example
+   * ```bash
+   * curl -N -X POST http://localhost:3000/api/evaluative/evaluate-ai/stream \
+   *   -H "Content-Type: application/json" \
+   *   -d '{"sessionId":"s1","promptOrContext":"Evaluate performance","studentTextResponse":"The answer is 42"}'
+   * ```
+   */
+  @Post('evaluate-ai/stream')
+  async evaluateAiStream(
+    @Body() dto: EvaluateAiInputDto,
+    @Res() res: Response,
+  ) {
+    // Set SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.status(HttpStatus.OK);
+    res.flushHeaders();
+
+    try {
+      let stream: AsyncGenerator<string>;
+
+      // Dispatch to correct streaming method (Audio/Phonetic vs Semantic)
+      if (dto.audioBase64 && dto.expectedText && dto.audioMimeType) {
+        stream = this.aiProvider.streamAudio(
+          dto.expectedText,
+          dto.audioMimeType,
+          dto.audioBase64,
+        );
+      } else {
+        stream = this.aiProvider.streamPedagogicalAction(
+          'You are an AI teacher evaluating cognitive and semantic performance.',
+          dto.promptOrContext,
+          dto.studentTextResponse || '',
+        );
+      }
+
+      for await (const chunk of stream) {
+        res.write(`event: chunk\ndata: ${JSON.stringify({ text: chunk })}\n\n`);
+      }
+
+      // Signal stream completion
+      res.write(`event: done\ndata: [DONE]\n\n`);
+    } catch (error: any) {
+      res.write(`event: error\ndata: ${JSON.stringify({ message: error.message || 'Streaming failed' })}\n\n`);
+    } finally {
+      res.end();
+    }
+  }
 }
+
