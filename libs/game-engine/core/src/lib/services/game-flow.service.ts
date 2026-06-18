@@ -1,4 +1,4 @@
-import { Injectable, computed, OnDestroy } from '@angular/core';
+import { Injectable, computed, signal, OnDestroy } from '@angular/core';
 import { GameStateMachine } from '../models/game-state-machine';
 import { GameFlowConfig, DEFAULT_FLOW_CONFIG } from '../models/game-flow-config';
 
@@ -37,6 +37,13 @@ export class GameFlowService implements OnDestroy {
   public readonly isCompleted = this._stateMachine.isCompleted;
 
   /**
+   * Accumulated text from the AI feedback stream.
+   * Updated chunk-by-chunk as tokens arrive from the SSE endpoint.
+   * Reset when advancing to the next game.
+   */
+  public readonly feedbackContent = signal<string>('');
+
+  /**
    * Whether game interaction should be disabled.
    * True when the state is anything other than PLAYING.
    * Games should bind to this instead of checking state directly.
@@ -48,6 +55,10 @@ export class GameFlowService implements OnDestroy {
   // ── Timer management ───────────────────────────────────
   private _activeTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private _config: GameFlowConfig = { ...DEFAULT_FLOW_CONFIG };
+
+  // ── Stream lifecycle ───────────────────────────────────
+  /** AbortController for the currently active SSE stream, if any. */
+  private _streamAbort: AbortController | null = null;
 
   // ── Callbacks for the runner ───────────────────────────
   private _onAutoAdvance: (() => void) | null = null;
@@ -141,6 +152,63 @@ export class GameFlowService implements OnDestroy {
     return this._stateMachine.transitionTo('ANSWERING');
   }
 
+  // ── Streaming feedback API ─────────────────────────────
+
+  /**
+   * Transition to FEEDBACK state once and prepare for streaming.
+   *
+   * Call this ONCE before starting to consume the SSE stream.
+   * The state is set to FEEDBACK a single time — subsequent chunks
+   * should use `appendFeedbackChunk()` which only touches the
+   * `feedbackContent` signal without re-transitioning state.
+   * This prevents animations tied to the FEEDBACK state from
+   * re-triggering on every chunk.
+   *
+   * @returns An AbortController that the caller should pass to the
+   *          stream consumer. The flow service keeps a reference
+   *          to it for cleanup on destroy/reset.
+   */
+  public startFeedbackStream(): AbortController {
+    // Clear any previous feedback text
+    this.feedbackContent.set('');
+
+    // Cancel the automatic ANSWERING→FEEDBACK timer to prevent a race
+    // condition where both the timer and our manual transition try to
+    // call showFeedback() simultaneously.
+    this.cancelTimer('answerToFeedback');
+
+    // Transition to FEEDBACK exactly once.
+    // If the timer already fired and we're already in FEEDBACK, this is a no-op.
+    if (!this._stateMachine.isFeedback()) {
+      this._stateMachine.showFeedback();
+    }
+
+    // Create a new abort controller for this stream
+    this._streamAbort = new AbortController();
+    return this._streamAbort;
+  }
+
+  /**
+   * Append a text chunk to the accumulated feedback content.
+   *
+   * This method ONLY updates the `feedbackContent` signal — it does
+   * NOT touch the state machine. This is intentional: the FEEDBACK
+   * state was already set by `startFeedbackStream()`, so we avoid
+   * redundant state transitions that would re-trigger animations.
+   */
+  public appendFeedbackChunk(text: string): void {
+    this.feedbackContent.update((prev) => prev + text);
+  }
+
+  /**
+   * Clear the feedback content and abort any active stream.
+   * Called when advancing to the next game.
+   */
+  public clearFeedbackContent(): void {
+    this.feedbackContent.set('');
+    this.abortActiveStream();
+  }
+
   /**
    * Manually advance to the next game.
    * Cancels any pending auto-advance timer.
@@ -174,6 +242,8 @@ export class GameFlowService implements OnDestroy {
    */
   public reset(): void {
     this.cancelAllTimers();
+    this.abortActiveStream();
+    this.feedbackContent.set('');
     this._stateMachine.reset();
     this._onAutoAdvance = null;
   }
@@ -199,5 +269,16 @@ export class GameFlowService implements OnDestroy {
       clearTimeout(id);
     }
     this._activeTimers.clear();
+  }
+
+  /**
+   * Abort the active SSE stream if one is running.
+   * Safe to call multiple times.
+   */
+  private abortActiveStream(): void {
+    if (this._streamAbort && !this._streamAbort.signal.aborted) {
+      this._streamAbort.abort();
+    }
+    this._streamAbort = null;
   }
 }

@@ -9,6 +9,7 @@ export * from './lib/models/game-flow-config';
 export * from './lib/services/history.service';
 export * from './lib/services/game-session.service';
 export * from './lib/services/game-flow.service';
+export * from './lib/services/sse-stream.service';
 export * from './lib/services/history-route.resolver';
 export * from './lib/services/history-data-provider';
 export * from './lib/services/mock-history-data-provider';
