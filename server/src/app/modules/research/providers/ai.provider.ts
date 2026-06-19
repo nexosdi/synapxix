@@ -242,6 +242,7 @@ export class AiProvider {
     systemPrompt: string,
     context: string,
     studentInput: any,
+    signal?: AbortSignal,
   ): AsyncGenerator<string> {
     const prompt = `
       ${systemPrompt}
@@ -259,7 +260,7 @@ export class AiProvider {
     try {
       // Retry only the initial connection — once the stream opens, we consume it directly
       const streamResult = await withRetry(
-        () => this.model.generateContentStream(prompt),
+        () => this.model.generateContentStream(prompt, { signal }),
         { maxRetries: this.maxRetries, baseDelayMs: this.baseDelayMs },
         this.logger,
       );
@@ -312,6 +313,7 @@ export class AiProvider {
     mimeType: string,
     base64Audio: string,
     gameType = 'read-aloud',
+    signal?: AbortSignal,
   ): AsyncGenerator<string> {
     const defaultPrompt = `
       You are an AI teacher evaluating a student's reading aloud exercise.
@@ -342,7 +344,7 @@ export class AiProvider {
                 mimeType: mimeType,
               },
             },
-          ]),
+          ], { signal }),
         { maxRetries: this.maxRetries, baseDelayMs: this.baseDelayMs },
         this.logger,
       );

@@ -365,6 +365,30 @@ describe('AiProvider', () => {
     });
 
     /**
+     * Verify that AbortSignal is passed to generateContentStream.
+     */
+    it('should pass abort signal to generateContentStream', async () => {
+      const mockStream = createMockStream(['Chunk']);
+      mockGenerateContentStream.mockResolvedValue(mockStream);
+      const controller = new AbortController();
+
+      const chunks: string[] = [];
+      for await (const chunk of provider.streamPedagogicalAction(
+        'Analyze',
+        'ctx',
+        { success: true },
+        controller.signal,
+      )) {
+        chunks.push(chunk);
+      }
+
+      expect(mockGenerateContentStream).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    /**
      * When the stream produces no text chunks, the provider should throw
      * InternalServerErrorException.
      */
@@ -463,6 +487,31 @@ describe('AiProvider', () => {
           mimeType: 'audio/webm',
         },
       });
+    });
+
+    /**
+     * Verify that AbortSignal is passed to generateContentStream for audio.
+     */
+    it('should pass abort signal to generateContentStream for audio', async () => {
+      const mockStream = createMockStream(['Chunk']);
+      mockGenerateContentStream.mockResolvedValue(mockStream);
+      const controller = new AbortController();
+
+      const chunks: string[] = [];
+      for await (const chunk of provider.streamAudio(
+        'Hello',
+        'audio/webm',
+        'data',
+        'read-aloud',
+        controller.signal,
+      )) {
+        chunks.push(chunk);
+      }
+
+      expect(mockGenerateContentStream).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.objectContaining({ signal: controller.signal }),
+      );
     });
 
     /**

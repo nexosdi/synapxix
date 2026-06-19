@@ -1,9 +1,9 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, createParamDecorator, ExecutionContext, Res } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, createParamDecorator, ExecutionContext, Res, Req } from '@nestjs/common';
 import { EvaluativeService } from './evaluative.service';
 import { EvaluateSessionDto, EvaluateAiInputDto } from './dto/evaluate-session.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AiProvider } from '../modules/research/providers/ai.provider';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 
 export const GetUser = createParamDecorator((data: string | undefined, ctx: ExecutionContext) => {
   const request = ctx.switchToHttp().getRequest();
@@ -100,6 +100,7 @@ export class EvaluativeController {
   async evaluateAiStream(
     @Body() dto: EvaluateAiInputDto,
     @Res() res: Response,
+    @Req() req: Request,
   ) {
     // Set SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
@@ -108,6 +109,14 @@ export class EvaluativeController {
     res.setHeader('X-Accel-Buffering', 'no');
     res.status(HttpStatus.OK);
     res.flushHeaders();
+
+    const abortController = new AbortController();
+    let isClosed = false;
+    const onClose = () => {
+      isClosed = true;
+      abortController.abort();
+    };
+    req.on('close', onClose);
 
     try {
       let stream: AsyncGenerator<string>;
@@ -118,25 +127,36 @@ export class EvaluativeController {
           dto.expectedText,
           dto.audioMimeType,
           dto.audioBase64,
+          'read-aloud',
+          abortController.signal,
         );
       } else {
         stream = this.aiProvider.streamPedagogicalAction(
           'You are an AI teacher evaluating cognitive and semantic performance.',
           dto.promptOrContext,
           dto.studentTextResponse || '',
+          abortController.signal,
         );
       }
 
       for await (const chunk of stream) {
+        if (isClosed) break;
         res.write(`event: chunk\ndata: ${JSON.stringify({ text: chunk })}\n\n`);
       }
 
-      // Signal stream completion
-      res.write(`event: done\ndata: [DONE]\n\n`);
+      if (!isClosed) {
+        // Signal stream completion
+        res.write(`event: done\ndata: [DONE]\n\n`);
+      }
     } catch (error: any) {
-      res.write(`event: error\ndata: ${JSON.stringify({ message: error.message || 'Streaming failed' })}\n\n`);
+      if (!isClosed && error.name !== 'AbortError') {
+        res.write(`event: error\ndata: ${JSON.stringify({ message: error.message || 'Streaming failed' })}\n\n`);
+      }
     } finally {
-      res.end();
+      req.off('close', onClose);
+      if (!isClosed) {
+        res.end();
+      }
     }
   }
 }

@@ -1,9 +1,9 @@
-import { Controller, Post, Body, UseInterceptors, Res, HttpStatus } from "@nestjs/common";
+import { Controller, Post, Body, UseInterceptors, Res, Req, HttpStatus } from "@nestjs/common";
 import { ResearchService } from "./research.service";
 import { ProcessGameActivityDto } from "./models/game-input.model";
 import { AiCacheInterceptor } from "./interceptors/ai-cache.interceptor";
 import { AiProvider } from "./providers/ai.provider";
-import { Response } from "express";
+import { Response, Request } from "express";
 import { AiPromptService } from "./services/ai-prompt.service";
 
 @Controller('research')
@@ -42,6 +42,7 @@ export class ResearchController {
     async processStream(
         @Body() body: ProcessGameActivityDto,
         @Res() res: Response,
+        @Req() req: Request,
     ) {
         // Set SSE headers
         res.setHeader('Content-Type', 'text/event-stream');
@@ -66,23 +67,40 @@ export class ResearchController {
         };
         const context = contextMap[gameType]?.() || 'General learning activity';
 
+        const abortController = new AbortController();
+        let isClosed = false;
+        const onClose = () => {
+            isClosed = true;
+            abortController.abort();
+        };
+        req.on('close', onClose);
+
         try {
             const stream = this.aiProvider.streamPedagogicalAction(
                 systemPrompt,
                 context,
                 studentResult,
+                abortController.signal,
             );
 
             for await (const chunk of stream) {
+                if (isClosed) break;
                 res.write(`event: chunk\ndata: ${JSON.stringify({ text: chunk })}\n\n`);
             }
 
-            // Signal stream completion
-            res.write(`event: done\ndata: [DONE]\n\n`);
+            if (!isClosed) {
+                // Signal stream completion
+                res.write(`event: done\ndata: [DONE]\n\n`);
+            }
         } catch (error: any) {
-            res.write(`event: error\ndata: ${JSON.stringify({ message: error.message || 'Streaming failed' })}\n\n`);
+            if (!isClosed && error.name !== 'AbortError') {
+                res.write(`event: error\ndata: ${JSON.stringify({ message: error.message || 'Streaming failed' })}\n\n`);
+            }
         } finally {
-            res.end();
+            req.off('close', onClose);
+            if (!isClosed) {
+                res.end();
+            }
         }
     }
 }
