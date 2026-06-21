@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, HttpCode, HttpStatus, UseGuards, createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { EvaluativeService } from './evaluative.service';
 import { EvaluateSessionDto, EvaluateAiInputDto } from './dto/evaluate-session.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -75,5 +75,20 @@ export class EvaluativeController {
       message: 'AI cognitive metrics evaluated and persisted successfully',
       data: metric,
     };
+  }
+
+  @Get('cohort-stats')
+  async getCohortStats() {
+    return this.evaluativeService.getCohortStats();
+  }
+
+  @Get('students')
+  async getStudentList() {
+    return this.evaluativeService.getStudentList();
+  }
+
+  @Get('students/:id/metrics')
+  async getStudentDetail(@Param('id') userId: string) {
+    return this.evaluativeService.getStudentDetail(userId);
   }
 }

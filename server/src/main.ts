@@ -19,9 +19,8 @@ async function bootstrap() {
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
 
-  // --- CONFIGURACIÓN DE CORS REFORZADA ---
   app.enableCors({
-    origin: 'http://localhost:4300', 
+    origin: ['http://localhost:4200', 'http://localhost:4300'], 
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // Agregamos OPTIONS
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'], // <--- ESTO ES CLAVE
     credentials: true,

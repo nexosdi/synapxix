@@ -122,6 +122,114 @@ export class EvaluativeService {
   }
 
   /**
+   * Retrieves aggregated cohort metrics for all students.
+   */
+  async getCohortStats() {
+    // 1. Get average metrics across all cognitive metrics in the db
+    const aggregations = await this.prisma.cognitiveMetric.aggregate({
+      _avg: {
+        accuracy: true,
+        cognitive_load: true,
+        memory_retention: true,
+        attention_span: true,
+      },
+    });
+
+    // 2. Count unique users who have metrics
+    const uniqueUsers = await this.prisma.cognitiveMetric.groupBy({
+      by: ['user_id'],
+      where: {
+        user_id: { not: null },
+      },
+    });
+    const totalStudents = uniqueUsers.length;
+
+    // 3. Count sessions created in the last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sessionsThisWeek = await this.prisma.cognitiveMetric.count({
+      where: {
+        created_at: {
+          gte: sevenDaysAgo,
+        },
+      },
+    });
+
+    return {
+      avgAccuracy: aggregations._avg.accuracy ?? 0,
+      avgCognitiveLoad: aggregations._avg.cognitive_load ?? 0,
+      avgMemoryRetention: aggregations._avg.memory_retention ?? 0,
+      avgAttentionSpan: aggregations._avg.attention_span ?? 0,
+      totalStudents,
+      sessionsThisWeek,
+    };
+  }
+
+  /**
+   * Retrieves summaries of performance metrics for all students.
+   */
+  async getStudentList() {
+    const users = await this.prisma.app_user.findMany({
+      where: {
+        role: { in: ['user', 'student'] },
+      },
+      include: {
+        cognitiveMetrics: {
+          orderBy: { created_at: 'desc' },
+        },
+      },
+    });
+
+    return users.map((user) => {
+      const metrics = user.cognitiveMetrics;
+      const totalSessions = metrics.length;
+
+      let avgAccuracy = 0;
+      let avgCognitiveLoad = 0;
+      let lastActive = user.created_at.toISOString();
+
+      if (totalSessions > 0) {
+        const sumAccuracy = metrics.reduce((sum, m) => sum + m.accuracy, 0);
+        const sumCogLoad = metrics.reduce((sum, m) => sum + m.cognitive_load, 0);
+        avgAccuracy = sumAccuracy / totalSessions;
+        avgCognitiveLoad = sumCogLoad / totalSessions;
+        lastActive = metrics[0].created_at.toISOString();
+      }
+
+      return {
+        userId: user.user_id,
+        displayName: `${user.firstname} ${user.lastname}`.trim() || user.username || 'Anonymous Student',
+        totalSessions,
+        avgAccuracy,
+        avgCognitiveLoad,
+        lastActive,
+      };
+    });
+  }
+
+  /**
+   * Retrieves individual cognitive metrics history for a specific student.
+   */
+  async getStudentDetail(userId: string) {
+    const metrics = await this.prisma.cognitiveMetric.findMany({
+      where: { user_id: userId },
+      orderBy: { created_at: 'asc' },
+    });
+
+    return metrics.map((m) => ({
+      id: m.metric_id,
+      sessionId: m.session_id,
+      userId: m.user_id,
+      accuracy: m.accuracy,
+      reactionTime: m.reaction_time,
+      cognitiveLoad: m.cognitive_load,
+      memoryRetention: m.memory_retention,
+      attentionSpan: m.attention_span,
+      createdAt: m.created_at.toISOString(),
+    }));
+  }
+
+  /**
    * Evaluative Engine: Processes scores mathematically to generate analytical metrics.
    */
   private calculateMetrics(attempts: GameAttemptRecordDto[]) {
