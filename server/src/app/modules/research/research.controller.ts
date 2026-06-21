@@ -2,16 +2,12 @@ import { Controller, Post, Body, UseInterceptors, Res, Req, HttpStatus } from "@
 import { ResearchService } from "./research.service";
 import { ProcessGameActivityDto } from "./models/game-input.model";
 import { AiCacheInterceptor } from "./interceptors/ai-cache.interceptor";
-import { AiProvider } from "./providers/ai.provider";
 import { Response, Request } from "express";
-import { AiPromptService } from "./services/ai-prompt.service";
 
 @Controller('research')
 export class ResearchController {
     constructor(
         private readonly researchService: ResearchService,
-        private readonly aiProvider: AiProvider,
-        private readonly aiPromptService: AiPromptService,
     ) {}
     
     @Post('process')
@@ -52,21 +48,6 @@ export class ResearchController {
         res.status(HttpStatus.OK);
         res.flushHeaders();
 
-        const { gameType, gameInput, studentResult } = body;
-
-        const defaultPrompt = `You are a pedagogical analyst evaluating a ${gameType} activity`;
-        const systemPrompt = await this.aiPromptService.getPrompt(gameType, 'SYSTEM_ANALYSIS', defaultPrompt);
-
-        // Build simplified context inline (mirrors ResearchService logic)
-        const contextMap: Record<string, () => string> = {
-            'fill-in-the-blanks': () => `Sentence: ${gameInput.sentence}. Blanks: ${gameInput.blanks?.length || 0}`,
-            'speak-about-photo': () => `Prompt: ${gameInput.prompt}. Keywords: ${gameInput.targetKeywords?.join(', ')}`,
-            'listen-type': () => `Audio: ${gameInput.audioUrl}. Expected: ${gameInput.answer}`,
-            'read-aloud': () => `Text: ${gameInput.text}. Min Score: ${gameInput.scoring?.minPronScore}%`,
-            'avatar': () => `Legend: ${gameInput.legend}. Options: ${gameInput.options?.length}`,
-        };
-        const context = contextMap[gameType]?.() || 'General learning activity';
-
         const abortController = new AbortController();
         let isClosed = false;
         const onClose = () => {
@@ -76,12 +57,8 @@ export class ResearchController {
         req.on('close', onClose);
 
         try {
-            const stream = this.aiProvider.streamPedagogicalAction(
-                systemPrompt,
-                context,
-                studentResult,
-                abortController.signal,
-            );
+            // Delegate domain logic (prompt + context resolution) to the service
+            const stream = await this.researchService.processActivityStream(body, abortController.signal);
 
             for await (const chunk of stream) {
                 if (isClosed) break;
