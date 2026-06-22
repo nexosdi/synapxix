@@ -10,16 +10,19 @@ import {
   ComponentRef,
   signal,
   computed,
+  DestroyRef,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { resolveGameLoader } from '../game-registry';
 import { HistoryService } from '../services/history.service';
 import { GameSessionService } from '../services/game-session.service';
 import { GameFlowService } from '../services/game-flow.service';
+import { SseStreamService } from '../services/sse-stream.service';
 import { InteractiveContent } from '../models/history.model';
 import { BaseGameComponent } from './base-game.component';
 import { AnyGameResult } from '../models/game-result.model';
 import { HttpClient } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'lib-game-runner',
@@ -115,7 +118,7 @@ import { HttpClient } from '@angular/common/http';
 
           <!-- Feedback text body -->
           <div class="px-8 py-6 flex flex-col gap-5">
-            @if (feedbackResult()?.feedback) {
+            @if (flowService.feedbackContent() || feedbackResult()?.feedback) {
               <div class="rounded-2xl px-5 py-4 ring-1"
                 [style]="feedbackResult()?.isCorrect
                   ? 'background:rgba(52,211,153,0.08);border-color:rgba(52,211,153,0.25)'
@@ -124,7 +127,12 @@ import { HttpClient } from '@angular/common/http';
                 <p class="text-[10px] font-black uppercase tracking-widest mb-1.5"
                   [style.color]="feedbackResult()?.isCorrect ? '#059669' : '#dc2626'"
                 >AI Feedback</p>
-                <p class="text-sm font-semibold text-gray-700 leading-relaxed">{{ feedbackResult()?.feedback }}</p>
+                <p class="text-sm font-semibold text-gray-700 leading-relaxed">
+                  {{ flowService.feedbackContent() || feedbackResult()?.feedback }}
+                  @if (flowService.feedbackContent() && !feedbackResult()?.feedback) {
+                    <span class="inline-block w-1.5 h-4 bg-violet-500 animate-pulse ml-0.5 align-text-bottom rounded-sm"></span>
+                  }
+                </p>
               </div>
             }
 
@@ -169,6 +177,7 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
 
   // Default base URL for API, normally injected or from environment
   private readonly apiUrl = '/api/game-session';
+  private readonly researchApiUrl = '/api/research';
 
   private currentComponentRef: ComponentRef<BaseGameComponent> | null = null;
   private completionRedirectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -176,6 +185,11 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
   private playStartMs: number | null = null;
   /** Tracks the ID of the content currently being loaded defensively against concurrent renders */
   private pendingRenderId: string | null = null;
+  /** Subscription to the active SSE stream for cleanup */
+  private streamSubscription: Subscription | null = null;
+
+  private readonly sseStream = inject(SseStreamService);
+  private readonly destroyRef = inject(DestroyRef);
 
   /** Stores the last result emitted by a game so the feedback modal can display real AI data */
   protected readonly feedbackResult = signal<AnyGameResult | null>(null);
@@ -290,9 +304,12 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
     if (this.completionRedirectTimer) {
       clearTimeout(this.completionRedirectTimer);
     }
+    // Cancel any active SSE stream to prevent memory leaks
+    this.cleanupStream();
     // The flow service manages its own timers — we just need to
     // unregister our callback to prevent zombie calls
     this.flowService.clearAutoAdvance();
+    this.flowService.clearFeedbackContent();
 
     // Prevent stale state from leaking into the next session
     this.historyService.resetJourney();
@@ -380,11 +397,89 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
       });
     }
 
-    // That's it! The flow service handles:
-    // ANSWERING →(800ms)→ FEEDBACK →(wait for manual advance)→ ADVANCING
+    // 5. Start SSE streaming for AI feedback.
+    //    The ANSWERING → FEEDBACK transition is handled ONCE by
+    //    flowService.startFeedbackStream() — subsequent chunks only
+    //    update feedbackContent without re-transitioning state.
+    this.startAiFeedbackStream(enrichedResult);
+  }
+
+  /**
+   * Opens an SSE POST stream to the research endpoint and accumulates
+   * AI-generated feedback tokens into `flowService.feedbackContent`.
+   *
+   * The FEEDBACK state transition happens exactly once before the stream
+   * starts. If the stream fails, the component falls back to the static
+   * `feedbackResult().feedback` that was already set.
+   */
+  private startAiFeedbackStream(result: AnyGameResult): void {
+    // Clean up any previous stream
+    this.cleanupStream();
+
+    const content = this.historyService.currentContent();
+    if (!content) return;
+
+    // Build the payload matching ProcessGameActivityDto
+    const payload = {
+      studentId: this.sessionService.currentSession()?.userId || 'anonymous',
+      gameType: content.gameType,
+      gameInput: content,
+      studentResult: {
+        content: result.answer,
+        duration: result.timeSpentMs,
+        success: result.isCorrect,
+      },
+    };
+
+    const { stream$, abort } = this.sseStream.streamPost(
+      `${this.researchApiUrl}/process/stream`,
+      payload,
+    );
+
+    // Transition ANSWERING → FEEDBACK once (the timer-based transition
+    // in GameFlowService is bypassed because we drive it manually)
+    // We wait a brief moment to show the "Validando..." overlay
+    setTimeout(() => {
+      this.flowService.startFeedbackStream();
+
+      this.streamSubscription = stream$.subscribe({
+        next: (chunk) => {
+          this.flowService.appendFeedbackChunk(chunk);
+        },
+        error: (err) => {
+          console.error('AI feedback stream error:', err);
+          // Fallback: static feedback already in feedbackResult
+        },
+        complete: () => {
+          // Stream finished — the accumulated text is the full feedback.
+          // Update the feedbackResult with the streamed content so the
+          // static display also has it.
+          const streamedText = this.flowService.feedbackContent();
+          if (streamedText) {
+            const current = this.feedbackResult();
+            if (current) {
+              this.feedbackResult.set({ ...current, feedback: streamedText });
+            }
+          }
+        },
+      });
+    }, this.flowService['_config'].answerToFeedbackDelayMs);
+  }
+
+  /**
+   * Clean up the active SSE stream subscription.
+   * Prevents memory leaks when the user navigates away mid-stream.
+   */
+  private cleanupStream(): void {
+    if (this.streamSubscription) {
+      this.streamSubscription.unsubscribe();
+      this.streamSubscription = null;
+    }
   }
 
   public onManualAdvance(): void {
+    this.cleanupStream();
+    this.flowService.clearFeedbackContent();
     this.feedbackResult.set(null); // Prevent stale state leaking to next game
     this.flowService.advanceNext();
   }

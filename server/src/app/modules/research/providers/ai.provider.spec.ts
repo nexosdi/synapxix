@@ -22,17 +22,33 @@ import { AiProvider } from './ai.provider';
 // ---------------------------------------------------------------------------
 
 const mockGenerateContent = jest.fn();
+const mockGenerateContentStream = jest.fn();
 
 jest.mock('@google/generative-ai', () => ({
   GoogleGenerativeAI: jest.fn().mockImplementation(() => ({
     getGenerativeModel: jest.fn().mockReturnValue({
       generateContent: mockGenerateContent,
+      generateContentStream: mockGenerateContentStream,
     }),
   })),
 }));
 
 // Use fake timers so retry delays don't slow down tests
 jest.useFakeTimers();
+
+/**
+ * Helper to create a mock async iterable stream from an array of text chunks.
+ * Simulates the Google Generative AI SDK's streaming response shape.
+ */
+function createMockStream(chunks: string[]) {
+  return {
+    stream: (async function* () {
+      for (const text of chunks) {
+        yield { text: () => text };
+      }
+    })(),
+  };
+}
 
 describe('AiProvider', () => {
   let provider: AiProvider;
@@ -311,6 +327,244 @@ describe('AiProvider', () => {
 
       expect(result).toContain('"isCorrect": true');
       expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // streamPedagogicalAction tests
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe('streamPedagogicalAction', () => {
+    /**
+     * Happy path: the stream produces multiple text chunks that are
+     * yielded one by one through the AsyncGenerator.
+     */
+    it('should stream pedagogical analysis chunks', async () => {
+      const mockStream = createMockStream([
+        'The student ',
+        'shows strong ',
+        'logical reasoning.',
+      ]);
+      mockGenerateContentStream.mockResolvedValue(mockStream);
+
+      const chunks: string[] = [];
+      for await (const chunk of provider.streamPedagogicalAction(
+        'Analyze this activity',
+        'Fill in the blanks',
+        { success: true, duration: 45 },
+      )) {
+        chunks.push(chunk);
+      }
+
+      expect(chunks).toEqual([
+        'The student ',
+        'shows strong ',
+        'logical reasoning.',
+      ]);
+      expect(mockGenerateContentStream).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * Verify that AbortSignal is passed to generateContentStream.
+     */
+    it('should pass abort signal to generateContentStream', async () => {
+      const mockStream = createMockStream(['Chunk']);
+      mockGenerateContentStream.mockResolvedValue(mockStream);
+      const controller = new AbortController();
+
+      const chunks: string[] = [];
+      for await (const chunk of provider.streamPedagogicalAction(
+        'Analyze',
+        'ctx',
+        { success: true },
+        controller.signal,
+      )) {
+        chunks.push(chunk);
+      }
+
+      expect(mockGenerateContentStream).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    /**
+     * When the stream produces no text chunks, the provider should throw
+     * InternalServerErrorException.
+     */
+    it('should throw on empty stream', async () => {
+      const mockStream = createMockStream([]);
+      mockGenerateContentStream.mockResolvedValue(mockStream);
+
+      const chunks: string[] = [];
+      let caughtError: unknown;
+
+      try {
+        for await (const chunk of provider.streamPedagogicalAction(
+          'Analyze',
+          'ctx',
+          { success: true },
+        )) {
+          chunks.push(chunk);
+        }
+      } catch (error) {
+        caughtError = error;
+      }
+
+      expect(chunks).toEqual([]);
+      expect(caughtError).toBeInstanceOf(InternalServerErrorException);
+    });
+
+    /**
+     * A transient 429 on the initial stream connection should trigger retry.
+     * Once the stream is established on the second attempt, chunks flow normally.
+     */
+    it('should retry on 429 during stream connection and succeed', async () => {
+      const rateLimitError = { status: 429, message: 'Too Many Requests' };
+      const mockStream = createMockStream(['Recovered ', 'stream.']);
+
+      mockGenerateContentStream
+        .mockRejectedValueOnce(rateLimitError)
+        .mockResolvedValue(mockStream);
+
+      const chunks: string[] = [];
+      const streamPromise = (async () => {
+        for await (const chunk of provider.streamPedagogicalAction(
+          'Analyze',
+          'ctx',
+          { success: true },
+        )) {
+          chunks.push(chunk);
+        }
+      })();
+
+      await jest.runAllTimersAsync();
+      await streamPromise;
+
+      expect(chunks).toEqual(['Recovered ', 'stream.']);
+      expect(mockGenerateContentStream).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // streamAudio tests
+  // ─────────────────────────────────────────────────────────────────────────
+
+  describe('streamAudio', () => {
+    /**
+     * Happy path for streaming multimodal audio analysis.
+     */
+    it('should stream audio evaluation chunks', async () => {
+      const mockStream = createMockStream([
+        '{"isCorrect": true, ',
+        '"score": 85, ',
+        '"feedback": "Great!"}',
+      ]);
+      mockGenerateContentStream.mockResolvedValue(mockStream);
+
+      const chunks: string[] = [];
+      for await (const chunk of provider.streamAudio(
+        'Hello world',
+        'audio/webm',
+        'base64audiodata',
+      )) {
+        chunks.push(chunk);
+      }
+
+      expect(chunks).toEqual([
+        '{"isCorrect": true, ',
+        '"score": 85, ',
+        '"feedback": "Great!"}',
+      ]);
+      expect(mockGenerateContentStream).toHaveBeenCalledTimes(1);
+
+      // Verify multimodal payload structure
+      const callArgs = mockGenerateContentStream.mock.calls[0][0];
+      expect(callArgs).toHaveLength(2);
+      expect(callArgs[1]).toEqual({
+        inlineData: {
+          data: 'base64audiodata',
+          mimeType: 'audio/webm',
+        },
+      });
+    });
+
+    /**
+     * Verify that AbortSignal is passed to generateContentStream for audio.
+     */
+    it('should pass abort signal to generateContentStream for audio', async () => {
+      const mockStream = createMockStream(['Chunk']);
+      mockGenerateContentStream.mockResolvedValue(mockStream);
+      const controller = new AbortController();
+
+      const chunks: string[] = [];
+      for await (const chunk of provider.streamAudio(
+        'Hello',
+        'audio/webm',
+        'data',
+        'read-aloud',
+        controller.signal,
+      )) {
+        chunks.push(chunk);
+      }
+
+      expect(mockGenerateContentStream).toHaveBeenCalledWith(
+        expect.any(Array),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    /**
+     * Empty audio stream should throw InternalServerErrorException.
+     */
+    it('should throw on empty audio stream', async () => {
+      const mockStream = createMockStream([]);
+      mockGenerateContentStream.mockResolvedValue(mockStream);
+
+      let caughtError: unknown;
+
+      try {
+        for await (const _chunk of provider.streamAudio(
+          'Hello',
+          'audio/webm',
+          'data',
+        )) {
+          // consume
+        }
+      } catch (error) {
+        caughtError = error;
+      }
+
+      expect(caughtError).toBeInstanceOf(InternalServerErrorException);
+    });
+
+    /**
+     * Retry on 429 for audio stream connection.
+     */
+    it('should retry on 429 during audio stream connection', async () => {
+      const rateLimitError = { status: 429, message: 'Rate limited' };
+      const mockStream = createMockStream(['{"isCorrect": true}']);
+
+      mockGenerateContentStream
+        .mockRejectedValueOnce(rateLimitError)
+        .mockResolvedValue(mockStream);
+
+      const chunks: string[] = [];
+      const streamPromise = (async () => {
+        for await (const chunk of provider.streamAudio(
+          'Hello',
+          'audio/webm',
+          'data',
+        )) {
+          chunks.push(chunk);
+        }
+      })();
+
+      await jest.runAllTimersAsync();
+      await streamPromise;
+
+      expect(chunks).toEqual(['{"isCorrect": true}']);
+      expect(mockGenerateContentStream).toHaveBeenCalledTimes(2);
     });
   });
 });
