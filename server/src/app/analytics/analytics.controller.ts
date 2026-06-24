@@ -6,6 +6,8 @@ import {
   IndividualCognitiveAverageDto,
   ClassProgressDto,
   StudentProgressDto,
+  GlobalMotorAverageDto,
+  GlobalEvaluativeAverageDto,
 } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -57,5 +59,23 @@ export class AnalyticsController {
     @Param('studentId') studentId: string,
   ): Promise<StudentProgressDto> {
     return this.analyticsService.getStudentProgress(studentId);
+  }
+
+  /**
+   * Retrieves the global motor average.
+   * @returns The global motor average.
+   */
+  @Get('global-motor-average')
+  async getGlobalMotorAverage(): Promise<GlobalMotorAverageDto> {
+    return this.analyticsService.getGlobalMotorAverage();
+  }
+
+  /**
+   * Retrieves the global evaluative average.
+   * @returns The global evaluative average.
+   */
+  @Get('global-evaluative-average')
+  async getGlobalEvaluativeAverage(): Promise<GlobalEvaluativeAverageDto> {
+    return this.analyticsService.getGlobalEvaluativeAverage();
   }
 }
