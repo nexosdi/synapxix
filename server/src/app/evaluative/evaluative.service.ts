@@ -122,6 +122,135 @@ export class EvaluativeService {
   }
 
   /**
+   * Retrieves aggregated cohort metrics for all students.
+   */
+  async getCohortStats() {
+    // 1. Get average metrics across all cognitive metrics in the db
+    const aggregations = await this.prisma.cognitiveMetric.aggregate({
+      _avg: {
+        accuracy: true,
+        cognitive_load: true,
+        memory_retention: true,
+        attention_span: true,
+      },
+    });
+
+    // 2. Count unique users who have metrics
+    const uniqueUsers = await this.prisma.cognitiveMetric.groupBy({
+      by: ['user_id'],
+      where: {
+        user_id: { not: null },
+      },
+    });
+    const totalStudents = uniqueUsers.length;
+
+    // 3. Count sessions created in the last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sessionsThisWeek = await this.prisma.cognitiveMetric.count({
+      where: {
+        created_at: {
+          gte: sevenDaysAgo,
+        },
+      },
+    });
+
+    return {
+      avgAccuracy: aggregations._avg.accuracy ?? 0,
+      avgCognitiveLoad: aggregations._avg.cognitive_load ?? 0,
+      avgMemoryRetention: aggregations._avg.memory_retention ?? 0,
+      avgAttentionSpan: aggregations._avg.attention_span ?? 0,
+      totalStudents,
+      sessionsThisWeek,
+    };
+  }
+
+  /**
+   * Retrieves summaries of performance metrics for all students.
+   */
+  async getStudentList() {
+    // 1. Fetch only student user attributes (no metrics)
+    const students = await this.prisma.app_user.findMany({
+      where: {
+        role: { in: ['user', 'student'] },
+      },
+      select: {
+        user_id: true,
+        firstname: true,
+        lastname: true,
+        username: true,
+        created_at: true,
+      },
+    });
+
+    // 2. Perform aggregations directly inside the database using Prisma's groupBy
+    const aggregations = await this.prisma.cognitiveMetric.groupBy({
+      by: ['user_id'],
+      _count: {
+        session_id: true,
+      },
+      _avg: {
+        accuracy: true,
+        cognitive_load: true,
+      },
+      _max: {
+        created_at: true,
+      },
+      where: {
+        user_id: { not: null },
+      },
+    });
+
+    // 3. Create a fast lookup map for student metrics aggregation (O(1) lookups)
+    const aggMap = new Map(
+      aggregations.map((agg) => [
+        agg.user_id,
+        {
+          totalSessions: agg._count.session_id,
+          avgAccuracy: agg._avg.accuracy ?? 0,
+          avgCognitiveLoad: agg._avg.cognitive_load ?? 0,
+          lastActive: agg._max.created_at ? agg._max.created_at.toISOString() : null,
+        },
+      ])
+    );
+
+    // 4. Map students with their corresponding aggregated data (O(N) total)
+    return students.map((user) => {
+      const agg = aggMap.get(user.user_id);
+      return {
+        userId: user.user_id,
+        displayName: `${user.firstname} ${user.lastname}`.trim() || user.username || 'Anonymous Student',
+        totalSessions: agg?.totalSessions ?? 0,
+        avgAccuracy: agg?.avgAccuracy ?? 0,
+        avgCognitiveLoad: agg?.avgCognitiveLoad ?? 0,
+        lastActive: agg?.lastActive ?? user.created_at.toISOString(),
+      };
+    });
+  }
+
+  /**
+   * Retrieves individual cognitive metrics history for a specific student.
+   */
+  async getStudentDetail(userId: string) {
+    const metrics = await this.prisma.cognitiveMetric.findMany({
+      where: { user_id: userId },
+      orderBy: { created_at: 'asc' },
+    });
+
+    return metrics.map((m) => ({
+      id: m.metric_id,
+      sessionId: m.session_id,
+      userId: m.user_id,
+      accuracy: m.accuracy,
+      reactionTime: m.reaction_time,
+      cognitiveLoad: m.cognitive_load,
+      memoryRetention: m.memory_retention,
+      attentionSpan: m.attention_span,
+      createdAt: m.created_at.toISOString(),
+    }));
+  }
+
+  /**
    * Evaluative Engine: Processes scores mathematically to generate analytical metrics.
    */
   private calculateMetrics(attempts: GameAttemptRecordDto[]) {

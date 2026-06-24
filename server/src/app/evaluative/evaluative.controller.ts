@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, createParamDecorator, ExecutionContext, Res, Req } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, HttpCode, HttpStatus, UseGuards, createParamDecorator, ExecutionContext, Res, Req } from '@nestjs/common';
 import { EvaluativeService } from './evaluative.service';
 import { EvaluateSessionDto, EvaluateAiInputDto } from './dto/evaluate-session.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -53,8 +53,8 @@ export class EvaluativeController {
     // Dispatch to correct AI analysis method (Audio/Phonetic vs Semantic)
     if (dto.audioBase64 && dto.expectedText && dto.audioMimeType) {
        aiResponseText = await this.aiProvider.analyzeAudio(
-         dto.expectedText, 
-         dto.audioMimeType, 
+         dto.expectedText,
+         dto.audioMimeType,
          dto.audioBase64
        );
     } else {
@@ -67,8 +67,8 @@ export class EvaluativeController {
 
     // Process the raw AI analysis into DB standardized metrics
     const metric = await this.evaluativeService.transformAiToMetricsAndPersist(
-      userId, 
-      dto.sessionId, 
+      userId,
+      dto.sessionId,
       aiResponseText
     );
 
@@ -77,6 +77,24 @@ export class EvaluativeController {
       message: 'AI cognitive metrics evaluated and persisted successfully',
       data: metric,
     };
+  }
+
+  @Get('cohort-stats')
+  @UseGuards(JwtAuthGuard)
+  async getCohortStats() {
+    return this.evaluativeService.getCohortStats();
+  }
+
+  @Get('students')
+  @UseGuards(JwtAuthGuard)
+  async getStudentList() {
+    return this.evaluativeService.getStudentList();
+  }
+
+  @Get('students/:id/metrics')
+  @UseGuards(JwtAuthGuard)
+  async getStudentDetail(@Param('id') userId: string) {
+    return this.evaluativeService.getStudentDetail(userId);
   }
 
   /**
@@ -160,4 +178,3 @@ export class EvaluativeController {
     }
   }
 }
-

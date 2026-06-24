@@ -1,0 +1,305 @@
+<div class="teacher-dash">
+
+  <!-- ── Navbar ────────────────────────────────────────────────────────── -->
+  <nav class="navbar" role="navigation" aria-label="Teacher portal navigation">
+    <a class="navbar__brand" href="#">
+      <img class="navbar__logo" src="/logo.png" alt="Synapxix logo" />
+      <span class="navbar__name">Synapxix</span>
+    </a>
+
+    <div class="navbar__center">
+      <span class="navbar__role-badge">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13">
+          <path d="M12 3L1 9l4 2.18V15h2v-2.82L9 13.18V17h6v-3.82l2-1.09V15h2v-3.82L23 9 12 3zm0 2.26L19.74 9 12 12.74 4.26 9 12 5.26zM17 14h-2v1h2v-1zm-4 0H9v1h4v-1z"/>
+        </svg>
+        Teacher Portal
+      </span>
+    </div>
+
+    <div class="navbar__actions">
+      <div class="navbar__avatar" role="button" aria-label="User profile">
+        {{ getUserInitial() }}
+      </div>
+      <button class="btn-logout" id="teacher-logout-btn" (click)="logout()">Log out</button>
+    </div>
+  </nav>
+
+  <!-- ── Main ──────────────────────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- ── Hero ────────────────────────────────────────────────────────── -->
+    <section class="hero" aria-label="Dashboard header">
+      <div>
+        <h1 class="hero__title">Class Overview</h1>
+        <p class="hero__subtitle">Monitor your students' cognitive performance and progress.</p>
+      </div>
+    </section>
+
+    <!-- ── KPI Cards ─────────────────────────────────────────────────── -->
+    <section class="kpi-grid" aria-label="Key performance indicators">
+
+      @if (loadingCohort()) {
+        @for (_ of [1,2,3,4]; track $index) {
+          <div class="kpi-card">
+            <div class="skeleton skeleton--icon"></div>
+            <div class="skeleton skeleton--value"></div>
+            <div class="skeleton skeleton--label"></div>
+          </div>
+        }
+      }
+
+      @if (!loadingCohort() && errorCohort()) {
+        <div class="error-banner" role="alert">
+          <span>{{ errorCohort() }}</span>
+          <button class="btn-retry" (click)="loadCohort()">Retry</button>
+        </div>
+      }
+
+      @if (!loadingCohort() && !errorCohort() && cohortStats()) {
+        <div class="kpi-card kpi-card--purple">
+          <div class="kpi-card__icon">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+            </svg>
+          </div>
+          <div class="kpi-card__value">{{ cohortStats()!.totalStudents }}</div>
+          <div class="kpi-card__label">Total Students</div>
+        </div>
+
+        <div class="kpi-card kpi-card--green">
+          <div class="kpi-card__icon">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/>
+            </svg>
+          </div>
+          <div class="kpi-card__value">{{ kpiAccuracyPct() }}%</div>
+          <div class="kpi-card__label">Avg Accuracy</div>
+        </div>
+
+        <div class="kpi-card kpi-card--pink">
+          <div class="kpi-card__icon">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+            </svg>
+          </div>
+          <div class="kpi-card__value">{{ kpiCogLoadRound() }}</div>
+          <div class="kpi-card__label">Avg Cognitive Load</div>
+        </div>
+
+        <div class="kpi-card kpi-card--amber">
+          <div class="kpi-card__icon">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+            </svg>
+          </div>
+          <div class="kpi-card__value">{{ cohortStats()!.sessionsThisWeek }}</div>
+          <div class="kpi-card__label">Sessions This Week</div>
+        </div>
+      }
+    </section>
+
+    <!-- ── Cohort Bar Chart ──────────────────────────────────────────── -->
+    <section class="section" aria-label="Cohort metrics chart">
+      <div class="section-header">
+        <div class="section-header__icon">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+            <path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="section-header__title">Cognitive Metrics — Class Average</h2>
+          <p class="section-header__subtitle">Aggregated scores across all students</p>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        @if (loadingCohort()) {
+          <div class="chart-skeleton"></div>
+        } @else if (errorCohort()) {
+          <div class="error-banner" role="alert">
+            <span>{{ errorCohort() }}</span>
+            <button class="btn-retry" (click)="loadCohort()">Retry</button>
+          </div>
+        } @else {
+          <div class="chart-wrap" aria-label="Bar chart showing class cognitive averages">
+            <canvas baseChart
+              [data]="barChartData()"
+              [options]="barChartOptions"
+              type="bar">
+            </canvas>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- ── Student Table ─────────────────────────────────────────────── -->
+    <section class="section" aria-label="Student list">
+      <div class="section-header">
+        <div class="section-header__icon">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+            <path d="M20 6h-2.18c.07-.44.18-.88.18-1.35C18 2.54 15.96.5 13.45.5c-1.4 0-2.56.67-3.45 1.67L9 3.28l-1-.94C7.1 1.17 5.94.5 4.55.5 2.04.5 0 2.54 0 4.65c0 .47.11.91.18 1.35H0v2h20V6zm0 4H4v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="section-header__title">Students</h2>
+          <p class="section-header__subtitle">Click a row to view individual metrics</p>
+        </div>
+      </div>
+
+      <div class="table-card">
+        @if (loadingStudents()) {
+          <div class="table-skeleton">
+            @for (_ of [1,2,3,4,5]; track $index) {
+              <div class="table-skeleton__row">
+                <div class="skeleton skeleton--cell-lg"></div>
+                <div class="skeleton skeleton--cell-sm"></div>
+                <div class="skeleton skeleton--cell-sm"></div>
+                <div class="skeleton skeleton--cell-sm"></div>
+                <div class="skeleton skeleton--cell-sm"></div>
+              </div>
+            }
+          </div>
+        } @else if (errorStudents()) {
+          <div class="error-banner" role="alert">
+            <span>{{ errorStudents() }}</span>
+            <button class="btn-retry" (click)="loadStudents()">Retry</button>
+          </div>
+        } @else {
+          <div class="table-scroll" role="region" aria-label="Student metrics table" tabindex="0">
+            <table class="table" aria-label="Students performance">
+              <thead>
+                <tr>
+                  <th (click)="sortBy('displayName')" role="columnheader" tabindex="0" [class.sorted]="sortField() === 'displayName'">
+                    Student
+                    <svg class="sort-icon" [class.sort-icon--active]="sortField() === 'displayName'" [class.sort-icon--asc]="sortDir() === 'asc'" viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+                      <path d="M7 10l5 5 5-5z"/>
+                    </svg>
+                  </th>
+                  <th (click)="sortBy('totalSessions')" role="columnheader" tabindex="0" [class.sorted]="sortField() === 'totalSessions'">
+                    Sessions
+                    <svg class="sort-icon" [class.sort-icon--active]="sortField() === 'totalSessions'" [class.sort-icon--asc]="sortDir() === 'asc'" viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+                      <path d="M7 10l5 5 5-5z"/>
+                    </svg>
+                  </th>
+                  <th (click)="sortBy('avgAccuracy')" role="columnheader" tabindex="0" [class.sorted]="sortField() === 'avgAccuracy'">
+                    Avg Accuracy
+                    <svg class="sort-icon" [class.sort-icon--active]="sortField() === 'avgAccuracy'" [class.sort-icon--asc]="sortDir() === 'asc'" viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+                      <path d="M7 10l5 5 5-5z"/>
+                    </svg>
+                  </th>
+                  <th (click)="sortBy('avgCognitiveLoad')" role="columnheader" tabindex="0" [class.sorted]="sortField() === 'avgCognitiveLoad'">
+                    Cog. Load
+                    <svg class="sort-icon" [class.sort-icon--active]="sortField() === 'avgCognitiveLoad'" [class.sort-icon--asc]="sortDir() === 'asc'" viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+                      <path d="M7 10l5 5 5-5z"/>
+                    </svg>
+                  </th>
+                  <th (click)="sortBy('lastActive')" role="columnheader" tabindex="0" [class.sorted]="sortField() === 'lastActive'">
+                    Last Active
+                    <svg class="sort-icon" [class.sort-icon--active]="sortField() === 'lastActive'" [class.sort-icon--asc]="sortDir() === 'asc'" viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+                      <path d="M7 10l5 5 5-5z"/>
+                    </svg>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (student of sortedStudents(); track student.userId) {
+                  <tr
+                    (click)="openStudentDetail(student)"
+                    [class.row--active]="selectedStudent()?.userId === student.userId"
+                    role="button"
+                    tabindex="0"
+                    [attr.aria-label]="'View metrics for ' + student.displayName"
+                    (keydown.enter)="openStudentDetail(student)"
+                  >
+                    <td class="td--name">
+                      <div class="student-avatar">{{ student.displayName.charAt(0) }}</div>
+                      {{ student.displayName }}
+                    </td>
+                    <td>{{ student.totalSessions }}</td>
+                    <td>
+                      <span [class]="accuracyClass(student.avgAccuracy)">
+                        {{ pct(student.avgAccuracy) }}
+                      </span>
+                    </td>
+                    <td>{{ student.avgCognitiveLoad | number:'1.0-0' }}</td>
+                    <td class="td--muted">{{ relativeDate(student.lastActive) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </section>
+  </main>
+
+  <!-- ── Student Detail Drawer ─────────────────────────────────────── -->
+  <div
+    class="drawer-overlay"
+    [class.drawer-overlay--open]="drawerOpen()"
+    (click)="closeDrawer()"
+    role="presentation"
+    aria-hidden="true"
+  ></div>
+
+  <aside
+    class="drawer"
+    [class.drawer--open]="drawerOpen()"
+    role="complementary"
+    [attr.aria-label]="'Metrics for ' + selectedStudent()?.displayName"
+  >
+    @if (selectedStudent()) {
+      <div class="drawer__header">
+        <div class="drawer__student">
+          <div class="student-avatar student-avatar--lg">{{ selectedStudent()!.displayName.charAt(0) }}</div>
+          <div>
+            <h3 class="drawer__student-name">{{ selectedStudent()!.displayName }}</h3>
+            <p class="drawer__student-meta">{{ selectedStudent()!.totalSessions }} sessions · Last active {{ relativeDate(selectedStudent()!.lastActive) }}</p>
+          </div>
+        </div>
+        <button class="drawer__close" (click)="closeDrawer()" aria-label="Close detail panel">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="drawer__body">
+        @if (loadingDetail()) {
+          <div class="chart-skeleton chart-skeleton--sm"></div>
+        } @else if (errorDetail()) {
+          <div class="error-banner" role="alert">
+            <span>{{ errorDetail() }}</span>
+            <button class="btn-retry" (click)="openStudentDetail(selectedStudent()!)">Retry</button>
+          </div>
+        } @else {
+          <p class="drawer__chart-label">Performance over time</p>
+          <div class="chart-wrap chart-wrap--sm" aria-label="Line chart of student metrics over time">
+            <canvas baseChart
+              [data]="lineChartData()"
+              [options]="lineChartOptions"
+              type="line">
+            </canvas>
+          </div>
+
+          <!-- Mini KPI row inside drawer -->
+          <div class="drawer__kpis">
+            <div class="drawer__kpi">
+              <span class="drawer__kpi-value" style="color:#a78bfa">{{ pct(selectedStudent()!.avgAccuracy) }}</span>
+              <span class="drawer__kpi-label">Accuracy</span>
+            </div>
+            <div class="drawer__kpi">
+              <span class="drawer__kpi-value" style="color:#f472b6">{{ selectedStudent()!.avgCognitiveLoad | number:'1.0-0' }}</span>
+              <span class="drawer__kpi-label">Cog. Load</span>
+            </div>
+            <div class="drawer__kpi">
+              <span class="drawer__kpi-value" style="color:#34d399">{{ selectedStudent()!.totalSessions }}</span>
+              <span class="drawer__kpi-label">Sessions</span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </aside>
+
+</div>
