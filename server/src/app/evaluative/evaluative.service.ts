@@ -169,40 +169,61 @@ export class EvaluativeService {
    * Retrieves summaries of performance metrics for all students.
    */
   async getStudentList() {
-    const users = await this.prisma.app_user.findMany({
+    // 1. Fetch only student user attributes (no metrics)
+    const students = await this.prisma.app_user.findMany({
       where: {
         role: { in: ['user', 'student'] },
       },
-      include: {
-        cognitiveMetrics: {
-          orderBy: { created_at: 'desc' },
-        },
+      select: {
+        user_id: true,
+        firstname: true,
+        lastname: true,
+        username: true,
+        created_at: true,
       },
     });
 
-    return users.map((user) => {
-      const metrics = user.cognitiveMetrics;
-      const totalSessions = metrics.length;
+    // 2. Perform aggregations directly inside the database using Prisma's groupBy
+    const aggregations = await this.prisma.cognitiveMetric.groupBy({
+      by: ['user_id'],
+      _count: {
+        session_id: true,
+      },
+      _avg: {
+        accuracy: true,
+        cognitive_load: true,
+      },
+      _max: {
+        created_at: true,
+      },
+      where: {
+        user_id: { not: null },
+      },
+    });
 
-      let avgAccuracy = 0;
-      let avgCognitiveLoad = 0;
-      let lastActive = user.created_at.toISOString();
+    // 3. Create a fast lookup map for student metrics aggregation (O(1) lookups)
+    const aggMap = new Map(
+      aggregations.map((agg) => [
+        agg.user_id,
+        {
+          totalSessions: agg._count.session_id,
+          avgAccuracy: agg._avg.accuracy ?? 0,
+          avgCognitiveLoad: agg._avg.cognitive_load ?? 0,
+          lastActive: agg._max.created_at ? agg._max.created_at.toISOString() : null,
+        },
+      ])
+    );
 
-      if (totalSessions > 0) {
-        const sumAccuracy = metrics.reduce((sum, m) => sum + m.accuracy, 0);
-        const sumCogLoad = metrics.reduce((sum, m) => sum + m.cognitive_load, 0);
-        avgAccuracy = sumAccuracy / totalSessions;
-        avgCognitiveLoad = sumCogLoad / totalSessions;
-        lastActive = metrics[0].created_at.toISOString();
-      }
-
+    // 4. Map students with their corresponding aggregated data (O(N) total)
+    return students.map((user) => {
+      const agg = aggMap.get(user.user_id);
       return {
         userId: user.user_id,
         displayName: `${user.firstname} ${user.lastname}`.trim() || user.username || 'Anonymous Student',
-        totalSessions,
-        avgAccuracy,
-        avgCognitiveLoad,
-        lastActive,
+        totalSessions: agg?.totalSessions ?? 0,
+        avgAccuracy: agg?.avgAccuracy ?? 0,
+        avgCognitiveLoad: agg?.avgCognitiveLoad ?? 0,
+        lastActive: agg?.lastActive ?? user.created_at.toISOString(),
       };
     });
   }
