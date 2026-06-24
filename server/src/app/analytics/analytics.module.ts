@@ -2,7 +2,7 @@
 import { Module } from '@nestjs/common';
 import { AnalyticsController } from './analytics.controller';
 import { AnalyticsService } from './analytics.service';
-import { PrismaModule } from '@synapxix/prisma-client';
+import { PrismaModule } from '@nexosdi.synapxix/prisma';
 
 @Module({
   imports: [PrismaModule],

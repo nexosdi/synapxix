@@ -9,7 +9,7 @@ import {
   GlobalMotorAverageDto,
   GlobalEvaluativeAverageDto,
 } from './dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('analytics')
 @UseGuards(JwtAuthGuard)

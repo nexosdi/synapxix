@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@synapxix/prisma-client';
+import { PrismaService } from '@nexosdi.synapxix/prisma';
 import {
   GlobalCognitiveAverageDto,
   IndividualCognitiveAverageDto,
@@ -125,12 +125,9 @@ export class AnalyticsService {
    * @returns A promise that resolves to a GlobalMotorAverageDto object.
    */
   async getGlobalMotorAverage(): Promise<GlobalMotorAverageDto> {
-    const { _avg, _count } = await this.prisma.gameAttempt.aggregate({
+    const avgScore = await this.prisma.gameAttempt.aggregate({
       _avg: {
         score: true,
-      },
-      _count: {
-        _all: true,
       },
     });
 
@@ -140,10 +137,10 @@ export class AnalyticsService {
       },
     });
 
-    const totalAttempts = _count._all;
+    const totalAttempts = await this.prisma.gameAttempt.count();
 
     return {
-      average_score: _avg.score || 0,
+      average_score: avgScore._avg.score || 0,
       completed_quickly_rate:
         totalAttempts > 0 ? quickCompletions / totalAttempts : 0,
     };
@@ -155,17 +152,13 @@ export class AnalyticsService {
    * @returns A promise that resolves to a GlobalEvaluativeAverageDto object.
    */
   async getGlobalEvaluativeAverage(): Promise<GlobalEvaluativeAverageDto> {
-    const { _count } = await this.prisma.gameAttempt.aggregate({
-      _count: { _all: true },
-    });
-
     const correctAttempts = await this.prisma.gameAttempt.count({
       where: {
         is_correct: true,
       },
     });
 
-    const totalAttempts = _count._all;
+    const totalAttempts = await this.prisma.gameAttempt.count();
 
     return {
       success_rate: totalAttempts > 0 ? correctAttempts / totalAttempts : 0,
