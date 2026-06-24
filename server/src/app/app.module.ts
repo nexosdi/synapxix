@@ -9,6 +9,7 @@ import { GameSessionModule } from './game-session/game-session.module';
 import { ResearchModule } from './modules/research/research.module';
 import { EvaluativeModule } from './evaluative/evaluative.module';
 import { ExercisesModule } from './exercises/exercises.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 /**
  * Root application module.
@@ -31,6 +32,7 @@ import { ExercisesModule } from './exercises/exercises.module';
     ResearchModule,
     EvaluativeModule,
     ExercisesModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
