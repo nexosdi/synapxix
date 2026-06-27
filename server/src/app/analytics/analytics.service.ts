@@ -35,9 +35,9 @@ export class AnalyticsService {
     });
 
     return {
-      accuracy: cognitiveAverages._avg.accuracy || 0,
-      reaction_time: cognitiveAverages._avg.reaction_time || 0,
-      cognitive_load: cognitiveAverages._avg.cognitive_load || 0,
+      accuracy: cognitiveAverages._avg.accuracy ?? 0,
+      reaction_time: cognitiveAverages._avg.reaction_time ?? 0,
+      cognitive_load: cognitiveAverages._avg.cognitive_load ?? 0,
     };
   }
 
@@ -63,9 +63,9 @@ export class AnalyticsService {
 
     return {
       user_id: userId,
-      accuracy: cognitiveAverages._avg.accuracy || 0,
-      reaction_time: cognitiveAverages._avg.reaction_time || 0,
-      cognitive_load: cognitiveAverages._avg.cognitive_load || 0,
+      accuracy: cognitiveAverages._avg.accuracy ?? 0,
+      reaction_time: cognitiveAverages._avg.reaction_time ?? 0,
+      cognitive_load: cognitiveAverages._avg.cognitive_load ?? 0,
     };
   }
 
@@ -93,7 +93,7 @@ export class AnalyticsService {
 
     return {
       class_id: classId,
-      progress: classProgress._avg.progress || 0,
+      progress: classProgress._avg.progress ?? 0,
     };
   }
 
@@ -115,7 +115,7 @@ export class AnalyticsService {
 
     return {
       student_id: studentId,
-      progress: studentProgress._avg.progress || 0,
+      progress: studentProgress._avg.progress ?? 0,
     };
   }
 
@@ -125,22 +125,22 @@ export class AnalyticsService {
    * @returns A promise that resolves to a GlobalMotorAverageDto object.
    */
   async getGlobalMotorAverage(): Promise<GlobalMotorAverageDto> {
-    const avgScore = await this.prisma.gameAttempt.aggregate({
-      _avg: {
-        score: true,
-      },
-    });
-
-    const quickCompletions = await this.prisma.gameAttempt.count({
-      where: {
-        completed_quickly: true,
-      },
-    });
-
-    const totalAttempts = await this.prisma.gameAttempt.count();
+    const [avgScore, quickCompletions, totalAttempts] = await Promise.all([
+      this.prisma.gameAttempt.aggregate({
+        _avg: {
+          score: true,
+        },
+      }),
+      this.prisma.gameAttempt.count({
+        where: {
+          completed_quickly: true,
+        },
+      }),
+      this.prisma.gameAttempt.count(),
+    ]);
 
     return {
-      average_score: avgScore._avg.score || 0,
+      average_score: avgScore._avg.score ?? 0,
       completed_quickly_rate:
         totalAttempts > 0 ? quickCompletions / totalAttempts : 0,
     };
@@ -152,13 +152,14 @@ export class AnalyticsService {
    * @returns A promise that resolves to a GlobalEvaluativeAverageDto object.
    */
   async getGlobalEvaluativeAverage(): Promise<GlobalEvaluativeAverageDto> {
-    const correctAttempts = await this.prisma.gameAttempt.count({
-      where: {
-        is_correct: true,
-      },
-    });
-
-    const totalAttempts = await this.prisma.gameAttempt.count();
+    const [correctAttempts, totalAttempts] = await Promise.all([
+      this.prisma.gameAttempt.count({
+        where: {
+          is_correct: true,
+        },
+      }),
+      this.prisma.gameAttempt.count(),
+    ]);
 
     return {
       success_rate: totalAttempts > 0 ? correctAttempts / totalAttempts : 0,
