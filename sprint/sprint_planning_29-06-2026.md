@@ -1,7 +1,7 @@
 # Planificación de Sprint (Sprint Planning)
 Proyecto Educativo Gamificado — Synapxix
 Proyecto: Synapxix
-Fecha del Sprint: 2026-06-29 (Semana 1)
+Fecha del Sprint: 29-06-2026 (Semana 1)
 Metodología: Ágil / Scrum
 Stack Tecnológico: Nx, Angular, NestJS, Prisma, PostgreSQL
 
