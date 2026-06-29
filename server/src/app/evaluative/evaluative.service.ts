@@ -122,50 +122,6 @@ export class EvaluativeService {
   }
 
   /**
-   * Retrieves aggregated cohort metrics for all students.
-   */
-  async getCohortStats() {
-    // 1. Get average metrics across all cognitive metrics in the db
-    const aggregations = await this.prisma.cognitiveMetric.aggregate({
-      _avg: {
-        accuracy: true,
-        cognitive_load: true,
-        memory_retention: true,
-        attention_span: true,
-      },
-    });
-
-    // 2. Count unique users who have metrics
-    const uniqueUsers = await this.prisma.cognitiveMetric.groupBy({
-      by: ['user_id'],
-      where: {
-        user_id: { not: null },
-      },
-    });
-    const totalStudents = uniqueUsers.length;
-
-    // 3. Count sessions created in the last 7 days
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const sessionsThisWeek = await this.prisma.cognitiveMetric.count({
-      where: {
-        created_at: {
-          gte: sevenDaysAgo,
-        },
-      },
-    });
-
-    return {
-      avgAccuracy: aggregations._avg.accuracy ?? 0,
-      avgCognitiveLoad: aggregations._avg.cognitive_load ?? 0,
-      avgMemoryRetention: aggregations._avg.memory_retention ?? 0,
-      avgAttentionSpan: aggregations._avg.attention_span ?? 0,
-      totalStudents,
-      sessionsThisWeek,
-    };
-  }
-
-  /**
    * Retrieves summaries of performance metrics for all students.
    */
   async getStudentList() {

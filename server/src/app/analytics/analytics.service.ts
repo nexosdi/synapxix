@@ -25,12 +25,34 @@ export class AnalyticsService {
    * This method aggregates the cognitive metrics for all users and returns the average accuracy, reaction time, and cognitive load.
    * @returns A promise that resolves to a GlobalCognitiveAverageDto object.
    */
-  async getGlobalCognitiveAverage(): Promise<GlobalCognitiveAverageDto> {
+  async getGlobalCognitiveAverage(
+    startDate?: string,
+    endDate?: string,
+  ): Promise<GlobalCognitiveAverageDto> {
+    const where: any = {};
+
+    if (startDate) {
+      where.created_at = { ...where.created_at, gte: new Date(startDate) };
+    }
+
+    if (endDate) {
+      where.created_at = { ...where.created_at, lte: new Date(endDate) };
+    }
+
+    if (!startDate && !endDate) {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      where.created_at = { gte: thirtyDaysAgo };
+    }
+
     const cognitiveAverages = await this.prisma.cognitiveMetric.aggregate({
+      where,
       _avg: {
         accuracy: true,
         reaction_time: true,
         cognitive_load: true,
+        memory_retention: true,
+        attention_span: true,
       },
     });
 
@@ -38,6 +60,8 @@ export class AnalyticsService {
       accuracy: cognitiveAverages._avg.accuracy ?? 0,
       reaction_time: cognitiveAverages._avg.reaction_time ?? 0,
       cognitive_load: cognitiveAverages._avg.cognitive_load ?? 0,
+      memory_retention: cognitiveAverages._avg.memory_retention ?? 0,
+      attention_span: cognitiveAverages._avg.attention_span ?? 0,
     };
   }
 

@@ -37,4 +37,26 @@ export class GlobalCognitiveAverageDto {
   })
   @IsNumber()
   cognitive_load: number;
+
+  /**
+   * The average memory retention of all users.
+   * @example 0.9
+   */
+  @ApiProperty({
+    description: 'The average memory retention of all users.',
+    example: 0.9,
+  })
+  @IsNumber()
+  memory_retention: number;
+
+  /**
+   * The average attention span of all users.
+   * @example 0.8
+   */
+  @ApiProperty({
+    description: 'The average attention span of all users.',
+    example: 0.8,
+  })
+  @IsNumber()
+  attention_span: number;
 }
