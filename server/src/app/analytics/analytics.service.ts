@@ -79,6 +79,8 @@ export class AnalyticsService {
         accuracy: true,
         reaction_time: true,
         cognitive_load: true,
+        memory_retention: true,
+        attention_span: true,
       },
       where: {
         user_id: userId,
@@ -90,6 +92,8 @@ export class AnalyticsService {
       accuracy: cognitiveAverages._avg.accuracy ?? 0,
       reaction_time: cognitiveAverages._avg.reaction_time ?? 0,
       cognitive_load: cognitiveAverages._avg.cognitive_load ?? 0,
+      memory_retention: cognitiveAverages._avg.memory_retention ?? 0,
+      attention_span: cognitiveAverages._avg.attention_span ?? 0,
     };
   }
 
