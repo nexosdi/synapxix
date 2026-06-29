@@ -11,9 +11,14 @@ import { MapComponent } from '../components/map.component';
 import { SplashComponent } from '../components/splash.component';
 import { DashboardComponent } from '../components/dashboard/dashboard.component';
 import { RoadmapBuilderComponent } from '../teachers-form/roadmap-builder.component';
+import { ShopComponent } from '../components/shop/shop.component';
 
 
 export const routes: Routes = [
+  {
+    path: 'shop',
+    component: ShopComponent,
+  },
   {
     path: '',
     component: SplashComponent,

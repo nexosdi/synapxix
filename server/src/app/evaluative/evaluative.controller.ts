@@ -81,11 +81,6 @@ export class EvaluativeController {
     };
   }
 
-  @Get('cohort-stats')
-  @UseGuards(JwtAuthGuard)
-  async getCohortStats() {
-    return this.evaluativeService.getCohortStats();
-  }
 
   @Get('students')
   @UseGuards(JwtAuthGuard)
