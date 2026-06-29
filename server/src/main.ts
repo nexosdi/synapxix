@@ -5,10 +5,15 @@
 
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import helmet from 'helmet';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  
+  // Security headers (OWASP recommended)
+  app.use(helmet());
+  
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
