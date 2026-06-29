@@ -52,7 +52,8 @@
       "executor": "@angular/build:dev-server",
       "options": {
         "buildTarget": "web-game:build:development",
-        "port": 4300
+        "port": 4300,
+        "proxyConfig": "web-game/proxy.conf.json"
       },
       "configurations": {
         "production": {

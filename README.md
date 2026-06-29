@@ -212,6 +212,8 @@ npx nx g @nx/js:library libs/<nombre>
 
 ## Testing
 
+### Unit Testing
+
 ```bash
 # Todos los tests
 npx nx test
@@ -223,6 +225,19 @@ npx nx test web-game
 # Con cobertura
 npx nx test server --coverage
 ```
+
+### E2E Testing (Playwright)
+
+El proyecto cuenta con pruebas End-to-End para verificar el flujo crítico (ej. `web-game`).
+
+```bash
+# Correr pruebas E2E en consola (headless)
+npx nx e2e web-game
+
+# Correr pruebas E2E abriendo la interfaz visual de Playwright
+npx nx e2e web-game --ui
+```
+> ⚠️ **Nota:** Asegúrate de tener el backend corriendo (`npx nx serve server`) en otra terminal antes de ejecutar los tests E2E, ya que el frontend del juego necesita comunicarse con la API.
 
 ---
 

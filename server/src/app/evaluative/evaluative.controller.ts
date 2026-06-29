@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Get, Param, HttpCode, HttpStatus, UseGuards, createParamDecorator, ExecutionContext, Res, Req } from '@nestjs/common';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { EvaluativeService } from './evaluative.service';
 import { EvaluateSessionDto, EvaluateAiInputDto } from './dto/evaluate-session.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -41,6 +42,7 @@ export class EvaluativeController {
    * Endpoint to process AI-driven evaluations (semantic or phonetic)
    * and translate them into standard cognitive metrics.
    */
+  @Throttle({ long: { limit: 10, ttl: 60000 } })
   @Post('evaluate-ai')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -109,6 +111,7 @@ export class EvaluativeController {
    *   -d '{"sessionId":"s1","promptOrContext":"Evaluate performance","studentTextResponse":"The answer is 42"}'
    * ```
    */
+  @SkipThrottle()
   @Post('evaluate-ai/stream')
   async evaluateAiStream(
     @Body() dto: EvaluateAiInputDto,
