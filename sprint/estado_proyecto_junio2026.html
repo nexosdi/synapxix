@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synapxix — Estado del Proyecto · Junio 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-primary: #6C3CE1;
+      --brand-secondary: #A78BFA;
+      --brand-accent: #34D399;
+      --brand-danger: #F87171;
+      --brand-warning: #FBBF24;
+      --bg-dark: #0F0F1A;
+      --bg-card: #16162A;
+      --bg-card2: #1E1E38;
+      --text-primary: #F1F0FF;
+      --text-secondary: #A5A3C7;
+      --text-muted: #6B6A8A;
+      --border: rgba(108, 60, 225, 0.25);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      font-size: 11pt;
+      line-height: 1.6;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ─── COVER PAGE ─── */
+    .cover {
+      width: 100%;
+      min-height: 100vh;
+      background: linear-gradient(145deg, #0F0F1A 0%, #1A0A3D 50%, #0D1B2A 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 60px 40px;
+      page-break-after: always;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cover::before {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(108,60,225,0.3) 0%, transparent 70%);
+      top: -200px;
+      right: -200px;
+      border-radius: 50%;
+    }
+
+    .cover::after {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%);
+      bottom: -100px;
+      left: -100px;
+      border-radius: 50%;
+    }
+
+    .cover-logo {
+      font-size: 13pt;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--brand-secondary);
+      margin-bottom: 60px;
+      opacity: 0.8;
+      z-index: 1;
+    }
+
+    .cover-badge {
+      display: inline-block;
+      background: rgba(108, 60, 225, 0.25);
+      border: 1px solid var(--brand-primary);
+      color: var(--brand-secondary);
+      font-size: 8.5pt;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 6px 18px;
+      border-radius: 100px;
+      margin-bottom: 32px;
+      z-index: 1;
+    }
+
+    .cover-title {
+      font-size: 52pt;
+      font-weight: 900;
+      text-align: center;
+      line-height: 1.05;
+      background: linear-gradient(135deg, #F1F0FF 0%, #A78BFA 50%, #6C3CE1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 20px;
+      z-index: 1;
+    }
+
+    .cover-subtitle {
+      font-size: 14pt;
+      color: var(--text-secondary);
+      text-align: center;
+      font-weight: 300;
+      letter-spacing: 0.05em;
+      margin-bottom: 64px;
+      z-index: 1;
+    }
+
+    .cover-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      width: 100%;
+      max-width: 700px;
+      z-index: 1;
+      margin-bottom: 60px;
+    }
+
+    .cover-meta-item {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .cover-meta-item .val {
+      font-size: 26pt;
+      font-weight: 800;
+      color: var(--brand-accent);
+      display: block;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .cover-meta-item .lbl {
+      font-size: 8.5pt;
+      color: var(--text-muted);
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .cover-footer {
+      font-size: 9pt;
+      color: var(--text-muted);
+      text-align: center;
+      z-index: 1;
+    }
+
+    /* ─── PAGES ─── */
+    .page {
+      width: 100%;
+      padding: 50px 52px;
+      page-break-after: always;
+      min-height: 100vh;
+      background: var(--bg-dark);
+    }
+
+    .page:last-child {
+      page-break-after: avoid;
+    }
+
+    /* ─── PAGE HEADER ─── */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 36px;
+    }
+
+    .page-logo {
+      font-size: 9pt;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .page-logo span { color: var(--brand-secondary); }
+
+    .page-date {
+      font-size: 8.5pt;
+      color: var(--text-muted);
+    }
+
+    /* ─── SECTION TITLE ─── */
+    .section-label {
+      font-size: 7.5pt;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--brand-primary);
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: 22pt;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 28px;
+      line-height: 1.2;
+    }
+
+    /* ─── CARDS ─── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 26px;
+      margin-bottom: 16px;
+    }
+
+    .card-accent {
+      border-left: 4px solid var(--brand-primary);
+    }
+
+    .card-success {
+      border-left: 4px solid var(--brand-accent);
+    }
+
+    .card-warning {
+      border-left: 4px solid var(--brand-warning);
+    }
+
+    .card-danger {
+      border-left: 4px solid var(--brand-danger);
+    }
+
+    .card-title {
+      font-size: 11.5pt;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-desc {
+      font-size: 9.5pt;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    /* ─── GRID ─── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    /* ─── STAT BOX ─── */
+    .stat-box {
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      text-align: center;
+    }
+
+    .stat-box .num {
+      font-size: 28pt;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-box .num.purple { color: var(--brand-secondary); }
+    .stat-box .num.green { color: var(--brand-accent); }
+    .stat-box .num.yellow { color: var(--brand-warning); }
+    .stat-box .num.red { color: var(--brand-danger); }
+
+    .stat-box .stat-lbl {
+      font-size: 8pt;
+      color: var(--text-muted);
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ─── TABLE ─── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9.5pt;
+    }
+
+    th {
+      background: var(--bg-card2);
+      color: var(--text-muted);
+      font-size: 8pt;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 11px 14px;
+      border-bottom: 1px solid rgba(108, 60, 225, 0.1);
+      color: var(--text-secondary);
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    td.bold { font-weight: 600; color: var(--text-primary); }
+
+    /* ─── STATUS CHIPS ─── */
+    .chip {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 100px;
+      font-size: 8pt;
+      font-weight: 600;
+    }
+
+    .chip-done { background: rgba(52,211,153,0.15); color: #34D399; }
+    .chip-pending { background: rgba(251,191,36,0.15); color: #FBBF24; }
+    .chip-critical { background: rgba(248,113,113,0.15); color: #F87171; }
+    .chip-in-progress { background: rgba(108,60,225,0.2); color: #A78BFA; }
+
+    /* ─── PROGRESS BAR ─── */
+    .progress-wrap {
+      background: rgba(255,255,255,0.06);
+      border-radius: 100px;
+      height: 7px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 100px;
+      background: linear-gradient(90deg, var(--brand-primary), var(--brand-secondary));
+    }
+
+    .progress-fill.green {
+      background: linear-gradient(90deg, #059669, #34D399);
+    }
+
+    /* ─── MODULE TAG ─── */
+    .tag {
+      display: inline-block;
+      background: rgba(108,60,225,0.18);
+      border: 1px solid rgba(108,60,225,0.3);
+      color: var(--brand-secondary);
+      font-size: 7.5pt;
+      font-weight: 600;
+      padding: 2px 9px;
+      border-radius: 5px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ─── DIVIDER ─── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 24px 0;
+    }
+
+    /* ─── TIMELINE ─── */
+    .timeline {
+      position: relative;
+      padding-left: 24px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--brand-primary), transparent);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -20px;
+      top: 5px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--brand-primary);
+      border: 2px solid var(--brand-secondary);
+    }
+
+    .timeline-item.done::before { background: var(--brand-accent); border-color: #A7F3D0; }
+    .timeline-item.pending::before { background: var(--brand-warning); border-color: #FDE68A; }
+
+    .timeline-pr {
+      font-size: 8pt;
+      font-weight: 700;
+      color: var(--brand-secondary);
+      margin-bottom: 2px;
+    }
+
+    .timeline-desc {
+      font-size: 9.5pt;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .timeline-date {
+      font-size: 8pt;
+      color: var(--text-muted);
+    }
+
+    /* ─── ARCHITECTURE LAYER ─── */
+    .arch-layer {
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .arch-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16pt;
+      flex-shrink: 0;
+    }
+
+    .arch-info { flex: 1; }
+
+    .arch-name {
+      font-size: 10pt;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 3px;
+    }
+
+    .arch-detail {
+      font-size: 8.5pt;
+      color: var(--text-secondary);
+    }
+
+    /* ─── RISK ─── */
+    .risk-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .risk-row:last-child { border-bottom: none; }
+
+    .risk-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .risk-dot.high { background: var(--brand-danger); }
+    .risk-dot.med { background: var(--brand-warning); }
+    .risk-dot.low { background: var(--brand-accent); }
+
+    .risk-title { font-size: 9.5pt; font-weight: 600; color: var(--text-primary); }
+    .risk-desc { font-size: 8.5pt; color: var(--text-muted); }
+    .risk-action { font-size: 8pt; color: var(--brand-secondary); margin-top: 2px; }
+
+    /* ─── PRINT ─── */
+    @media print {
+      body { background: #0F0F1A !important; }
+      .cover { min-height: 100vh; }
+      .page { min-height: 100vh; }
+    }
+
+    @page {
+      size: A4;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     COVER
+══════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-logo">Nexosdi &nbsp;·&nbsp; Synapxix Platform</div>
+  <div class="cover-badge">Estado del Proyecto · Sprint Review</div>
+  <div class="cover-title">Synapxix</div>
+  <div class="cover-subtitle">Plataforma Educativa Cognitiva Adaptativa<br>Monorepo · Angular 20 + NestJS 11 + PostgreSQL</div>
+
+  <div class="cover-meta-grid">
+    <div class="cover-meta-item">
+      <span class="val">113</span>
+      <span class="lbl">Commits en main</span>
+    </div>
+    <div class="cover-meta-item">
+      <span class="val">33</span>
+      <span class="lbl">Pull Requests mergeados</span>
+    </div>
+    <div class="cover-meta-item">
+      <span class="val">9+</span>
+      <span class="lbl">Colaboradores</span>
+    </div>
+  </div>
+
+  <div class="cover-footer">Generado el 23 de junio de 2026 &nbsp;·&nbsp; Reunión de equipo</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     PAGE 2 — RESUMEN EJECUTIVO
+══════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-logo"><span>Synapxix</span> &nbsp;·&nbsp; Estado del Proyecto</div>
+    <div class="page-date">23 junio 2026</div>
+  </div>
+
+  <div class="section-label">Resumen Ejecutivo</div>
+  <div class="section-title">¿Dónde estamos hoy?</div>
+
+  <div class="grid-3" style="margin-bottom:24px;">
+    <div class="stat-box">
+      <div class="num purple">5</div>
+      <div class="stat-lbl">Features completadas<br>en el último sprint</div>
+    </div>
+    <div class="stat-box">
+      <div class="num green">134</div>
+      <div class="stat-lbl">Archivos TypeScript<br>en el monorepo</div>
+    </div>
+    <div class="stat-box">
+      <div class="num yellow">6</div>
+      <div class="stat-lbl">Schemas PostgreSQL<br>(dominios separados)</div>
+    </div>
+  </div>
+
+  <div class="card card-accent">
+    <div class="card-title">🧠 Visión del producto</div>
+    <div class="card-desc">
+      Synapxix es una plataforma educativa cognitiva que usa juegos adaptativos para evaluar y entrenar capacidades cognitivas de estudiantes. La IA analiza resultados de juegos en tiempo real y genera feedback pedagógico personalizado. Los docentes construyen <em>roadmaps</em> de aprendizaje; los alumnos avanzan a través de sesiones gamificadas con economía de créditos y XP.
+    </div>
+  </div>
+
+  <div class="card card-success">
+    <div class="card-title">✅ Estado general</div>
+    <div class="card-desc">
+      El proyecto está en <strong style="color:#34D399;">desarrollo activo</strong> con arquitectura monorepo Nx consolidada. La integración de IA vía Gemini está operativa con streaming SSE. El motor de juegos, el motor económico y el dashboard del alumno están implementados. CI/CD con GitHub Actions corre en cada push a main.
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">Progreso por área</div>
+  <div style="margin-top: 8px;">
+    <div style="margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; font-size:9pt; margin-bottom:4px;">
+        <span style="color:var(--text-secondary);">Backend (NestJS)</span>
+        <span style="color:var(--brand-accent); font-weight:600;">78%</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-fill green" style="width:78%"></div></div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; font-size:9pt; margin-bottom:4px;">
+        <span style="color:var(--text-secondary);">Motor de juegos (game-engine)</span>
+        <span style="color:var(--brand-accent); font-weight:600;">72%</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-fill green" style="width:72%"></div></div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; font-size:9pt; margin-bottom:4px;">
+        <span style="color:var(--text-secondary);">Integración IA / AI Provider</span>
+        <span style="color:var(--brand-secondary); font-weight:600;">65%</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-fill" style="width:65%"></div></div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; font-size:9pt; margin-bottom:4px;">
+        <span style="color:var(--text-secondary);">Frontend alumno (web-game)</span>
+        <span style="color:var(--brand-secondary); font-weight:600;">60%</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-fill" style="width:60%"></div></div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; font-size:9pt; margin-bottom:4px;">
+        <span style="color:var(--text-secondary);">Panel admin</span>
+        <span style="color:var(--brand-warning); font-weight:600;">40%</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-fill" style="width:40%; background: linear-gradient(90deg,#92400e,#FBBF24);"></div></div>
+    </div>
+    <div>
+      <div style="display:flex; justify-content:space-between; font-size:9pt; margin-bottom:4px;">
+        <span style="color:var(--text-secondary);">Testing (cobertura general)</span>
+        <span style="color:var(--brand-warning); font-weight:600;">35%</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-fill" style="width:35%; background: linear-gradient(90deg,#92400e,#FBBF24);"></div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     PAGE 3 — ARQUITECTURA
+══════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-logo"><span>Synapxix</span> &nbsp;·&nbsp; Arquitectura técnica</div>
+    <div class="page-date">23 junio 2026</div>
+  </div>
+
+  <div class="section-label">Arquitectura</div>
+  <div class="section-title">Stack y estructura del monorepo</div>
+
+  <div class="arch-layer">
+    <div class="arch-icon" style="background:rgba(108,60,225,0.2);">🌐</div>
+    <div class="arch-info">
+      <div class="arch-name">web-game &nbsp;<span class="tag">:4300</span> &nbsp;<span class="tag">Angular 20</span></div>
+      <div class="arch-detail">SPA para alumnos. Contiene: dashboard de alumno con métricas cognitivas + datos de economía (créditos/XP), mapa de progreso, motor de juegos embebido, formulario de docentes para roadmaps, integración de chat IA con streaming SSE en tiempo real.</div>
+    </div>
+  </div>
+
+  <div class="arch-layer">
+    <div class="arch-icon" style="background:rgba(52,211,153,0.15);">🖥️</div>
+    <div class="arch-info">
+      <div class="arch-name">admin-frontend &nbsp;<span class="tag">:4200</span> &nbsp;<span class="tag">Angular 20</span></div>
+      <div class="arch-detail">Panel administrativo para gestores/docentes. Dashboard con gráficos (Chart.js). Login y registro. Conexión a la misma API que web-game vía <code style="font-family:monospace; color:var(--brand-secondary);">ApiService</code>.</div>
+    </div>
+  </div>
+
+  <div class="arch-layer">
+    <div class="arch-icon" style="background:rgba(167,139,250,0.15);">⚙️</div>
+    <div class="arch-info">
+      <div class="arch-name">server &nbsp;<span class="tag">:3000</span> &nbsp;<span class="tag">NestJS 11</span></div>
+      <div class="arch-detail">API REST. Módulos: <strong>auth</strong> (JWT/Passport), <strong>economy</strong> (créditos, XP, tienda), <strong>game-session</strong> (ciclo de vida), <strong>evaluative</strong> (análisis cognitivo), <strong>research</strong> (IA + caché Redis), <strong>learning</strong> (perfil adaptativo), <strong>profile</strong>.</div>
+    </div>
+  </div>
+
+  <div class="arch-layer">
+    <div class="arch-icon" style="background:rgba(251,191,36,0.15);">📦</div>
+    <div class="arch-info">
+      <div class="arch-name">libs (monorepo compartido) &nbsp;<span class="tag">Nx 22</span></div>
+      <div class="arch-detail">
+        <strong>game-engine/core</strong> — Motor de juegos: tipos, servicios (GameFlow, SSEStream), registro, OnPush CD optimizado.<br>
+        <strong>prisma</strong> — Schema + migraciones + PrismaService compartido.<br>
+        <strong>baseRepository</strong> — Repositorio genérico reutilizable.<br>
+        <strong>learning/shared</strong> — Tipos compartidos del módulo de aprendizaje.<br>
+        <strong>envValidator</strong> — Validación de env vars al startup.
+      </div>
+    </div>
+  </div>
+
+  <div class="arch-layer">
+    <div class="arch-icon" style="background:rgba(248,113,113,0.1);">🐘</div>
+    <div class="arch-info">
+      <div class="arch-name">PostgreSQL 15 &nbsp;<span class="tag">:5434</span> &nbsp;<span class="tag">Prisma 6</span></div>
+      <div class="arch-detail">6 schemas separados por dominio: <code style="font-family:monospace; color:var(--brand-secondary);">auth</code> · <code style="font-family:monospace; color:var(--brand-secondary);">core</code> · <code style="font-family:monospace; color:var(--brand-secondary);">knowledge</code> · <code style="font-family:monospace; color:var(--brand-secondary);">psychometrics</code> · <code style="font-family:monospace; color:var(--brand-secondary);">audit</code> · <code style="font-family:monospace; color:var(--brand-secondary);">communication</code>. Redis para caché de prompts IA.</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-label">CI/CD</div>
+  <div class="card card-accent" style="margin-top:8px;">
+    <div class="card-title">⚡ GitHub Actions · Pipeline activo</div>
+    <div class="card-desc">
+      Pipeline configurado en <code style="font-family:monospace; color:var(--brand-secondary);">.github/workflows/</code>. Corre lint → test → build (Nx affected) en cada PR y push a main. Build de producción validado; artefactos en <code style="font-family:monospace; color:var(--brand-secondary);">dist/</code>.
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     PAGE 4 — FEATURES COMPLETADAS
+══════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-logo"><span>Synapxix</span> &nbsp;·&nbsp; Features completadas</div>
+    <div class="page-date">23 junio 2026</div>
+  </div>
+
+  <div class="section-label">Historial de Pull Requests · main</div>
+  <div class="section-title">Lo que ya está construido</div>
+
+  <div class="timeline">
+
+    <div class="timeline-item done">
+      <div class="timeline-pr">PR #33 — MERGEADO (último)</div>
+      <div class="timeline-desc">AI Streaming SSE — Respuestas de IA en tiempo real</div>
+      <div class="card-desc" style="font-size:8.5pt; margin-top:4px;">Implementación completa de Server-Sent Events (SSE) vía POST fetch (sin limitación del EventSource nativo). <code style="font-family:monospace; color:var(--brand-secondary);">SseStreamService</code> en el game-engine: stream de chunks con <code style="font-family:monospace; color:var(--brand-secondary);">AbortController</code>, cero memory leaks, ejecutado fuera de Angular zone para performance. Refactor del contexto de stream del controller al service.</div>
+    </div>
+
+    <div class="timeline-item done">
+      <div class="timeline-pr">PR #32</div>
+      <div class="timeline-desc">Student Dashboard — Panel del alumno completo</div>
+      <div class="card-desc" style="font-size:8.5pt; margin-top:4px;">Dashboard con métricas cognitivas en tiempo real, datos de economía (créditos + XP), navegación cross-app. Incluye servicio evaluativo e infraestructura de analytics con bypass JWT para desarrollo.</div>
+    </div>
+
+    <div class="timeline-item done">
+      <div class="timeline-pr">PR #31</div>
+      <div class="timeline-desc">AI Provider Integration — Módulo research con Redis cache</div>
+      <div class="card-desc" style="font-size:8.5pt; margin-top:4px;">Módulo <code style="font-family:monospace; color:var(--brand-secondary);">research</code> en NestJS: procesa resultados de juegos con Gemini 2.5, retorna <code>aiFeedback</code> + <code>dimensionUpdate</code> + <code>performanceSummary</code>. Redis-backed caching de prompts y respuestas LLM. AiProvider con retry mechanism.</div>
+    </div>
+
+    <div class="timeline-item done">
+      <div class="timeline-pr">PR #30</div>
+      <div class="timeline-desc">Game Feedback UI — Feedback cognitivo en tiempo real</div>
+      <div class="card-desc" style="font-size:8.5pt; margin-top:4px;">UI dinámica de feedback cognitivo en web-game integrada con el motor de juegos. Visualización de métricas post-partida.</div>
+    </div>
+
+    <div class="timeline-item done">
+      <div class="timeline-pr">PR #28</div>
+      <div class="timeline-desc">Economy Balance Endpoint + Tienda virtual</div>
+      <div class="card-desc" style="font-size:8.5pt; margin-top:4px;">Motor de economía completo: endpoint de balance, tienda virtual con protección de concurrencia, <code>PurchaseTransaction</code>, <code>UserInventory</code>. Tests completos para el controller de compras.</div>
+    </div>
+
+    <div class="timeline-item done">
+      <div class="timeline-pr">PR #27</div>
+      <div class="timeline-desc">Motor evaluativo y endpoint cognitivo</div>
+      <div class="card-desc" style="font-size:8.5pt; margin-top:4px;">Evaluación semántica y fonética usando AiProvider. Métricas cognitivas guardadas en DB (<code>CognitiveMetric</code>). Dimensiones: lógica, creatividad, etc.</div>
+    </div>
+
+    <div class="timeline-item done">
+      <div class="timeline-pr">PR #25</div>
+      <div class="timeline-desc">Game Engine Refactor v2 — Performance</div>
+      <div class="card-desc" style="font-size:8.5pt; margin-top:4px;">OnPush Change Detection en todos los componentes del motor. Timer ejecutado fuera de Angular zone. Registro centralizado de juegos.</div>
+    </div>
+
+    <div class="timeline-item done">
+      <div class="timeline-pr">PR #21</div>
+      <div class="timeline-desc">AI Exercises UI — Interfaz de ejercicios generados por IA</div>
+      <div class="card-desc" style="font-size:8.5pt; margin-top:4px;">Componentes Angular para ejercicios generados dinámicamente. Fix de font budget (Nunito movida a global styles).</div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     PAGE 5 — API & DB
+══════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-logo"><span>Synapxix</span> &nbsp;·&nbsp; API &amp; Base de datos</div>
+    <div class="page-date">23 junio 2026</div>
+  </div>
+
+  <div class="section-label">API Endpoints implementados</div>
+  <div class="section-title">Superficie de la API REST</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Módulo</th>
+        <th>Método</th>
+        <th>Ruta</th>
+        <th>Descripción</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="bold">Auth</td>
+        <td><span class="chip chip-in-progress">GET</span></td>
+        <td><code style="font-family:monospace; font-size:8pt;">/api/auth/preferences</code></td>
+        <td>Preferencias del usuario autenticado</td>
+        <td><span class="chip chip-done">✓ Done</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Economy</td>
+        <td><span class="chip chip-in-progress">POST</span></td>
+        <td><code style="font-family:monospace; font-size:8pt;">/api/economy/claim-reward</code></td>
+        <td>Reclamar recompensa al finalizar juego</td>
+        <td><span class="chip chip-done">✓ Done</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Economy</td>
+        <td><span class="chip chip-in-progress">POST</span></td>
+        <td><code style="font-family:monospace; font-size:8pt;">/api/economy/purchase</code></td>
+        <td>Compra en tienda virtual (con lock de concurrencia)</td>
+        <td><span class="chip chip-done">✓ Done</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Game Session</td>
+        <td><span class="chip chip-in-progress">POST</span></td>
+        <td><code style="font-family:monospace; font-size:8pt;">/api/game-session/start</code></td>
+        <td>Iniciar sesión de juego</td>
+        <td><span class="chip chip-done">✓ Done</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Game Session</td>
+        <td><span class="chip chip-in-progress">POST</span></td>
+        <td><code style="font-family:monospace; font-size:8pt;">/api/game-session/:id/attempt</code></td>
+        <td>Registrar intento</td>
+        <td><span class="chip chip-done">✓ Done</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Game Session</td>
+        <td><span class="chip chip-in-progress">POST</span></td>
+        <td><code style="font-family:monospace; font-size:8pt;">/api/game-session/:id/complete</code></td>
+        <td>Finalizar sesión</td>
+        <td><span class="chip chip-done">✓ Done</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Evaluative</td>
+        <td><span class="chip chip-in-progress">POST</span></td>
+        <td><code style="font-family:monospace; font-size:8pt;">/api/evaluative/*</code></td>
+        <td>Evaluación cognitiva semántica + fonética vía IA</td>
+        <td><span class="chip chip-done">✓ Done</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Research</td>
+        <td><span class="chip chip-in-progress">POST</span></td>
+        <td><code style="font-family:monospace; font-size:8pt;">/api/research/process</code></td>
+        <td>Análisis IA de resultado de juego (sync)</td>
+        <td><span class="chip chip-done">✓ Done</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Research</td>
+        <td><span class="chip chip-in-progress">POST</span></td>
+        <td><code style="font-family:monospace; font-size:8pt;">/api/research/process/stream</code></td>
+        <td>Análisis IA con streaming SSE</td>
+        <td><span class="chip chip-done">✓ Done</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Learning</td>
+        <td><span class="chip chip-in-progress">POST/GET</span></td>
+        <td><code style="font-family:monospace; font-size:8pt;">/api/learning/*</code></td>
+        <td>Bootstrap, usuarios, topics, preferencias, métodos</td>
+        <td><span class="chip chip-done">✓ Done</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr class="divider">
+
+  <div class="section-label">Base de datos · Modelos Prisma</div>
+  <div class="grid-2" style="margin-top:12px;">
+    <div>
+      <div class="card" style="margin-bottom:10px;">
+        <div class="card-title" style="font-size:9.5pt;">📋 Entidades principales</div>
+        <div class="card-desc" style="font-size:8.5pt; line-height:2;">
+          <span class="tag">app_user</span> &nbsp;<span class="tag">Institution</span> &nbsp;<span class="tag">Structure</span><br>
+          <span class="tag">GameSession</span> &nbsp;<span class="tag">GameAttempt</span><br>
+          <span class="tag">EconomyTransaction</span> &nbsp;<span class="tag">PurchaseTransaction</span><br>
+          <span class="tag">UserInventory</span> &nbsp;<span class="tag">CognitiveMetric</span><br>
+          <span class="tag">UserProfile</span> &nbsp;<span class="tag">Content</span><br>
+          <span class="tag">UserContentProgress</span> &nbsp;<span class="tag">AuditLog</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title" style="font-size:9.5pt;">🔐 Schemas de DB</div>
+        <div style="margin-top:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+            <span class="tag">auth</span><span style="font-size:8pt; color:var(--text-muted);">Identidad, sesiones</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+            <span class="tag">core</span><span style="font-size:8pt; color:var(--text-muted);">Juegos, economía</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+            <span class="tag">knowledge</span><span style="font-size:8pt; color:var(--text-muted);">Contenido, progreso</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+            <span class="tag">psychometrics</span><span style="font-size:8pt; color:var(--text-muted);">Arquetipos cognitivos</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0;">
+            <span class="tag">audit</span> + <span class="tag">communication</span><span style="font-size:8pt; color:var(--text-muted);">Logs, notificaciones</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     PAGE 6 — PENDIENTES & RIESGOS
+══════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-logo"><span>Synapxix</span> &nbsp;·&nbsp; Pendientes y riesgos</div>
+    <div class="page-date">23 junio 2026</div>
+  </div>
+
+  <div class="section-label">Backlog — Lo que falta</div>
+  <div class="section-title">Próximas prioridades</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Área</th>
+        <th>Item pendiente</th>
+        <th>Impacto</th>
+        <th>Prioridad</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="bold">Testing</td>
+        <td>Cobertura de tests en web-game y admin-frontend (actualmente ~35%)</td>
+        <td>Calidad, regresiones</td>
+        <td><span class="chip chip-critical">🔴 Alta</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Auth</td>
+        <td>Remover bypass JWT del módulo evaluativo antes de producción</td>
+        <td>Seguridad crítica</td>
+        <td><span class="chip chip-critical">🔴 Alta</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Admin frontend</td>
+        <td>Panel de gestión de usuarios, métricas institucionales y reportes</td>
+        <td>UX docentes/admins</td>
+        <td><span class="chip chip-critical">🔴 Alta</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Arquetipos cognitivos</td>
+        <td>Implementar lógica de asignación de arquetipo en psychometrics schema (Dimension/Archetype usados pero sin lógica)</td>
+        <td>Core del producto</td>
+        <td><span class="chip chip-critical">🔴 Alta</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Motor de juegos</td>
+        <td>Agregar más tipos de juegos al game-registry (actualmente estructura base lista)</td>
+        <td>Contenido, variedad</td>
+        <td><span class="chip chip-pending">🟡 Media</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Research / IA</td>
+        <td>Expandir <code style="font-family:monospace; font-size:8pt;">contextMap</code> para soporte de nuevos tipos de juego en el módulo research</td>
+        <td>Escalabilidad IA</td>
+        <td><span class="chip chip-pending">🟡 Media</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Learning</td>
+        <td>Conectar módulo learning con neo4j para grafo de conocimiento (docker profile disponible pero no integrado)</td>
+        <td>Adaptatividad</td>
+        <td><span class="chip chip-pending">🟡 Media</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Keycloak</td>
+        <td>Reemplazar JWT custom con Keycloak para auth enterprise (docker profile listo)</td>
+        <td>Seguridad, escalabilidad</td>
+        <td><span class="chip chip-pending">🟡 Media</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Notificaciones</td>
+        <td>Implementar módulo <code style="font-family:monospace; font-size:8pt;">communication</code> (schema existe, sin lógica)</td>
+        <td>Engagement alumnos</td>
+        <td><span class="chip chip-pending">🟡 Media</span></td>
+      </tr>
+      <tr>
+        <td class="bold">Infra</td>
+        <td>Deployment a ambiente de staging / producción</td>
+        <td>Go-live</td>
+        <td><span class="chip chip-pending">🟡 Media</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr class="divider">
+
+  <div class="section-label">Riesgos técnicos</div>
+  <div class="card" style="margin-top:8px; padding: 18px 22px;">
+    <div class="risk-row">
+      <div class="risk-dot high"></div>
+      <div>
+        <div class="risk-title">Bypass JWT en producción</div>
+        <div class="risk-desc">El módulo evaluative tiene un bypass JWT para dev que puede llegar a producción por error.</div>
+        <div class="risk-action">→ Acción: flag de entorno + test que falle si NODE_ENV=production y bypass activo</div>
+      </div>
+    </div>
+    <div class="risk-row">
+      <div class="risk-dot high"></div>
+      <div>
+        <div class="risk-title">Google AI API quota en streaming</div>
+        <div class="risk-desc">El streaming SSE puede generar muchas llamadas a Gemini. Sin rate limiting por usuario, una sola sesión puede agotar la cuota.</div>
+        <div class="risk-action">→ Acción: throttle por userId en SseStreamService + monitoreo de cuota</div>
+      </div>
+    </div>
+    <div class="risk-row">
+      <div class="risk-dot med"></div>
+      <div>
+        <div class="risk-title">package-lock.json divergente entre ramas</div>
+        <div class="risk-desc">Conflictos frecuentes en package-lock.json al mergear. Evidenciado hoy mismo al hacer pull.</div>
+        <div class="risk-action">→ Acción: usar npm ci en CI, agregar package-lock.json a la estrategia de merge (.gitattributes)</div>
+      </div>
+    </div>
+    <div class="risk-row">
+      <div class="risk-dot med"></div>
+      <div>
+        <div class="risk-title">Dependencia transitiva ng2-charts / Angular CDK</div>
+        <div class="risk-desc">Requiere --legacy-peer-deps. Puede romper el build sin aviso al actualizar Angular.</div>
+        <div class="risk-action">→ Acción: evaluar migración a ngx-charts o esperar compatibilidad ng2-charts@11</div>
+      </div>
+    </div>
+    <div class="risk-row">
+      <div class="risk-dot low"></div>
+      <div>
+        <div class="risk-title">Redis sin persistencia en dev</div>
+        <div class="risk-desc">El caché de prompts IA (Redis) se pierde al reiniciar en local. No afecta producción si se configura con AOF.</div>
+        <div class="risk-action">→ Acción: documentar configuración Redis en docker-compose para dev persistente</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     PAGE 7 — EQUIPO & PRÓXIMOS PASOS
+══════════════════════════════════════════ -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-logo"><span>Synapxix</span> &nbsp;·&nbsp; Equipo y próximos pasos</div>
+    <div class="page-date">23 junio 2026</div>
+  </div>
+
+  <div class="section-label">Equipo</div>
+  <div class="section-title">Contribuciones al repositorio</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Colaborador</th>
+        <th>Commits</th>
+        <th>Área principal</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="bold">Santiago</td>
+        <td>48</td>
+        <td>Backend NestJS, game-engine, arquitectura general</td>
+      </tr>
+      <tr>
+        <td class="bold">Alan Asmis</td>
+        <td>27</td>
+        <td>Frontend web-game, componentes Angular</td>
+      </tr>
+      <tr>
+        <td class="bold">Fernando Hirschfeld</td>
+        <td>21</td>
+        <td>Arquitectura, DevOps, CI/CD, PR reviews</td>
+      </tr>
+      <tr>
+        <td class="bold">SoPerez1</td>
+        <td>21</td>
+        <td>Módulo research / IA, AI Provider</td>
+      </tr>
+      <tr>
+        <td class="bold">yisusok</td>
+        <td>21</td>
+        <td>Economy, evaluative, game-session</td>
+      </tr>
+      <tr>
+        <td class="bold">Felipe Schenberger</td>
+        <td>19</td>
+        <td>Admin frontend, dashboard, gráficos</td>
+      </tr>
+      <tr>
+        <td class="bold">Otros colaboradores</td>
+        <td>17</td>
+        <td>Features puntuales, fixes</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr class="divider">
+
+  <div class="section-label">Próximo sprint — Propuesta</div>
+  <div class="section-title">¿Qué hacemos la próxima semana?</div>
+
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div class="card card-danger">
+      <div class="card-title">🔒 Seguridad (URGENTE)</div>
+      <div class="card-desc" style="font-size:8.5pt;">
+        1. Remover bypass JWT del módulo evaluative<br>
+        2. Agregar test que falle si el bypass llega a prod<br>
+        3. Revisar todos los guards de auth en controllers
+      </div>
+    </div>
+    <div class="card card-warning">
+      <div class="card-title">🧪 Testing</div>
+      <div class="card-desc" style="font-size:8.5pt;">
+        1. Tests e2e para el flujo completo: inicio sesión → juego → economía<br>
+        2. Subir cobertura de web-game a 60%+<br>
+        3. Tests de integración para el módulo research
+      </div>
+    </div>
+    <div class="card card-accent">
+      <div class="card-title">🧠 Arquetipos cognitivos</div>
+      <div class="card-desc" style="font-size:8.5pt;">
+        1. Diseñar algoritmo de asignación de arquetipo basado en <code style="font-family:monospace;">CognitiveMetric</code><br>
+        2. Poblar tablas <code style="font-family:monospace;">Dimension</code> y <code style="font-family:monospace;">Archetype</code><br>
+        3. Endpoint <code style="font-family:monospace;">/api/profile/archetype</code>
+      </div>
+    </div>
+    <div class="card card-accent">
+      <div class="card-title">📊 Admin frontend</div>
+      <div class="card-desc" style="font-size:8.5pt;">
+        1. Vista de gestión de alumnos por institución<br>
+        2. Dashboard de métricas cognitivas por grupo<br>
+        3. Reportes exportables (CSV/PDF)
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="background: linear-gradient(135deg, rgba(108,60,225,0.15), rgba(52,211,153,0.08)); border-color: rgba(108,60,225,0.4);">
+    <div class="card-title">🎯 Objetivo del sprint: MVP con usuario real</div>
+    <div class="card-desc">
+      El objetivo del próximo sprint es tener un <strong style="color:var(--brand-accent);">flujo end-to-end completo y seguro</strong> que un alumno real pueda usar: login → dashboard → juego → análisis IA → feedback → actualización de economía. Sin bypasses, sin mocks, en datos reales de DB.
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <div style="text-align:center; padding: 20px 0;">
+    <div style="font-size:8.5pt; color: var(--text-muted); letter-spacing:0.1em; text-transform:uppercase;">Generado por Antigravity · Nexosdi / Synapxix · Junio 2026</div>
+    <div style="font-size:8pt; color: var(--text-muted); margin-top:4px;">Repositorio: github.com/nexosdi/synapxix · Rama: main · Commit: 35dffce</div>
+  </div>
+</div>
+
+</body>
+</html>
