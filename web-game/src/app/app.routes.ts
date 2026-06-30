@@ -18,6 +18,7 @@ export const routes: Routes = [
   {
     path: 'shop',
     component: ShopComponent,
+    canActivate: [AuthGuard],
   },
   {
     path: '',
@@ -25,9 +26,11 @@ export const routes: Routes = [
   },
  { path: 'dashboard',
    component: DashboardComponent, 
+   canActivate: [AuthGuard],
  },
   {
     path: 'history/:historyId',
+    canActivate: [AuthGuard],
     providers: [
       HistoryService,
       MockHistoryDataProvider,
