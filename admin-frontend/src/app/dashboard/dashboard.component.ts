@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 import { ChatbotComponent } from './chatbot/chatbot.component';
 import { CognitiveChartsComponent } from './cognitive-charts/cognitive-charts.component';
+import { NotificationBellComponent } from '../shared/components/notification-bell/notification-bell.component';
 import { environment } from '../../environments/environment';
 
 interface BalanceResponse {
@@ -32,7 +33,7 @@ interface ExerciseCategory {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, ChatbotComponent, CognitiveChartsComponent],
+  imports: [CommonModule, ChatbotComponent, CognitiveChartsComponent, NotificationBellComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
 })
