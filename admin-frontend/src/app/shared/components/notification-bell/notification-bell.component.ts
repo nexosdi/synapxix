@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { NotificationService } from '../../../core/services/notification.service';
-import { Notification } from '../../../core/models/notification.model';
+import { Notification, NotificationType } from '../../../core/models/notification.model';
 
 @Component({
   selector: 'app-notification-bell',
@@ -45,7 +45,7 @@ export class NotificationBellComponent {
   }
 
   getIcon(type: string): string {
-    return NotificationService.iconForType(type as any);
+    return NotificationService.iconForType(type as NotificationType);
   }
 
   hasNotifications(): boolean {

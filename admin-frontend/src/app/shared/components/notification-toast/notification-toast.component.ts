@@ -1,7 +1,7 @@
 import { Component, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NotificationService } from '../../../core/services/notification.service';
-import { Notification } from '../../../core/models/notification.model';
+import { Notification, NotificationType } from '../../../core/models/notification.model';
 
 @Component({
   selector: 'app-notification-toast',
@@ -50,12 +50,13 @@ export class NotificationToastComponent {
   private removeToast(id: string): void {
     clearTimeout(this.timers.get(id));
     this.timers.delete(id);
+    this.processedIds.delete(id);
     this.visibleToasts.update((list) => list.filter((t) => t.id !== id));
     this.svc.dismissToast(id);
   }
 
   getIcon(type: string): string {
-    return NotificationService.iconForType(type as any);
+    return NotificationService.iconForType(type as NotificationType);
   }
 
   trackById(_: number, item: Notification) {

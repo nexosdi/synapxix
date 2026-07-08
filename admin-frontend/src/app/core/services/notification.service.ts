@@ -98,8 +98,8 @@ export class NotificationService implements OnDestroy {
 
           if (fresh.length > 0) {
             this._notifications.update((prev) => [...fresh, ...prev]);
-            // Queue fresh ones as toasts
-            this._toastQueue.update((q) => [...q, ...fresh]);
+            // Queue fresh ones as toasts (capped so a burst can't grow this unbounded)
+            this._toastQueue.update((q) => [...q, ...fresh].slice(-20));
           }
         },
         // Silent fail: backend endpoint doesn't exist yet, polling continues
