@@ -39,4 +39,9 @@ export class EconomyController {
   ) {
     return this.economyService.processPurchase(userId, dto);
   }
+
+  @Get('items')
+  async getItems() {
+    return this.economyService.getStoreItems();
+  }
 }
