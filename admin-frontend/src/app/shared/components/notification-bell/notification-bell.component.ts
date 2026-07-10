@@ -59,7 +59,6 @@ export class NotificationBellComponent {
   }
 
   /** Close panel when user clicks outside */
-  @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     if (!this.elRef.nativeElement.contains(event.target)) {
       this.isOpen.set(false);
