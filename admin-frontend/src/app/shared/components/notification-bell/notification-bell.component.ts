@@ -3,7 +3,6 @@ import {
   inject,
   signal,
   computed,
-  HostListener,
   ElementRef,
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
@@ -16,6 +15,9 @@ import { Notification, NotificationType } from '../../../core/models/notificatio
   imports: [CommonModule, DatePipe],
   templateUrl: './notification-bell.component.html',
   styleUrls: ['./notification-bell.component.css'],
+  host: {
+    '(document:click)': 'onDocumentClick($event)',
+  },
 })
 export class NotificationBellComponent {
   private readonly svc = inject(NotificationService);
