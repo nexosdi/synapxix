@@ -1,12 +1,17 @@
-import { Injectable, signal, computed, inject, OnDestroy } from '@angular/core';
+import { Injectable, signal, computed, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
+import { NgZone } from '@angular/core';
+import { timer, switchMap, EMPTY } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Notification, NotificationApiResponse, NotificationType } from '../models/notification.model';
 
 @Injectable({ providedIn: 'root' })
-export class NotificationService implements OnDestroy {
-  private readonly http = inject(HttpClient);
-  private readonly api = environment.apiUrl;
+export class NotificationService {
+  private readonly http    = inject(HttpClient);
+  private readonly ngZone  = inject(NgZone);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly api     = environment.apiUrl;
 
   // ── State ────────────────────────────────────────────────────────────────
   private readonly _notifications = signal<Notification[]>([]);
@@ -21,14 +26,8 @@ export class NotificationService implements OnDestroy {
   private readonly _toastQueue = signal<Notification[]>([]);
   readonly toastQueue = this._toastQueue.asReadonly();
 
-  private pollingInterval: ReturnType<typeof setInterval> | null = null;
-
   constructor() {
     this.startPolling();
-  }
-
-  ngOnDestroy(): void {
-    this.stopPolling();
   }
 
   // ── Public API ───────────────────────────────────────────────────────────
@@ -65,46 +64,51 @@ export class NotificationService implements OnDestroy {
 
   // ── Polling ──────────────────────────────────────────────────────────────
 
+  /**
+   * Runs the 30-second polling loop OUTSIDE Zone.js so the timer tick never
+   * triggers a global change-detection cycle on its own.
+   *
+   * switchMap cancels any in-flight HTTP request before firing the next one,
+   * preventing overlapping responses / race conditions.
+   *
+   * takeUntilDestroyed() tears down the subscription automatically when the
+   * root injector is destroyed — no manual OnDestroy needed.
+   *
+   * TODO: flip environment.notificationsApiReady to true once
+   * GET /api/notifications ships on the backend.
+   */
   private startPolling(): void {
     if (!environment.notificationsApiReady) return;
-    this.fetchNotifications();
-    this.pollingInterval = setInterval(() => this.fetchNotifications(), 30_000);
+
+    this.ngZone.runOutsideAngular(() => {
+      timer(0, 30_000)
+        .pipe(
+          switchMap(() =>
+            this.http
+              .get<NotificationApiResponse>(`${this.api}/notifications`)
+              .pipe(
+                // Silent fail — keeps polling even if the endpoint isn't ready
+                switchMap((res) => {
+                  this.ngZone.run(() => this.mergeIncoming(res.notifications));
+                  return EMPTY;
+                })
+              )
+          ),
+          takeUntilDestroyed(this.destroyRef)
+        )
+        .subscribe({ error: () => {} });
+    });
   }
 
-  private stopPolling(): void {
-    if (this.pollingInterval !== null) {
-      clearInterval(this.pollingInterval);
-      this.pollingInterval = null;
+  private mergeIncoming(incoming: Notification[]): void {
+    const existingIds = new Set(this._notifications().map((n) => n.id));
+    const fresh = incoming.filter((n) => !existingIds.has(n.id));
+
+    if (fresh.length > 0) {
+      this._notifications.update((prev) => [...fresh, ...prev]);
+      // Cap queue so a notification burst doesn't grow it unbounded
+      this._toastQueue.update((q) => [...q, ...fresh].slice(-20));
     }
-  }
-
-  /**
-   * TODO: Replace mock URL with real endpoint GET /api/notifications once backend exists.
-   * Expected response shape: NotificationApiResponse { notifications: Notification[] }
-   *
-   * Errors are NOT caught here — they propagate so the component can handle them gracefully.
-   * Currently 404s are silently ignored via the subscribe error handler in the service itself
-   * because there is no UI to surface polling errors (it just means "no new notifications").
-   */
-  private fetchNotifications(): void {
-    this.http
-      .get<NotificationApiResponse>(`${this.api}/notifications`)
-      .subscribe({
-        next: (response) => {
-          const incoming = response.notifications;
-          // Merge: add only new notifications (by id) and preserve local state
-          const existingIds = new Set(this._notifications().map((n) => n.id));
-          const fresh = incoming.filter((n) => !existingIds.has(n.id));
-
-          if (fresh.length > 0) {
-            this._notifications.update((prev) => [...fresh, ...prev]);
-            // Queue fresh ones as toasts (capped so a burst can't grow this unbounded)
-            this._toastQueue.update((q) => [...q, ...fresh].slice(-20));
-          }
-        },
-        // Silent fail: backend endpoint doesn't exist yet, polling continues
-        error: () => {},
-      });
   }
 
   // ── Icon helper ──────────────────────────────────────────────────────────
