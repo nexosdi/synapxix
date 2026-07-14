@@ -1,42 +1,45 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { auth0Config } from '@nexosdi.synapxix/auth0-config';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import jwksRsa from 'jwks-rsa';
 
-export type Auth0JwtPayload = {
+export type KeycloakJwtPayload = {
   [key: string]: unknown;
   iss?: string;
   aud?: string | string[];
   sub?: string;
   email?: string;
   name?: string;
-  picture?: string;
+  preferred_username?: string;
+  realm_access?: { roles: string[] };
 };
 
+/**
+ * Estrategia de Passport para validar tokens JWT (Bearer tokens).
+ * Integrado con el Keycloak del VPS. Descarga las llaves públicas (JWKS) desde la URL
+ * configurada para verificar criptográficamente que los tokens no fueron alterados.
+ */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
-    const audience = process.env.AUTH0_AUDIENCE ?? auth0Config.audience;
-    const issuer = normalizeIssuer(process.env.AUTH0_DOMAIN ?? auth0Config.domain);
+    const realmUrl = process.env.KEYCLOAK_REALM_URL || 'http://localhost:8080/realms/synapxix';
 
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKeyProvider: jwksRsa.passportJwtSecret({
         cache: true,
         cacheMaxEntries: 5,
-        cacheMaxAge: 1000 * 60 * 10,
+        cacheMaxAge: 600_000,
         rateLimit: true,
         jwksRequestsPerMinute: 10,
-        jwksUri: `${issuer}.well-known/jwks.json`,
+        jwksUri: `${realmUrl}/protocol/openid-connect/certs`,
       }),
-      audience,
-      issuer,
+      issuer: realmUrl,
       algorithms: ['RS256'],
     });
   }
 
-  validate(payload: Auth0JwtPayload) {
+  validate(payload: KeycloakJwtPayload) {
     return payload;
   }
 }

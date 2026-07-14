@@ -19,9 +19,15 @@ import {
 } from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Request } from 'express';
-import { Auth0JwtPayload } from '../auth/jwt.strategy';
+import { KeycloakJwtPayload } from '../auth/jwt.strategy';
 import { PrismaService } from '@nexosdi.synapxix/prisma';
 
+/**
+ * Controlador de Analíticas.
+ * Protegido globalmente por `JwtAuthGuard`, asegura que todas las peticiones tengan un token válido de Keycloak.
+ * Utiliza el objeto `req.user` para validar si el usuario que solicita los datos tiene permisos
+ * sobre el recurso (ej. si es el mismo usuario, un profesor o un administrador).
+ */
 @ApiTags('Analytics')
 @Controller('analytics')
 @UseGuards(JwtAuthGuard)
@@ -63,7 +69,7 @@ export class AnalyticsController {
   @Get('individual-average/:userId')
   async getIndividualCognitiveAverage(
     @Param('userId') userId: string,
-    @Req() req: Request & { user: Auth0JwtPayload },
+    @Req() req: Request & { user: KeycloakJwtPayload },
   ): Promise<IndividualCognitiveAverageDto> {
     const requestingUser = req.user;
     const user = await this.prisma.app_user.findUnique({
@@ -101,7 +107,7 @@ export class AnalyticsController {
   @Get('student-progress/:studentId')
   async getStudentProgress(
     @Param('studentId') studentId: string,
-    @Req() req: Request & { user: Auth0JwtPayload },
+    @Req() req: Request & { user: KeycloakJwtPayload },
   ): Promise<StudentProgressDto> {
     const requestingUser = req.user;
     const user = await this.prisma.app_user.findUnique({

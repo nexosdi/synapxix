@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { AuthGuard } from '@auth0/auth0-angular';
+import { keycloakAuthGuard } from './guards/keycloak-auth.guard';
 import {
   GameRunnerComponent,
   HistoryService,
@@ -14,10 +14,17 @@ import { RoadmapBuilderComponent } from '../teachers-form/roadmap-builder.compon
 import { ShopComponent } from '../components/shop/shop.component';
 
 
+/**
+ * Definición de rutas del web-game.
+ * Las rutas protegidas (ej. shop, dashboard e history) utilizan el guard
+ * `keycloakAuthGuard` para requerir token válido desde el servidor Keycloak del VPS.
+ * La ruta raíz (splash) es pública.
+ */
 export const routes: Routes = [
   {
     path: 'shop',
     component: ShopComponent,
+    canActivate: [keycloakAuthGuard],
   },
   {
     path: '',
@@ -25,9 +32,11 @@ export const routes: Routes = [
   },
  { path: 'dashboard',
    component: DashboardComponent, 
+   canActivate: [keycloakAuthGuard],
  },
   {
     path: 'history/:historyId',
+    canActivate: [keycloakAuthGuard],
     providers: [
       HistoryService,
       MockHistoryDataProvider,

@@ -18,7 +18,6 @@
       "@nexosdi.synapxix/game-engine/core": [
         "libs/game-engine/core/src/index.ts"
       ],
-      "@nexosdi.synapxix/auth0-config": ["auth0.config.ts"],
       "@nexosdi.synapxix/learning/shared": [
         "libs/learning/shared/src/index.ts"
       ],
