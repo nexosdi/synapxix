@@ -1,12 +1,18 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '@auth0/auth0-angular'; 
-import { filter, switchMap, take } from 'rxjs';
+import { KeycloakService } from 'keycloak-angular';
+import { take } from 'rxjs';
 import { CognitiveElement } from './models/CognitiveElement.model';
 import { CognitiveService } from './services/Cognitive.service';
 import { CognitiveCardComponent } from './components/CognitiveCard.component';
 import { CognitiveChartComponent } from './components/CognitiveCharts.components';
 
+/**
+ * Componente principal del Dashboard.
+ * Muestra el progreso cognitivo del usuario.
+ * Utiliza `KeycloakService` para la autenticación y no requiere esperar a que cargue
+ * de forma asíncrona porque Keycloak ya fue inicializado por el APP_INITIALIZER.
+ */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -62,7 +68,7 @@ export class DashboardComponent implements OnInit {
   public isLoading = true;
   public errorMessage = '';
 
-  private auth = inject(AuthService);
+  private keycloak = inject(KeycloakService);
   private cognitiveService = inject(CognitiveService);
 
   ngOnInit(): void {
@@ -73,11 +79,7 @@ export class DashboardComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.auth.isLoading$.pipe(
-      filter(loading => !loading),
-      take(1), 
-      switchMap(() => this.cognitiveService.getElements())
-    ).subscribe({
+    this.cognitiveService.getElements().subscribe({
       next: (data) => {
         this.elements = data;
         this.selectedElement = data[0] ?? null;

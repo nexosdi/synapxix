@@ -178,9 +178,20 @@ npx nx serve web-game
 
 # Frontend admin (puerto 4200)
 npx nx serve admin-frontend
-```
+
+### 6. Configuración de Keycloak (Desarrollo local)
+
+Para que el sistema de autenticación de Keycloak funcione correctamente en tu entorno local:
+
+  **Configurar el Backend (`server`)**:
+   Asegúrate de agregar en tu archivo `.env` la dirección pública del realm de Keycloak:
+   ```env
+   KEYCLOAK_REALM_URL=https://auth.aisuite.neops.ai/realms/Synapxix
+   ```
+   *(Si necesitas saltarte la validación en desarrollo local, puedes configurar `DISABLE_AUTH=true` en tu `.env` para usar el guard de prueba `MockJwtGuard`)*.
 
 ---
+
 
 ## Workflows de desarrollo
 
@@ -265,6 +276,7 @@ Ver [`.env.example`](.env.example) para la lista completa. Las variables obligat
 | `APP_DB_PASSWORD` | Contraseña de la DB |
 | `APP_DB_PORT` | Puerto expuesto del contenedor (default: `5434`) |
 | `GOOGLE_GEN_AI_KEY` | API key de Google AI Studio (para módulo de IA) |
+| `KEYCLOAK_REALM_URL` | URL pública del realm de Keycloak para validación JWT |
 
 ---
 
