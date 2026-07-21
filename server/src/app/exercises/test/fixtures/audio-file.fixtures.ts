@@ -1,4 +1,5 @@
 import { READ_ALOUD_MAX_FILE_SIZE_BYTES } from '../../validators/read-aloud-audio.validation';
+import { UploadedAudioFile } from '../../types/uploaded-audio-file';
 
 export const MP4_BUFFER = Buffer.from([
   0x00, 0x00, 0x00, 0x20, 0x66, 0x74, 0x79, 0x70,
@@ -29,8 +30,8 @@ export const PNG_BUFFER = Buffer.from([
 ]);
 
 export function createMockAudioFile(
-  overrides: Partial<Express.Multer.File> = {},
-): Express.Multer.File {
+  overrides: Partial<UploadedAudioFile> = {},
+): UploadedAudioFile {
   const buffer = overrides.buffer ?? WEBM_BUFFER;
 
   return {
@@ -40,7 +41,6 @@ export function createMockAudioFile(
     mimetype: overrides.mimetype ?? 'audio/webm',
     size: overrides.size ?? buffer.length,
     buffer,
-    stream: null as unknown as Express.Multer.File['stream'],
     destination: '',
     filename: '',
     path: '',
@@ -48,7 +48,7 @@ export function createMockAudioFile(
   };
 }
 
-export function createOversizedAudioFile(): Express.Multer.File {
+export function createOversizedAudioFile(): UploadedAudioFile {
   return createMockAudioFile({
     size: READ_ALOUD_MAX_FILE_SIZE_BYTES + 1,
   });

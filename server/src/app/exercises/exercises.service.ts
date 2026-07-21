@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { AiProvider } from '../modules/research/providers/ai.provider';
 import { EvaluateReadAloudDto } from './dto/evaluate-read-aloud.dto';
+import { UploadedAudioFile } from './types/uploaded-audio-file';
 
 @Injectable()
 export class ExercisesService {
   constructor(private readonly aiProvider: AiProvider) {}
 
-  async evaluateAudio(dto: EvaluateReadAloudDto, file: Express.Multer.File) {
+  async evaluateAudio(dto: EvaluateReadAloudDto, file: UploadedAudioFile) {
     const base64Audio = file.buffer.toString('base64');
     const mimeType = file.mimetype;
 

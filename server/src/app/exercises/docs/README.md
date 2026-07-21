@@ -109,7 +109,7 @@ Body (FormData):
 - Return a safe fallback if the response is not valid JSON
 
 **Methods**:
-- `evaluateAudio(dto: EvaluateReadAloudDto, file: Express.Multer.File): Promise<any>`
+- `evaluateAudio(dto: EvaluateReadAloudDto, file: UploadedAudioFile): Promise<any>`
   - Converts `file.buffer` → base64
   - Calls `aiProvider.analyzeAudio(expectedText, mimeType, base64)`
   - Cleans the response (removes ` ```json ` and ` ``` `)
@@ -129,7 +129,7 @@ Body (FormData):
 **Technical Detail**:
 ```typescript
 export class ReadAloudMimeTypeValidator extends FileValidator<Record<string, unknown>> {
-  isValid(file?: Express.Multer.File): boolean {
+  isValid(file?: UploadedAudioFile): boolean {
     if (!file?.mimetype) return false;
     return ALLOWED_AUDIO_MIME_REGEX.test(file.mimetype);
   }
@@ -362,6 +362,8 @@ server/src/app/exercises/
 │   └── README.md
 ├── dto/
 │   └── evaluate-read-aloud.dto.ts
+├── types/
+│   └── uploaded-audio-file.ts
 ├── test/
 │   ├── fixtures/
 │   │   └── audio-file.fixtures.ts

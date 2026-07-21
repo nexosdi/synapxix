@@ -13,6 +13,7 @@ import { ExercisesService } from './exercises.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { EvaluateReadAloudDto } from './dto/evaluate-read-aloud.dto';
 import { readAloudAudioFilePipe } from './validators/read-aloud-audio.validation';
+import { UploadedAudioFile } from './types/uploaded-audio-file';
 
 
 @Controller('exercises')
@@ -31,7 +32,7 @@ export class ExercisesController {
   )
   evaluateReadAloud(
     @Body() body: EvaluateReadAloudDto,
-    @UploadedFile(readAloudAudioFilePipe) file: Express.Multer.File,
+    @UploadedFile(readAloudAudioFilePipe) file: UploadedAudioFile,
   ) {
     return this.exercisesService.evaluateAudio(body, file);
   }
