@@ -1,8 +1,8 @@
-# Rewards Shop (Synapxix) — Rewards Shop (Tienda de Recompensas)
+# Rewards Shop (Synapxix) — Rewards Shop 
 
 A simple e-commerce module where students spend **virtual credits** to unlock **avatars** and **banners**.
 
-> Focus of this README: **testing infrastructure** and how to walk through scenarios using mocks.
+> Focus of this README: **Real integration** with the backend economy service and historical testing details.
 
 ---
 
@@ -12,12 +12,11 @@ A simple e-commerce module where students spend **virtual credits** to unlock **
 
 ```txt
 shop.component.ts
-  ├─ shop-balance.component.ts        (UI: displays credits balance)
-  ├─ shop-item-card.component.ts     (UI: item card for avatars/banners)
-  ├─ economy-store.service.ts       (real HttpClient: getBalance(), purchase())
-  ├─ mock-economy-store.service.ts  (MOCK TEMPORARY for testing)
-  │    ├─ getBalance() -> fixed credits
-  │    └─ purchase() -> simulates outcomes
+  ├─ shop-balance.component.ts         (UI: displays credits balance)
+  ├─ shop-item-card.component.ts      (UI: item card for avatars/banners)
+  ├─ economy-store.service.ts        (real HttpClient: getBalance(), purchase())
+  ├─ services/
+  │    └─ http-store-items.provider.ts (real HttpClient: getItems())
   └─ models/
        ├─ store-item.model.ts
        └─ store-items-provider.token.ts
@@ -25,7 +24,7 @@ shop.component.ts
 
 **How the interaction flows**:
 
-1. `shop.component.ts` loads/sorts/filters items (via provider/token).
+1. `shop.component.ts` loads items via `HttpStoreItemsProvider` (using the injection token `STORE_ITEMS_PROVIDER`).
 2. Calls `EconomyStoreService.getBalance()` to render the credits balance.
 3. On purchase, calls `EconomyStoreService.purchase(itemId)`.
 4. Updates the balance reactively using Angular Signals after a successful purchase.
@@ -33,6 +32,7 @@ shop.component.ts
 ### Backend — `economy` module
 
 - `EconomyController` (`@Controller('economy')` protected with `JwtAuthGuard`):
+  - `GET /economy/items` → `StoreItem[]` (lists all active store items from DB)
   - `GET /economy/balance` → `BalanceResponseDto { credits, experience_points }`
   - `POST /economy/purchase` → `PurchaseDto { itemId: string (UUID) }`
     → `PurchaseResponseDto { status, purchaseId, itemId, itemName, itemType, creditsSpent, newBalance, processedAt }`
@@ -52,13 +52,13 @@ shop.component.ts
     - write audit log
   - uses `updateMany` with a condition (`credits >= price`) to mitigate race conditions for concurrent purchases
 
-**Tables involved (inferred)**:
+**Tables involved**:
 - `app_user`
-- `storeItem`
-- `userInventory`
-- `purchaseTransaction`
-- `economyTransaction`
-- `auditLog`
+- `store_item`
+- `user_inventory`
+- `purchase_transaction`
+- `economy_transaction`
+- `audit_log`
 
 ---
 
@@ -66,64 +66,22 @@ shop.component.ts
 
 | Method | Route | Request body | Response (high-level) | Possible errors |
 |---|---|---|---|---|
+| GET | `/economy/items` | — | `StoreItem[]` | — |
 | GET | `/economy/balance` | — | `BalanceResponseDto { credits, experience_points }` | — |
 | POST | `/economy/purchase` | `PurchaseDto { itemId: string (UUID) }` | `PurchaseResponseDto { status, purchaseId, itemId, itemName, itemType, creditsSpent, newBalance, processedAt }` | `INSUFFICIENT_FUNDS` (400), `ALREADY_OWNED` (409), `ITEM_NOT_FOUND` (404), `UNKNOWN` |
 | POST | `/economy/claim-reward` | `ClaimRewardDto { gameSessionId: UUID, score: number (0-1000), victory: boolean }` | `ClaimRewardResponseDto { status, transactionId, balance: {credits, experience_points}, reward: {credits, xp}, processedAt }` | (depends on backend error mapping) |
 
 ---
 
-## Status: using mocked data (TEMPORARY)
+## Connection Status: Live Backend (Fullstack)
 
-To test the UI without relying on a real JWT-authenticated user against the DB, `shop.component.ts` includes a temporary `providers` override:
+Previously, local mocks (`MockEconomyStoreService` and `MockStoreItemsProvider`) were used to simulate purchases and item listings without requiring an authenticated user (JWT) or a running database.
 
-- `{ provide: EconomyStoreService, useClass: MockEconomyStoreService }`
+Those mocks have been completely removed and replaced with the real HTTP services querying the backend.
 
-This mock (`mock-economy-store.service.ts`) simulates:
-- `getBalance()` → returns **300 fixed credits**
-- `purchase()` → simulates:
-  - successful purchase
-  - insufficient funds
-  - item already owned
-  - item not found
-
-Why this exists:
-- The current testing/infrastructure setup doesn’t yet provide a stable way to generate a real authenticated user (JWT + DB) for UI testing.
-
-### How to revert the mock (EXACT steps)
-
-1. Delete the mock file:
-   - `web-game/src/components/shop/services/mock-economy-store.service.ts`
-2. Edit `web-game/src/components/shop/shop.component.ts` and remove the temporary `providers` override.
-
-Specifically, remove the **two lines** that bind `EconomyStoreService` to `MockEconomyStoreService`.
-
-Reference (do not copy blindly; confirm against your local file):
-
-```ts
-// TODO: remove the exact 2 lines from providers
-{ provide: EconomyStoreService, useClass: MockEconomyStoreService }
-```
-
----
-
-## How to test different scenarios (using the mock)
-
-All scenarios are controlled from `MockEconomyStoreService` (`mock-economy-store.service.ts`).
-
-### Successful purchase
-- Ensure the chosen `itemId` has a price `<= mockCredits`.
-- Ensure the chosen `itemId` is **not** present in `mockOwnedItemIds`.
-
-### Insufficient funds
-- Increase the item price (or decrease `mockCredits`).
-- Ensure the chosen `itemId` has a price `> mockCredits`.
-
-### Already owned (ALREADY_OWNED)
-- Add the chosen `itemId` to `mockOwnedItemIds`.
-- Call `purchase(itemId)`.
-
-### Item not found (ITEM_NOT_FOUND)
-- Call `purchase(itemId)` with an `itemId` that the mock considers inactive/non-existent.
+To test the complete flow:
+1. Ensure the backend (NestJS) is running.
+2. The user must be authenticated with a valid JWT token, as all `/economy` endpoints are protected by the `JwtAuthGuard`.
 
 ---
 
@@ -133,8 +91,7 @@ All scenarios are controlled from `MockEconomyStoreService` (`mock-economy-store
 - [x] Purchase integration against `POST /economy/purchase` including error mapping: `INSUFFICIENT_FUNDS`, `ALREADY_OWNED`, `ITEM_NOT_FOUND`
 - [x] Reactive balance update using Angular Signals after a successful purchase
 - [x] Testing infrastructure enabled with a temporary mock of `EconomyStoreService`
-- [ ] Test purchase flows with a **real authenticated (JWT) user** against the DB
-- [ ] Revert the mock before merging to production:
-  - [ ] remove `mock-economy-store.service.ts`
-  - [ ] remove the `providers` override from `shop.component.ts`
-
+- [x] Test purchase flows with a **real authenticated (JWT) user** against the DB
+- [x] Revert the mock before merging to production:
+  - [x] remove `mock-economy-store.service.ts`
+  - [x] remove the `providers` override from `shop.component.ts`

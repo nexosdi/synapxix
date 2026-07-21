@@ -1,6 +1,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@nexosdi.synapxix/prisma';
+import { StoreItem } from '@prisma/client';
 
 @Injectable()
 export class EconomyRepository {
@@ -77,6 +78,14 @@ export class EconomyRepository {
     return this.prisma.storeItem.findFirst({
       where: {
         store_item_id: itemId,
+        is_active: true,
+      },
+    });
+  }
+
+  async findAllActiveItems(): Promise<StoreItem[]> {
+    return this.prisma.storeItem.findMany({
+      where: {
         is_active: true,
       },
     });

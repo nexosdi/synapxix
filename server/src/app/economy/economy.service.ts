@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { StoreItem } from '@prisma/client';
 import { calculateGameReward, calculateXP, validatePurchase } from './logic/economy.logic';
 import { EconomyRepository } from './economy.repository';
 import { ClaimRewardDto } from './dto/claim.reward.dto';
@@ -200,5 +201,9 @@ export class EconomyService {
 
       this.handleError(error, userId);
     }
+  }
+
+  async getStoreItems(): Promise<StoreItem[]> {
+    return this.repository.findAllActiveItems();
   }
 }

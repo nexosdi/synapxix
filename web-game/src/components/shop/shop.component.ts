@@ -10,12 +10,10 @@ import { forkJoin } from 'rxjs';
 
 import { StoreItem, StoreItemViewModel } from './models/store-item.model';
 import { STORE_ITEMS_PROVIDER } from './models/store-items-provider.token';
-import { MockStoreItemsProvider } from './services/mock-store-items.provider';
+import { HttpStoreItemsProvider } from './services/http-store-items.provider';
 import { EconomyStoreService, PurchaseError } from './services/economy-store.service';
 import { StoreItemCardComponent } from './component/shop-item-card.component';
 import { StoreBalanceComponent } from './component/shop-balance.component';
-
-import { MockEconomyStoreService } from './services/mock-economy-store.service'; // MOCK TEMPORAL
 
 type FilterType = 'all' | 'avatar' | 'banner';
 
@@ -29,9 +27,7 @@ interface PurchaseState {
   standalone: true,
   imports: [CommonModule, StoreItemCardComponent, StoreBalanceComponent],
   providers: [
-    { provide: STORE_ITEMS_PROVIDER, useClass: MockStoreItemsProvider },
-    { provide: EconomyStoreService, useClass: MockEconomyStoreService }, // MOCK TEMPORAL
-
+    { provide: STORE_ITEMS_PROVIDER, useClass: HttpStoreItemsProvider },
   ],
   template: `
     <div class="store">
