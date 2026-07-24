@@ -2,7 +2,7 @@ import { Injectable, signal, computed, inject, DestroyRef } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
 import { NgZone } from '@angular/core';
-import { timer, switchMap, EMPTY } from 'rxjs';
+import { timer, switchMap, tap, catchError, EMPTY } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Notification, NotificationApiResponse, NotificationType } from '../models/notification.model';
 
@@ -87,16 +87,14 @@ export class NotificationService {
             this.http
               .get<NotificationApiResponse>(`${this.api}/notifications`)
               .pipe(
-                // Silent fail — keeps polling even if the endpoint isn't ready
-                switchMap((res) => {
-                  this.ngZone.run(() => this.mergeIncoming(res.notifications));
-                  return EMPTY;
-                })
+                tap((res) => this.ngZone.run(() => this.mergeIncoming(res.notifications))),
+                // Silent fail — keeps polling even if a request errors out
+                catchError(() => EMPTY)
               )
           ),
           takeUntilDestroyed(this.destroyRef)
         )
-        .subscribe({ error: () => {} });
+        .subscribe();
     });
   }
 
