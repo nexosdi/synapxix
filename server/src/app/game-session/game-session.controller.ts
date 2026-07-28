@@ -1,27 +1,30 @@
-import { Controller, Post, Body, Param } from '@nestjs/common';
+import { Controller, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Request } from 'express';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { KeycloakJwtPayload } from '../auth/jwt.strategy';
 import { GameSessionService } from './game-session.service';
 import { StartSessionDto, SubmitAttemptDto } from './dto/game-session.dto';
-// Omitiendo el guardia temporalmente o haciéndolo opcional, dado que el userId puede ser null, 
-// pero vamos a dejar que las rutas sean públicas por ahora, o si requieren JWT, el userId puede ser null.
-// Dado el requerimiento "userId se mantendrá en null intencionalmente", mejor sin JwtAuthGuard en estos endpoints, 
-// o un JWT opcional. Como no hay un guardia de jwt-optional a mano, lo dejo sin guardia para facilitar pruebas.
 
 @Controller('game-session')
+@UseGuards(JwtAuthGuard)
 export class GameSessionController {
   constructor(private readonly gameSessionService: GameSessionService) {}
 
   @Post('start')
-  startSession(@Body() dto: StartSessionDto) {
-    return this.gameSessionService.startSession(dto);
+  startSession(@Req() req: Request & { user: KeycloakJwtPayload }, @Body() dto: StartSessionDto) {
+    const userId = req.user.sub!;
+    return this.gameSessionService.startSession(userId, dto);
   }
 
   @Post(':id/attempt')
-  submitAttempt(@Param('id') id: string, @Body() dto: SubmitAttemptDto) {
-    return this.gameSessionService.submitAttempt(id, dto);
+  submitAttempt(@Req() req: Request & { user: KeycloakJwtPayload }, @Param('id') id: string, @Body() dto: SubmitAttemptDto) {
+    const userId = req.user.sub!;
+    return this.gameSessionService.submitAttempt(userId, id, dto);
   }
 
   @Post(':id/complete')
-  completeSession(@Param('id') id: string) {
-    return this.gameSessionService.completeSession(id);
+  completeSession(@Req() req: Request & { user: KeycloakJwtPayload }, @Param('id') id: string) {
+    const userId = req.user.sub!;
+    return this.gameSessionService.completeSession(userId, id);
   }
 }
