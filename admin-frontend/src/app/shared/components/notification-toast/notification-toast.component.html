@@ -1,0 +1,32 @@
+<div class="toast-container" aria-live="polite" aria-label="Notifications">
+  @for (toast of visibleToasts(); track trackById($index, toast)) {
+    <div
+      class="toast"
+      [class.toast--leaving]="toast.leaving"
+      [class.toast--achievement]="toast.type === 'achievement'"
+      [class.toast--feedback]="toast.type === 'feedback'"
+      [class.toast--ranking]="toast.type === 'ranking'"
+      role="alert"
+    >
+      <div class="toast__icon">{{ getIcon(toast.type) }}</div>
+
+      <div class="toast__content">
+        <p class="toast__title">{{ toast.title }}</p>
+        <p class="toast__message">{{ toast.message }}</p>
+      </div>
+
+      <button
+        class="toast__dismiss"
+        (click)="startLeave(toast.id)"
+        aria-label="Dismiss notification"
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+      </button>
+
+      <!-- Progress bar that drains over 4s -->
+      <div class="toast__progress" [class.toast__progress--draining]="!toast.leaving"></div>
+    </div>
+  }
+</div>

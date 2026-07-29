@@ -1,0 +1,78 @@
+<div class="bell-wrapper" id="notification-bell-wrapper">
+
+  <!-- ── Bell trigger ──────────────────────────────────────────────── -->
+  <button
+    class="bell-btn"
+    id="notification-bell-btn"
+    [class.bell-btn--active]="isOpen()"
+    (click)="togglePanel()"
+    [attr.aria-label]="'Notifications' + (unreadCount() > 0 ? ', ' + unreadCount() + ' unread' : '')"
+    aria-haspopup="true"
+    [attr.aria-expanded]="isOpen()"
+  >
+    <!-- Bell SVG -->
+    <svg class="bell-icon" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+    </svg>
+
+    <!-- Unread badge -->
+    @if (unreadCount() > 0) {
+      <span
+        class="badge"
+        [class.badge--pulse]="unreadCount() > 0"
+        aria-hidden="true"
+      >{{ badgeLabel() }}</span>
+    }
+  </button>
+
+  <!-- ── Dropdown panel ────────────────────────────────────────────── -->
+  @if (isOpen()) {
+    <div class="panel" id="notification-panel" role="dialog" aria-label="Notifications panel">
+
+      <!-- Header -->
+      <div class="panel__header">
+        <h3 class="panel__title">Notifications</h3>
+        @if (unreadCount() > 0) {
+          <button class="panel__mark-all" id="mark-all-read-btn" (click)="markAllRead()">
+            Mark all as read
+          </button>
+        }
+      </div>
+
+      <!-- List -->
+      <div class="panel__list" role="list">
+        @if (!hasNotifications()) {
+          <div class="panel__empty">
+            <span class="panel__empty-icon">🔔</span>
+            <p>You're all caught up!</p>
+          </div>
+        } @else {
+          @for (n of notifications(); track trackById($index, n)) {
+            <div
+              class="panel__item"
+              [class.panel__item--unread]="!n.read"
+              [class.panel__item--achievement]="n.type === 'achievement'"
+              [class.panel__item--feedback]="n.type === 'feedback'"
+              [class.panel__item--ranking]="n.type === 'ranking'"
+              role="listitem"
+              (click)="markRead(n.id)"
+            >
+              <div class="panel__item-icon">{{ getIcon(n.type) }}</div>
+              <div class="panel__item-body">
+                <p class="panel__item-title">{{ n.title }}</p>
+                <p class="panel__item-msg">{{ n.message }}</p>
+                <time class="panel__item-time" [attr.datetime]="n.timestamp">
+                  {{ n.timestamp | date: 'MMM d, h:mm a' }}
+                </time>
+              </div>
+              @if (!n.read) {
+                <div class="panel__item-dot" aria-label="Unread"></div>
+              }
+            </div>
+          }
+        }
+      </div>
+    </div>
+  }
+
+</div>
