@@ -7,10 +7,6 @@ export class StartSessionDto {
   @IsOptional()
   @IsString()
   category?: string;
-
-  @IsOptional()
-  @IsUUID()
-  userId?: string;
 }
 
 export class SubmitAttemptDto {

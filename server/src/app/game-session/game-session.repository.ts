@@ -6,10 +6,10 @@ import { StartSessionDto, SubmitAttemptDto } from './dto/game-session.dto';
 export class GameSessionRepository {
   constructor(private prisma: PrismaService) {}
 
-  async createSession(dto: StartSessionDto) {
+  async createSession(userId: string, dto: StartSessionDto) {
     return this.prisma.gameSession.create({
       data: {
-        user_id: dto.userId || null,
+        user_id: userId,
         history_id: dto.historyId,
         category: dto.category,
         status: 'playing',
