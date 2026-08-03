@@ -62,8 +62,8 @@ import { Subscription } from 'rxjs';
           <div
             class="relative px-8 pt-10 pb-8 flex flex-col items-center gap-4 text-white overflow-hidden"
             [style.background]="feedbackResult()?.isCorrect
-              ? 'linear-gradient(135deg, #5b21b6 0%, #2e1065 100%)'
-              : 'linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%)'"
+              ? 'linear-gradient(135deg, var(--sx-blue-deep) 0%, var(--sx-blue-900) 100%)'
+              : 'linear-gradient(135deg, #b03636 0%, #7a2020 100%)'"
           >
             <!-- Logo in corner -->
             <img
@@ -121,11 +121,11 @@ import { Subscription } from 'rxjs';
             @if (flowService.feedbackContent() || feedbackResult()?.feedback) {
               <div class="rounded-2xl px-5 py-4 ring-1"
                 [style]="feedbackResult()?.isCorrect
-                  ? 'background:rgba(52,211,153,0.08);border-color:rgba(52,211,153,0.25)'
+                  ? 'background:rgba(30, 158, 106,0.08);border-color:rgba(30, 158, 106,0.25)'
                   : 'background:rgba(248,113,113,0.08);border-color:rgba(248,113,113,0.25)'"
               >
                 <p class="text-[10px] font-black uppercase tracking-widest mb-1.5"
-                  [style.color]="feedbackResult()?.isCorrect ? '#059669' : '#dc2626'"
+                  [style.color]="feedbackResult()?.isCorrect ? '#059669' : '#d64545'"
                 >AI Feedback</p>
                 <p class="text-sm font-semibold text-gray-700 leading-relaxed">
                   {{ flowService.feedbackContent() || feedbackResult()?.feedback }}
@@ -141,7 +141,7 @@ import { Subscription } from 'rxjs';
               type="button"
               (click)="onManualAdvance()"
               class="w-full py-4 rounded-2xl text-white text-sm font-black tracking-wide shadow-lg transition-transform active:scale-95"
-              style="background: linear-gradient(135deg,#b794f4 0%,#f687b3 45%,#fbd38d 100%);"
+              style="background: linear-gradient(135deg,var(--sx-sky) 0%,var(--sx-blue-300) 45%,var(--sx-blue) 100%);"
             >
               Continue →
             </button>

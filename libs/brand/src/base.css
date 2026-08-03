@@ -1,0 +1,81 @@
+/**
+ * Synapxix — Base de marca
+ * =========================================================================
+ * Aplica los fundamentos del manual a los elementos base: tipografía
+ * redondeada, alto contraste y foco visible. Se carga después de tokens.css.
+ *
+ * Deliberadamente corto: define el punto de partida, no los componentes.
+ * =========================================================================
+ */
+
+html,
+body {
+  font-family: var(--sx-font);
+  color: var(--sx-text);
+  background-color: var(--sx-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Títulos en azul profundo y peso alto: "amigable, clara, moderna". */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--sx-font);
+  font-weight: var(--sx-weight-black);
+  color: var(--sx-blue-deep);
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: var(--sx-blue);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+  transition: color var(--sx-transition);
+}
+
+a:hover {
+  color: var(--sx-blue-deep);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* Formas redondeadas: principio visual del manual. */
+button {
+  border-radius: var(--sx-radius-pill);
+}
+
+input,
+select,
+textarea {
+  border-radius: var(--sx-radius-sm);
+}
+
+/**
+ * Foco visible y de marca.
+ * No se elimina nunca: la accesibilidad es parte de "confianza".
+ */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--sx-blue);
+  outline-offset: 2px;
+  border-radius: var(--sx-radius-sm);
+}
+
+::selection {
+  background-color: var(--sx-blue);
+  color: var(--sx-white);
+}
+
+/* El logo no se distorsiona: mantiene proporción siempre. */
+.sx-logo,
+img[alt*='Synapxix' i] {
+  object-fit: contain;
+}

@@ -1,6 +1,12 @@
+/* Tipografía de marca: sans serif redondeada (ver BRAND.md) */
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,800;1,900&display=swap');
+
+/* Identidad Synapxix — fuente única de verdad en libs/brand/ */
+@import '../../libs/brand/src/tokens.css';
+@import '../../libs/brand/src/base.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* You can add global styles to this file, and also import other style files */
+/* Los estilos globales propios de web-game van debajo de esta línea. */

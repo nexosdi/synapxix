@@ -19,13 +19,13 @@ import {
       @if (isCorrect()) {
         <div class="absolute inset-0 z-20 flex items-center justify-center rounded-[3rem] bg-white/80 backdrop-blur-sm animate-in fade-in duration-300">
           <div class="flex flex-col items-center gap-4 rounded-[2.5rem] bg-yellow-300 px-12 py-8 shadow-xl border-b-8 border-yellow-500 scale-110 animate-in bounce-in">
-            <h3 class="text-4xl font-black text-[#1b95fb]">PERFECT! 🎧</h3>
+            <h3 class="text-4xl font-black text-[#1e90ff]">PERFECT! 🎧</h3>
           </div>
         </div>
       }
 
       <header class="space-y-4 text-center">
-        <div class="inline-block px-6 py-2 rounded-full bg-[#1b95fb]/10 text-[#1b95fb] text-xs font-black uppercase tracking-[0.2em]">
+        <div class="inline-block px-6 py-2 rounded-full bg-[#1e90ff]/10 text-[#1e90ff] text-xs font-black uppercase tracking-[0.2em]">
           Listening Mission
         </div>
         
@@ -37,7 +37,7 @@ import {
       <div class="flex justify-center p-6 bg-slate-50 rounded-[2rem] border-4 border-dashed border-slate-200">
         <button 
           (click)="audioPlayer.play()"
-          class="flex items-center gap-3 px-8 py-4 bg-white border-b-4 border-slate-200 rounded-full text-[#1b95fb] font-black hover:bg-slate-100 active:translate-y-1 active:border-b-0 transition-all"
+          class="flex items-center gap-3 px-8 py-4 bg-white border-b-4 border-slate-200 rounded-full text-[#1e90ff] font-black hover:bg-slate-100 active:translate-y-1 active:border-b-0 transition-all"
         >
           <span class="text-2xl">🔊</span>
           PLAY AUDIO
@@ -50,7 +50,7 @@ import {
           type="text"
           [(ngModel)]="userInput"
           placeholder="Type what you hear..."
-          class="w-full px-8 py-6 bg-slate-100 border-b-4 border-slate-200 text-[#1b95fb] font-black text-2xl rounded-full focus:bg-white focus:border-[#1b95fb] outline-none transition-all text-center placeholder:text-slate-300"
+          class="w-full px-8 py-6 bg-slate-100 border-b-4 border-slate-200 text-[#1e90ff] font-black text-2xl rounded-full focus:bg-white focus:border-[#1e90ff] outline-none transition-all text-center placeholder:text-slate-300"
           (keyup.enter)="checkAnswer(view.answer)"
         />
 
@@ -62,7 +62,7 @@ import {
 
         <button
           (click)="checkAnswer(view.answer)"
-          class="w-full py-6 bg-[#1b95fb] text-white font-black text-2xl rounded-full border-b-8 border-[#0d47a1] hover:bg-[#1b95fb]/90 active:translate-y-2 active:border-b-0 transition-all shadow-xl shadow-[#1b95fb]/30"
+          class="w-full py-6 bg-[#1e90ff] text-white font-black text-2xl rounded-full border-b-8 border-[#0d47a1] hover:bg-[#1e90ff]/90 active:translate-y-2 active:border-b-0 transition-all shadow-xl shadow-[#1e90ff]/30"
         >
           CHECK ANSWER
         </button>

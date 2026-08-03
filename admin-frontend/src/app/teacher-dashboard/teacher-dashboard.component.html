@@ -285,15 +285,15 @@
           <!-- Mini KPI row inside drawer -->
           <div class="drawer__kpis">
             <div class="drawer__kpi">
-              <span class="drawer__kpi-value" style="color:#a78bfa">{{ pct(selectedStudent()!.avgAccuracy) }}</span>
+              <span class="drawer__kpi-value" style="color:var(--sx-blue)">{{ pct(selectedStudent()!.avgAccuracy) }}</span>
               <span class="drawer__kpi-label">Accuracy</span>
             </div>
             <div class="drawer__kpi">
-              <span class="drawer__kpi-value" style="color:#f472b6">{{ selectedStudent()!.avgCognitiveLoad | number:'1.0-0' }}</span>
+              <span class="drawer__kpi-value" style="color:var(--sx-chart-4)">{{ selectedStudent()!.avgCognitiveLoad | number:'1.0-0' }}</span>
               <span class="drawer__kpi-label">Cog. Load</span>
             </div>
             <div class="drawer__kpi">
-              <span class="drawer__kpi-value" style="color:#34d399">{{ selectedStudent()!.totalSessions }}</span>
+              <span class="drawer__kpi-value" style="color:var(--sx-blue-deep)">{{ selectedStudent()!.totalSessions }}</span>
               <span class="drawer__kpi-label">Sessions</span>
             </div>
           </div>

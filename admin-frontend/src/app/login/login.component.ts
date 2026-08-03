@@ -61,8 +61,9 @@ import { Router } from '@angular/router';
   styleUrls: ['./login.component.css'],
 })
 export class LoginComponent {
+  /** Gradiente de marca: del azul profundo al azul Synapxix (ver BRAND.md). */
   gradientBackground =
-    'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)';
+    'linear-gradient(135deg, var(--sx-blue-900) 0%, var(--sx-blue-deep) 50%, var(--sx-blue) 100%)';
 
   constructor(private router: Router) {
     this.checkLoginStatus();

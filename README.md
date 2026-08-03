@@ -341,8 +341,26 @@ app.enableCors({
 
 ---
 
+## Identidad visual
+
+La interfaz sigue el Manual de Marca de Synapxix. Las reglas de uso están en
+**[BRAND.md](BRAND.md)**: leelo antes de escribir estilos.
+
+Regla corta: **ningún color, tipografía o radio se escribe a mano.** Todo sale de
+los tokens en [`libs/brand/src/tokens.css`](libs/brand/src/tokens.css).
+
+```css
+/* mal */            /* bien */
+color: #1e90ff;      color: var(--sx-blue);
+border-radius: 4px;  border-radius: var(--sx-radius-sm);
+```
+
+En `web-game` y `libs` también existen las utilidades de Tailwind equivalentes
+(`bg-synapxix`, `text-blue-deep`, `rounded-sx-lg`).
+
 ## Convenciones del proyecto
 
+- **Marca**: ver [BRAND.md](BRAND.md). Sin colores ni fuentes hardcodeadas.
 - **Commits**: Conventional Commits (`feat:`, `fix:`, `chore:`, etc.)
 - **Idioma del código**: inglés (identificadores, comentarios, mensajes de error)
 - **Idioma de UI**: español (labels, textos visibles al usuario)

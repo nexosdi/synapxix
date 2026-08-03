@@ -49,7 +49,7 @@ import { CognitiveElement } from '../models/CognitiveElement.model';
       box-shadow: 0 8px 16px rgba(0,0,0,0.1); 
       transform: translateY(-2px); /* Un toque extra de UX */
     }
-    .card:focus { border-color: #cbd5e1; }
+    .card:focus { border-color: #c9e0ff; }
     .card--selected { border-color: var(--accent); background: #f8fafc; }
     .card__header {
       display: flex;
@@ -60,13 +60,13 @@ import { CognitiveElement } from '../models/CognitiveElement.model';
     .card__name { font-weight: 600; color: #334155; }
     .card__score { font-weight: 800; font-size: 1.2rem; }
     .card__bar-track {
-      background: #f1f5f9;
+      background: #f5f9ff;
       border-radius: 99px;
       height: 12px;
       overflow: hidden;
     }
     .card__bar-fill { height: 100%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
-    .card__hint { font-size: 0.75rem; color: #94a3b8; margin-top: 10px; margin-bottom: 0; }
+    .card__hint { font-size: 0.75rem; color: #8fb8e0; margin-top: 10px; margin-bottom: 0; }
   `],
 })
 export class CognitiveCardComponent {

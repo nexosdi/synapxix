@@ -21,11 +21,11 @@
 
 .bell-btn:hover,
 .bell-btn--active {
-  background: rgba(167, 139, 250, 0.15);
-  border-color: rgba(167, 139, 250, 0.35);
-  color: #a78bfa;
+  background: rgba(30, 144, 255, 0.15);
+  border-color: rgba(30, 144, 255, 0.35);
+  color: #1e90ff;
   transform: scale(1.06);
-  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.15);
+  box-shadow: 0 0 0 4px rgba(10, 79, 191, 0.15);
 }
 
 .bell-icon {
@@ -42,7 +42,7 @@
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #7c3aed, #db2777);
+  background: linear-gradient(135deg, #0a4fbf, #1e90ff);
   color: #fff;
   font-size: 0.62rem;
   font-weight: 800;
@@ -58,8 +58,8 @@
 }
 
 @keyframes badge-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.6); }
-  50%       { box-shadow: 0 0 0 6px rgba(124, 58, 237, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(10, 79, 191, 0.6); }
+  50%       { box-shadow: 0 0 0 6px rgba(10, 79, 191, 0); }
 }
 
 /* ── Panel ────────────────────────────────────────────────────────── */
@@ -131,7 +131,7 @@
 .panel__mark-all {
   border: none;
   background: none;
-  color: #a78bfa;
+  color: #1e90ff;
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
@@ -140,7 +140,7 @@
   transition: background 0.2s;
 }
 .panel__mark-all:hover {
-  background: rgba(167, 139, 250, 0.12);
+  background: rgba(30, 144, 255, 0.12);
 }
 
 /* ── Panel list ───────────────────────────────────────────────────── */
@@ -150,12 +150,12 @@
   padding: 8px 0;
   /* Scrollbar styling */
   scrollbar-width: thin;
-  scrollbar-color: rgba(167, 139, 250, 0.3) transparent;
+  scrollbar-color: rgba(30, 144, 255, 0.3) transparent;
 }
 .panel__list::-webkit-scrollbar { width: 4px; }
 .panel__list::-webkit-scrollbar-track { background: transparent; }
 .panel__list::-webkit-scrollbar-thumb {
-  background: rgba(167, 139, 250, 0.3);
+  background: rgba(30, 144, 255, 0.3);
   border-radius: 2px;
 }
 
@@ -197,8 +197,8 @@
 }
 
 /* Type accent borders */
-.panel__item--achievement.panel__item--unread { border-left-color: #a78bfa; }
-.panel__item--feedback.panel__item--unread    { border-left-color: #f472b6; }
+.panel__item--achievement.panel__item--unread { border-left-color: #1e90ff; }
+.panel__item--feedback.panel__item--unread    { border-left-color: #4aa3a3; }
 .panel__item--ranking.panel__item--unread     { border-left-color: #fcd34d; }
 
 /* ── Item icon ────────────────────────────────────────────────────── */
@@ -253,6 +253,6 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #7c3aed, #db2777);
+  background: linear-gradient(135deg, #0a4fbf, #1e90ff);
   margin-top: 4px;
 }

@@ -10,7 +10,7 @@
   flex-direction: column;
   gap: 12px;
   pointer-events: none;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--sx-font);
   /* Cap total width so it never overflows viewport */
   max-width: calc(100vw - 48px);
   width: 340px;
@@ -57,22 +57,22 @@
 
 /* ── Type accent colours ───────────────────────────────────────────── */
 .toast--achievement {
-  border-color: rgba(167, 139, 250, 0.3);
+  border-color: rgba(30, 144, 255, 0.3);
   box-shadow:
-    0 8px 32px rgba(124, 58, 237, 0.25),
+    0 8px 32px rgba(10, 79, 191, 0.25),
     0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
-.toast--achievement .toast__icon { background: rgba(124, 58, 237, 0.2); }
-.toast--achievement .toast__title { color: #a78bfa; }
+.toast--achievement .toast__icon { background: rgba(10, 79, 191, 0.2); }
+.toast--achievement .toast__title { color: #1e90ff; }
 
 .toast--feedback {
-  border-color: rgba(244, 114, 182, 0.3);
+  border-color: rgba(74, 163, 163, 0.3);
   box-shadow:
     0 8px 32px rgba(219, 39, 119, 0.2),
     0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 .toast--feedback .toast__icon { background: rgba(219, 39, 119, 0.2); }
-.toast--feedback .toast__title { color: #f472b6; }
+.toast--feedback .toast__title { color: #4aa3a3; }
 
 .toast--ranking {
   border-color: rgba(252, 211, 77, 0.3);
