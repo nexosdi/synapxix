@@ -16,6 +16,7 @@
     "baseUrl": ".",
     "paths": {
       "@nexosdi.synapxix/dala/contracts": ["libs/dala/contracts/src/index.ts"],
+      "@nexosdi.synapxix/dala/instrumentation": ["libs/dala/instrumentation/src/index.ts"],
       "@nexosdi.synapxix/dala/domain": ["libs/dala/domain/src/index.ts"],
       "@nexosdi.synapxix/game-engine/core": [
         "libs/game-engine/core/src/index.ts"
