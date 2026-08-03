@@ -95,10 +95,11 @@ describe('AiProvider', () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
-   * The provider must throw during construction if the API key is missing,
-   * since it cannot function without one.
+   * A missing API key must not abort application bootstrap: construction
+   * succeeds so that the non-AI parts of the API keep working, and the failure
+   * surfaces only when an AI-backed method is actually called.
    */
-  it('should throw if API key is missing', () => {
+  it('should construct without an API key and fail only on use', async () => {
     const badConfig = {
       get: jest.fn((key: string) => {
         if (key === 'GOOGLE_GEN_AI_KEY') return undefined;
@@ -106,9 +107,11 @@ describe('AiProvider', () => {
       }),
     } as unknown as ConfigService;
 
-    expect(() => new AiProvider(badConfig, aiPromptService)).toThrow(
-      'Google Generative AI API key is not set',
-    );
+    const provider = new AiProvider(badConfig, aiPromptService);
+
+    await expect(
+      provider.analyzePedagogicalAction('prompt', 'context', {}),
+    ).rejects.toThrow('Google Generative AI API key is not set');
   });
 
   // ─────────────────────────────────────────────────────────────────────────
