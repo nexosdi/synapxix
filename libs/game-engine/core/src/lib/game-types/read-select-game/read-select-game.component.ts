@@ -17,7 +17,7 @@ import {
     >
       @if (isFinished()) {
         <div class="absolute inset-0 z-20 flex items-center justify-center rounded-[3rem] bg-white/80 backdrop-blur-[2px] animate-in fade-in duration-300">
-          <div class="flex flex-col items-center gap-4 rounded-[2.5rem] bg-yellow-300 px-12 py-8 shadow-xl border-b-8 border-yellow-500 scale-110">
+          <div class="flex flex-col items-center gap-4 rounded-[2.5rem] bg-brand-300 px-12 py-8 shadow-xl border-b-8 border-brand-600 scale-110">
             <h3 class="text-4xl font-black text-[#1e90ff]">¡GENIAL! 🚀</h3>
             <p class="text-[#1e90ff] font-bold italic uppercase tracking-widest text-sm">Next Mission</p>
           </div>
@@ -36,7 +36,7 @@ import {
         <div class="max-w-xs mx-auto flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border-2 border-slate-100">
           <div class="h-4 flex-1 bg-white rounded-full overflow-hidden border border-slate-200">
             <div 
-              class="h-full bg-yellow-300 transition-all duration-700 ease-out shadow-[0_0_10px_rgba(253,224,71,0.8)]"
+              class="h-full bg-brand-300 transition-all duration-700 ease-out shadow-[0_0_10px_rgba(253,224,71,0.8)]"
               [style.width.%]="(foundWords().size / view.minCorrectToPass) * 100"
             ></div>
           </div>

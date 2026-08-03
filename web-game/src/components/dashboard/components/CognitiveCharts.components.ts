@@ -41,11 +41,11 @@ Chart.register(...registerables);
     }
     .chart-wrapper--empty { 
       display: flex; align-items: center; justify-content: center; 
-      height: 400px; color: #5b7ca8; font-style: italic;
+      height: 400px; color: #4c6c9a; font-style: italic;
     }
     .chart-wrapper__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
     .chart-wrapper__title { margin: 0; color: #0a4fbf; font-size: 1.25rem; }
-    .chart-wrapper__badge { background: #f5f9ff; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; color: #5b7ca8; font-weight: 600; }
+    .chart-wrapper__badge { background: #f5f9ff; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; color: #4c6c9a; font-weight: 600; }
     .chart-wrapper__canvas-container { height: 400px; position: relative; }
   `],
 })

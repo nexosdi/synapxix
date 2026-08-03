@@ -16,7 +16,7 @@ import {
     >
       @if (isFinished()) {
         <div class="absolute inset-0 z-20 flex items-center justify-center rounded-[3rem] bg-white/80 backdrop-blur-sm animate-in fade-in duration-500">
-          <div class="flex flex-col items-center gap-4 rounded-[2.5rem] bg-yellow-300 px-12 py-8 shadow-xl border-b-8 border-yellow-500 scale-110 animate-in zoom-in">
+          <div class="flex flex-col items-center gap-4 rounded-[2.5rem] bg-brand-300 px-12 py-8 shadow-xl border-b-8 border-brand-600 scale-110 animate-in zoom-in">
             <h3 class="text-4xl font-black text-[#1e90ff]">WELL DONE! 🚀</h3>
           </div>
         </div>

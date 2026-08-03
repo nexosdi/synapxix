@@ -23,7 +23,7 @@
 
     p {
       margin-top: 1rem;
-      color: #5b7ca8;
+      color: #4c6c9a;
     }
   }
 
@@ -58,7 +58,7 @@
   display: inline-block;
   width: 40px;
   height: 40px;
-  border: 4px solid #f3f3f3;
+  border: 4px solid #f5f9ff;
   border-top: 4px solid #0a4fbf;
   border-radius: 50%;
   animation: spin 1s linear infinite;

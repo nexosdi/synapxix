@@ -18,7 +18,7 @@ import {
     >
       @if (isCorrect()) {
         <div class="absolute inset-0 z-20 flex items-center justify-center rounded-[3rem] bg-white/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div class="flex flex-col items-center gap-4 rounded-[2.5rem] bg-yellow-300 px-12 py-8 shadow-xl border-b-8 border-yellow-500 scale-110 animate-in bounce-in">
+          <div class="flex flex-col items-center gap-4 rounded-[2.5rem] bg-brand-300 px-12 py-8 shadow-xl border-b-8 border-brand-600 scale-110 animate-in bounce-in">
             <h3 class="text-4xl font-black text-[#1e90ff]">PERFECT! 🎧</h3>
           </div>
         </div>
@@ -62,7 +62,7 @@ import {
 
         <button
           (click)="checkAnswer(view.answer)"
-          class="w-full py-6 bg-[#1e90ff] text-white font-black text-2xl rounded-full border-b-8 border-[#0d47a1] hover:bg-[#1e90ff]/90 active:translate-y-2 active:border-b-0 transition-all shadow-xl shadow-[#1e90ff]/30"
+          class="w-full py-6 bg-[#1e90ff] text-white font-black text-2xl rounded-full border-b-8 border-[#0a4fbf] hover:bg-[#1e90ff]/90 active:translate-y-2 active:border-b-0 transition-all shadow-xl shadow-[#1e90ff]/30"
         >
           CHECK ANSWER
         </button>

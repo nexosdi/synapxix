@@ -12,7 +12,7 @@ import { CognitiveElement } from '../models/CognitiveElement.model';
       role="button"
       tabindex="0"
       [class.card--selected]="isSelected"
-      [style.--accent]="element.color || '#3b82f6'" 
+      [style.--accent]="element.color || '#1e90ff'" 
       (click)="selected.emit(element)"
       (keydown.enter)="selected.emit(element)"
     >
@@ -50,14 +50,14 @@ import { CognitiveElement } from '../models/CognitiveElement.model';
       transform: translateY(-2px); /* Un toque extra de UX */
     }
     .card:focus { border-color: #c9e0ff; }
-    .card--selected { border-color: var(--accent); background: #f8fafc; }
+    .card--selected { border-color: var(--accent); background: #f5f9ff; }
     .card__header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1rem;
     }
-    .card__name { font-weight: 600; color: #334155; }
+    .card__name { font-weight: 600; color: #0a4fbf; }
     .card__score { font-weight: 800; font-size: 1.2rem; }
     .card__bar-track {
       background: #f5f9ff;

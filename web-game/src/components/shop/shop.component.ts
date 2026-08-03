@@ -106,7 +106,7 @@ interface PurchaseState {
     }
     .store__subtitle {
       margin: 0;
-      color: #5b7ca8;
+      color: #4c6c9a;
       font-size: 0.9rem;
     }
 
@@ -147,7 +147,7 @@ interface PurchaseState {
       border-radius: 99px;
       border: 2px solid #c9e0ff;
       background: white;
-      color: #5b7ca8;
+      color: #4c6c9a;
       font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;

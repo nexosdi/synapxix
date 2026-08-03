@@ -75,7 +75,7 @@ import { StoreItemViewModel } from '../models/store-item.model';
     }
     .item-card--owned {
       border-color: #1e9e6a;
-      background: #f0fdf4;
+      background: #e3f7ef;
     }
 
     /* Preview */
@@ -118,7 +118,7 @@ import { StoreItemViewModel } from '../models/store-item.model';
       gap: 4px;
       font-size: 0.75rem;
       font-weight: 600;
-      color: #16a34a;
+      color: #1e9e6a;
     }
     .item-card__owned-icon {
       font-size: 1.5rem;
@@ -146,7 +146,7 @@ import { StoreItemViewModel } from '../models/store-item.model';
     .item-card__description {
       margin: 0;
       font-size: 0.78rem;
-      color: #5b7ca8;
+      color: #4c6c9a;
       line-height: 1.4;
     }
 
@@ -181,7 +181,7 @@ import { StoreItemViewModel } from '../models/store-item.model';
       justify-content: center;
       transition: background 0.2s;
     }
-    .item-card__btn:hover:not(:disabled) { background: #303f9f; }
+    .item-card__btn:hover:not(:disabled) { background: #0a4fbf; }
     .item-card__btn--owned {
       background: #1e9e6a;
       cursor: default;

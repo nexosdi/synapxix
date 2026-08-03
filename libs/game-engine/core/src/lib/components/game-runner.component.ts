@@ -80,7 +80,7 @@ import { Subscription } from 'rxjs';
             <!-- Premium Icon Badge -->
             <div class="relative z-10 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white shadow-2xl ring-8 ring-white/20"
                  [class.shadow-emerald-900]="feedbackResult()?.isCorrect"
-                 [class.shadow-rose-900]="!feedbackResult()?.isCorrect"
+                 [class.shadow-brand-700]="!feedbackResult()?.isCorrect"
                  style="transform: rotate(-3deg);">
               @if (feedbackResult()?.isCorrect) {
                 <!-- Success Star Icon -->
@@ -90,7 +90,7 @@ import { Subscription } from 'rxjs';
                 <div class="absolute -top-1 -right-1 h-5 w-5 animate-ping rounded-full bg-emerald-400 opacity-60"></div>
               } @else {
                 <!-- Try Again Icon -->
-                <svg class="h-10 w-10 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <svg class="h-10 w-10 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               }
@@ -125,12 +125,12 @@ import { Subscription } from 'rxjs';
                   : 'background:rgba(248,113,113,0.08);border-color:rgba(248,113,113,0.25)'"
               >
                 <p class="text-[10px] font-black uppercase tracking-widest mb-1.5"
-                  [style.color]="feedbackResult()?.isCorrect ? '#059669' : '#d64545'"
+                  [style.color]="feedbackResult()?.isCorrect ? '#1e9e6a' : '#d64545'"
                 >AI Feedback</p>
                 <p class="text-sm font-semibold text-gray-700 leading-relaxed">
                   {{ flowService.feedbackContent() || feedbackResult()?.feedback }}
                   @if (flowService.feedbackContent() && !feedbackResult()?.feedback) {
-                    <span class="inline-block w-1.5 h-4 bg-violet-500 animate-pulse ml-0.5 align-text-bottom rounded-sm"></span>
+                    <span class="inline-block w-1.5 h-4 bg-brand-500 animate-pulse ml-0.5 align-text-bottom rounded-sm"></span>
                   }
                 </p>
               </div>

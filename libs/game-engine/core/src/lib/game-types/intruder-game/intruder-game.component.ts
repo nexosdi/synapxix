@@ -38,7 +38,7 @@ import { OddOneOutInteractiveContent, toOddOneOutModel, OptionItem } from './int
             [disabled]="disabled() || feedbackState() === 'success'"
             class="group relative flex flex-col items-center justify-center gap-4 rounded-[2.5rem] border-b-[10px] bg-slate-50 p-8 transition-all hover:scale-105 active:translate-y-2 active:border-b-0 disabled:opacity-50"
             [class.border-slate-200]="!wrongId() || wrongId() !== item.id"
-            [class.border-rose-400]="wrongId() === item.id"
+            [class.border-brand-500]="wrongId() === item.id"
             [class.animate-shake]="wrongId() === item.id"
           >
             @if (item.imageUrl) {
@@ -74,7 +74,7 @@ export class IntruderGameComponent implements BaseGameComponent {
 
   readonly feedbackConfig = computed(() => ({
     success: { title: '¡LO ENCONTRASTE!', icon: '🎯', class: 'bg-emerald-500 border-emerald-700' },
-    error: { title: '¡INTENTA OTRA VEZ!', icon: '🧐', class: 'bg-rose-500 border-rose-700' }
+    error: { title: '¡INTENTA OTRA VEZ!', icon: '🧐', class: 'bg-brand-500 border-brand-700' }
   }[this.feedbackState() as 'success' | 'error'] || { title: '', icon: '', class: '' }));
 
   selectOption(item: OptionItem) {

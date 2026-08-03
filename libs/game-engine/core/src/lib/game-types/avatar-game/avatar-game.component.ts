@@ -16,7 +16,7 @@ import {
     >
       @if (selectedId()) {
         <div class="absolute inset-0 z-20 flex items-center justify-center rounded-[3rem] bg-white/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div class="flex flex-col items-center gap-4 rounded-[2.5rem] bg-yellow-300 px-12 py-8 shadow-xl border-b-8 border-yellow-500 scale-110 animate-in bounce-in">
+          <div class="flex flex-col items-center gap-4 rounded-[2.5rem] bg-brand-300 px-12 py-8 shadow-xl border-b-8 border-brand-600 scale-110 animate-in bounce-in">
             <h3 class="text-3xl font-black text-[#1e90ff]">GREAT CHOICE! 🛡️</h3>
           </div>
         </div>
