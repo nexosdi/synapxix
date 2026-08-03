@@ -9,7 +9,7 @@
 /* ── Base ────────────────────────────────────────────────────────── */
 .teacher-dash {
   min-height: 100vh;
-  background: linear-gradient(135deg, #052a66 0%, #052a66 50%, #0d1135 100%);
+  background: var(--sx-blue-50);
   position: relative;
   overflow-x: hidden;
 }
@@ -21,7 +21,7 @@
   right: -10%;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(10, 79, 191,0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--sx-sky) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -31,10 +31,10 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(15,5,32,0.7);
+  background: rgba(255,255,255,0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid var(--sx-border);
   padding: 0 2rem;
   height: 68px;
   display: flex;
@@ -58,10 +58,7 @@
 .navbar__name {
   font-size: 1.15rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #c9e0ff, #93c6ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--sx-blue);
   letter-spacing: -0.02em;
 }
 
@@ -109,9 +106,9 @@
 .btn-logout {
   padding: 7px 16px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.7);
+  background: var(--sx-white);
+  border: 1px solid var(--sx-border);
+  color: var(--sx-text);
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
@@ -119,8 +116,8 @@
 }
 
 .btn-logout:hover {
-  background: rgba(255,255,255,0.1);
-  color: white;
+  background: var(--sx-sky);
+  color: var(--sx-blue-deep);
 }
 
 /* ── Main ────────────────────────────────────────────────────────── */
@@ -143,14 +140,14 @@
 .hero__title {
   font-size: 2rem;
   font-weight: 800;
-  color: white;
+  color: var(--sx-blue-deep);
   margin: 0 0 0.35rem;
   letter-spacing: -0.03em;
 }
 
 .hero__subtitle {
   font-size: 0.92rem;
-  color: rgba(255,255,255,0.45);
+  color: var(--sx-text-muted);
   margin: 0;
 }
 
@@ -165,8 +162,8 @@
 .kpi-card {
   border-radius: 20px;
   padding: 1.5rem;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--sx-white);
+  border: 1px solid var(--sx-border);
   backdrop-filter: blur(12px);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   position: relative;
@@ -196,7 +193,7 @@
 .kpi-card__value {
   font-size: 2rem;
   font-weight: 900;
-  color: white;
+  color: var(--sx-blue-deep);
   letter-spacing: -0.04em;
   line-height: 1;
   margin-bottom: 0.3rem;
@@ -210,7 +207,7 @@
 .kpi-card__label {
   font-size: 0.76rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.4);
+  color: var(--sx-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.07em;
 }
@@ -242,13 +239,13 @@
 .section-header__title {
   font-size: 1.05rem;
   font-weight: 700;
-  color: white;
+  color: var(--sx-blue-deep);
   margin: 0;
 }
 
 .section-header__subtitle {
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.4);
+  color: var(--sx-text-muted);
   margin: 0;
   font-weight: 500;
 }
@@ -257,8 +254,8 @@
 .chart-card {
   border-radius: 20px;
   padding: 1.75rem;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--sx-white);
+  border: 1px solid var(--sx-border);
 }
 
 .chart-wrap {
@@ -273,8 +270,8 @@
 /* ── Table ───────────────────────────────────────────────────────── */
 .table-card {
   border-radius: 20px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--sx-white);
+  border: 1px solid var(--sx-border);
   overflow: hidden;
 }
 
@@ -293,11 +290,11 @@
   text-align: left;
   font-size: 0.75rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.4);
+  color: var(--sx-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  background: rgba(255,255,255,0.02);
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  background: var(--sx-sky);
+  border-bottom: 1px solid var(--sx-border);
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
@@ -326,7 +323,7 @@
 }
 
 .table tbody tr {
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--sx-border);
   transition: background 0.15s ease;
   cursor: pointer;
 }
@@ -346,7 +343,7 @@
 
 .table tbody td {
   padding: 1rem 1.25rem;
-  color: rgba(255,255,255,0.8);
+  color: var(--sx-text);
   vertical-align: middle;
 }
 
@@ -355,11 +352,11 @@
   align-items: center;
   gap: 10px;
   font-weight: 600;
-  color: white !important;
+  color: var(--sx-text) !important;
 }
 
 .td--muted {
-  color: rgba(255,255,255,0.4) !important;
+  color: var(--sx-text-muted) !important;
   font-size: 0.82rem;
 }
 
@@ -412,7 +409,7 @@
 
 /* ── Skeletons ───────────────────────────────────────────────────── */
 .skeleton {
-  background: rgba(255,255,255,0.07);
+  background: var(--sx-sky);
   border-radius: 8px;
   animation: skeleton-pulse 1.4s ease-in-out infinite;
 }
@@ -428,7 +425,7 @@
 
 .chart-skeleton {
   height: 260px;
-  background: rgba(255,255,255,0.04);
+  background: var(--sx-white);
   border-radius: 12px;
   animation: skeleton-pulse 1.4s ease-in-out infinite;
 }
@@ -442,7 +439,7 @@
   align-items: center;
   gap: 1.5rem;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--sx-border);
 }
 
 .skeleton--cell-lg { height: 0.9rem; width: 160px; }
@@ -503,7 +500,7 @@
   width: 420px;
   max-width: 100vw;
   background: linear-gradient(180deg, #052a66 0%, #052a66 100%);
-  border-left: 1px solid rgba(255,255,255,0.1);
+  border-left: 1px solid var(--sx-border);
   z-index: 200;
   transform: translateX(100%);
   transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -518,7 +515,7 @@
 
 .drawer__header {
   padding: 1.5rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid var(--sx-border);
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -534,34 +531,34 @@
 .drawer__student-name {
   font-size: 1rem;
   font-weight: 700;
-  color: white;
+  color: var(--sx-blue-deep);
   margin: 0 0 0.2rem;
 }
 
 .drawer__student-meta {
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.4);
+  color: var(--sx-text-muted);
   margin: 0;
 }
 
 .drawer__close {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--sx-white);
+  border: 1px solid var(--sx-border);
   border-radius: 50%;
   width: 34px;
   height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255,255,255,0.6);
+  color: var(--sx-text-muted);
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
 
 .drawer__close:hover {
-  background: rgba(255,255,255,0.12);
-  color: white;
+  background: var(--sx-sky);
+  color: var(--sx-blue-deep);
 }
 
 .drawer__body {
@@ -573,7 +570,7 @@
 .drawer__chart-label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.4);
+  color: var(--sx-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   margin: 0 0 1rem;
@@ -587,8 +584,8 @@
 }
 
 .drawer__kpi {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--sx-white);
+  border: 1px solid var(--sx-border);
   border-radius: 14px;
   padding: 1rem;
   text-align: center;
@@ -605,7 +602,7 @@
   display: block;
   font-size: 0.72rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.4);
+  color: var(--sx-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-top: 0.25rem;

@@ -33,6 +33,37 @@ Cuatro colores oficiales. No se reinterpretan ni se sustituyen.
 Hay una escala derivada (`--sx-blue-50` … `--sx-blue-900`) para jerarquía. No son
 colores nuevos: son el mismo azul con distinta intensidad.
 
+### Contraste: cuándo usar cada azul
+
+El Azul Synapxix es un azul brillante, y eso tiene una consecuencia práctica que
+conviene tener presente:
+
+| Sobre blanco | Contraste | Sirve para |
+|---|---|---|
+| `--sx-blue` `#1E90FF` | 3.03:1 | Rellenos, iconos, bordes, botones, **texto grande** (≥24px, o ≥19px en negrita) |
+| `--sx-blue-deep` `#0A4FBF` | 7.28:1 | **Texto pequeño**, títulos, valores, cualquier dato legible |
+| `--sx-text-muted` `#4C6C9A` | 4.6:1 | Texto secundario |
+
+**No uses `--sx-blue` como color de texto pequeño sobre blanco**: no alcanza el
+mínimo AA de WCAG (4.5:1). Es el error más fácil de cometer, porque el color se
+ve bien pero no es legible para todo el mundo. Para eso está `--sx-blue-deep`.
+
+Lo mismo aplica al acento teal: `--sx-chart-4` sirve para rellenos, y
+`--sx-chart-4-text` es su variante legible como texto.
+
+### Superficies: la interfaz es clara
+
+El manual define un lienzo **blanco y azul cielo**, con el azul como acento. No
+uses paneles oscuros ni glassmorphism sobre fondo negro: contradice "alto
+contraste" y "tono cercano".
+
+| Elemento | Token |
+|---|---|
+| Fondo de página | `--sx-blue-50` |
+| Tarjetas y paneles | `--sx-white` + `1px solid var(--sx-border)` |
+| Superficie destacada | `--sx-sky` |
+| Sombra | `--sx-shadow-sm` / `-md` (teñidas de azul, nunca negro plano) |
+
 ### Colores de estado
 
 `--sx-success`, `--sx-warning`, `--sx-danger` (con sus variantes `-soft`) existen

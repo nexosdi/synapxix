@@ -36,7 +36,9 @@
      Alto contraste es un principio de marca: el texto principal usa el
      azul profundo, no gris ni negro puro.                                 */
   --sx-text: var(--sx-blue-deep);
-  --sx-text-muted: #5b7ca8;
+  /* Calibrado para superar 4.5:1 sobre blanco (WCAG AA en texto normal):
+     "alto contraste" es un principio del manual, no un detalle opcional. */
+  --sx-text-muted: #4c6c9a;
   --sx-text-on-blue: var(--sx-white);
 
   /* ── Superficies ──────────────────────────────────────────────────────  */
@@ -64,6 +66,9 @@
   --sx-chart-2: var(--sx-blue-deep);
   --sx-chart-3: var(--sx-blue-300);
   --sx-chart-4: #4aa3a3;
+  /* Variante oscura del acento teal, para cuando se usa como texto pequeño:
+     #4aa3a3 sobre blanco da 2.97:1 y no alcanza AA. */
+  --sx-chart-4-text: #2f7070;
   --sx-chart-5: var(--sx-blue-800);
   --sx-chart-6: #8fb8e0;
 

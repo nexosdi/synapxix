@@ -60,14 +60,14 @@ interface Metric {
 
     .chart-row__label {
       font-size: 0.88rem;
-      font-weight: 600;
-      color: rgba(255,255,255,0.8);
+      font-weight: var(--sx-weight-medium);
+      color: var(--sx-text);
       flex: 1;
     }
 
     .chart-row__value {
       font-size: 0.88rem;
-      font-weight: 800;
+      font-weight: var(--sx-weight-black);
       letter-spacing: -0.02em;
       min-width: 42px;
       text-align: right;
@@ -75,14 +75,14 @@ interface Metric {
 
     .chart-row__track {
       height: 10px;
-      background: rgba(255,255,255,0.07);
-      border-radius: 999px;
+      background: var(--sx-sky);
+      border-radius: var(--sx-radius-pill);
       overflow: hidden;
     }
 
     .chart-row__fill {
       height: 100%;
-      border-radius: 999px;
+      border-radius: var(--sx-radius-pill);
       transition: width 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
   `],
@@ -102,7 +102,7 @@ export class CognitiveChartsComponent implements OnChanges {
         gradient: 'linear-gradient(90deg, var(--sx-blue-900), var(--sx-blue-deep))',
         // Clock/history icon representing recall
         svgPath:  'M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z',
-        color:    'var(--sx-blue-deep)',
+        color:    'var(--sx-blue-900)',
       },
       {
         label:    'Reading',
@@ -110,7 +110,7 @@ export class CognitiveChartsComponent implements OnChanges {
         gradient: 'linear-gradient(90deg, var(--sx-blue-deep), var(--sx-blue))',
         // Book icon
         svgPath:  'M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z',
-        color:    'var(--sx-blue)',
+        color:    'var(--sx-blue-deep)',
       },
       {
         label:    'Speech',
@@ -118,7 +118,7 @@ export class CognitiveChartsComponent implements OnChanges {
         gradient: 'linear-gradient(90deg, var(--sx-chart-4), var(--sx-blue-300))',
         // Mic icon
         svgPath:  'M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z',
-        color:    'var(--sx-chart-4)',
+        color:    'var(--sx-chart-4-text)',
       },
     ]);
   }
