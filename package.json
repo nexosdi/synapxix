@@ -12,7 +12,12 @@
     "start": "nx serve",
     "build": "nx build",
     "test": "nx test",
-    "lint": "nx lint"
+    "lint": "nx lint",
+    "db:up": "docker compose up -d postgres-app redis",
+    "db:migrate": "prisma migrate deploy --config prisma.config.ts",
+    "db:seed": "ts-node -P tsconfig.base.json libs/prisma/src/seeds/dev.seed.ts",
+    "db:seed:prompts": "ts-node -P tsconfig.base.json libs/prisma/src/seeds/ai-prompt.seed.ts",
+    "dev:setup": "npm run db:up && prisma generate --config prisma.config.ts && npm run db:migrate && npm run db:seed"
   },
   "dependencies": {
     "@angular/animations": "20.3.9",

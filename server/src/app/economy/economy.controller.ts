@@ -21,20 +21,20 @@ export class EconomyController {
 
   @Post('claim-reward')
   async claimReward(
-    @GetUser('user_id') userId: string,
+    @GetUser('sub') userId: string,
     @Body() dto: ClaimRewardDto,
   ) {
     return this.economyService.processGameReward(userId, dto);
   }
 
   @Get('balance')
-  async getBalance(@GetUser('user_id') userId: string) {
+  async getBalance(@GetUser('sub') userId: string) {
     return this.economyService.getBalance(userId);
   }
   @Post('purchase')
   @HttpCode(HttpStatus.CREATED)
   async purchase(
-    @GetUser('user_id') userId: string,
+    @GetUser('sub') userId: string,
     @Body() dto: PurchaseDto,
   ) {
     return this.economyService.processPurchase(userId, dto);
