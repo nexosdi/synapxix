@@ -50,6 +50,9 @@ services:
     restart: unless-stopped
     command:
       - start-dev
+      # Crea el realm Synapxix y el cliente synapxix-app en el primer arranque.
+      # Es idempotente: si el realm ya existe en la base, la importación se ignora.
+      - --import-realm
     environment:
       # Admin credentials
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
@@ -78,10 +81,13 @@ services:
       # Disable CSP to allow reCAPTCHA (dev only)
       KC_HTTP_HEADERS_CONTENT_SECURITY_POLICY: ""
     ports:
-      - "8080:8080"
+      # Configurable por si el 8080 ya está ocupado en la máquina (KEYCLOAK_PORT en .env)
+      - "${KEYCLOAK_PORT:-8080}:8080"
     volumes:
       # Mount custom theme
       - ./keycloak-theme:/opt/keycloak/themes/synapxix
+      # Realm de desarrollo, importado en el primer arranque
+      - ./keycloak/realm-synapxix.json:/opt/keycloak/data/import/realm-synapxix.json:ro
     depends_on:
       postgres-keycloak:
         condition: service_healthy
