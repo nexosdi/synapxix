@@ -67,7 +67,7 @@ import { Subscription } from 'rxjs';
           >
             <!-- Logo in corner -->
             <img
-              src="/logo.png"
+              src="/logo-light.png"
               alt="Synapxix"
               class="absolute top-4 right-4 h-8 w-8 object-contain mix-blend-screen opacity-90"
               aria-hidden="true"

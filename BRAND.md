@@ -106,6 +106,18 @@ principal: contradice el "tono cercano" del manual. Solo aparecen como fallback.
 
 ## 5. Logo
 
+Los originales viven en [`libs/brand/assets/`](libs/brand/assets) y se copian al
+`public/` de cada app, desde donde se sirven en la raíz.
+
+| Archivo | Cuándo usarlo |
+|---|---|
+| `/logo.png` | Isotipo principal (azul). Sobre fondos claros. |
+| `/logo-light.png` | Isotipo versión clara. **Sobre fondos azules u oscuros.** |
+| `/logo-full.png` | Isotipo + logotipo. Para encabezados amplios y material de marca. |
+| `libs/brand/assets/logo.svg` | Vector, para cuando se necesite escalar sin pérdida. |
+
+Elegí la versión según el fondo: el isotipo azul sobre un fondo azul no se lee.
+
 Reglas del manual, aplicables a cualquier uso en la interfaz:
 
 **Sí**

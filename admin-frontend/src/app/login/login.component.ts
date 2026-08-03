@@ -21,8 +21,8 @@ import { Router } from '@angular/router';
         <div class="brand-section">
           <div class="logo-container">
             <img
-              src="assets/logo.png"
-              alt="Synapsis Logo"
+              src="/logo-light.png"
+              alt="Synapxix Logo"
               class="logo"
               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
             />
@@ -32,7 +32,7 @@ import { Router } from '@angular/router';
             </div>
           </div>
 
-          <h1 class="brand-name">Synapsis</h1>
+          <h1 class="brand-name">Synapxix</h1>
           <p class="tagline">¡Donde aprender es divertido!</p>
         </div>
 
