@@ -36,13 +36,13 @@ import { BalanceGameData } from '@nexosdi.synapxix/game-engine/core';
         </div>
 
         <div class="flex-1 space-y-4">
-          <div class="p-6 bg-white rounded-[2rem] shadow-sm border-2 border-indigo-100 ring-4 ring-indigo-50/50">
-            <label for="rightValue" class="text-[10px] font-black text-indigo-400 block mb-3 uppercase tracking-widest text-center">Lado Derecho</label>
+          <div class="p-6 bg-white rounded-[2rem] shadow-sm border-2 border-brand-100 ring-4 ring-brand-100/50">
+            <label for="rightValue" class="text-[10px] font-black text-brand-500 block mb-3 uppercase tracking-widest text-center">Lado Derecho</label>
             <input id="rightValue" type="number" [(ngModel)]="data.rightSide.value" 
-                   class="w-full p-4 bg-indigo-50/30 border-none rounded-2xl text-2xl font-black text-indigo-600 text-center outline-none focus:ring-2 focus:ring-indigo-400" placeholder="0">
+                   class="w-full p-4 bg-brand-100/30 border-none rounded-2xl text-2xl font-black text-brand-700 text-center outline-none focus:ring-2 focus:ring-brand-500" placeholder="0">
             <label for="rightLabel" class="sr-only">Etiqueta Lado Derecho</label>
             <input id="rightLabel" [(ngModel)]="data.rightSide.label" 
-                   class="w-full mt-3 p-2 bg-transparent border-b border-indigo-100 text-center text-xs font-medium outline-none" placeholder="Etiqueta (ej: Gatos)">
+                   class="w-full mt-3 p-2 bg-transparent border-b border-brand-100 text-center text-xs font-medium outline-none" placeholder="Etiqueta (ej: Gatos)">
             <label for="rightImage" class="sr-only">URL Imagen Lado Derecho</label>
             <input id="rightImage" [(ngModel)]="data.rightSide.imageUrl" 
                    class="w-full mt-2 p-2 bg-slate-50 rounded-lg text-[10px] outline-none" placeholder="URL Imagen (opcional)">

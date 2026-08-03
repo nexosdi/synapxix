@@ -124,9 +124,9 @@ export class GameStateMachine {
     // Developer logging
     console.log(
       `%c[GameStateMachine]%c ${current} ➔ %c${newState}%c (spent ${timeInState.toFixed(0)}ms in ${current})`,
-      'color: #94a3b8; font-weight: bold;',
+      'color: #8fb8e0; font-weight: bold;',
       'color: inherit;',
-      'color: #3b82f6; font-weight: bold;',
+      'color: #1e90ff; font-weight: bold;',
       'color: inherit;'
     );
 

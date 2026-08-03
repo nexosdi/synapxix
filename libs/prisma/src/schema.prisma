@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["audit", "auth", "communication", "core", "knowledge", "psychometrics"]
+  schemas  = ["audit", "auth", "communication", "core", "dala", "knowledge", "psychometrics"]
 }
 
 model Institution {
@@ -330,4 +330,144 @@ model AiPrompt {
   @@index([game_type, category, is_active])
   @@map("ai_prompt")
   @@schema("core")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// D.A.L.A.™ — Bounded context propio. Schema lógico `dala`.
+// Regla: ningún módulo de Synapxix escribe aquí directamente; todo pasa por
+// la fachada del módulo dala. `psychometrics` queda para resultados
+// psicométricos validados; NO es el núcleo D.A.L.A.
+// ═══════════════════════════════════════════════════════════════════════════
+
+model DalaInstrument {
+  instrument_id      String   @id // p. ej. "categorization"
+  instrument_version String
+  description        String?
+  payload_schema     Json? // JSON Schema del payload de sus eventos
+  registered_at      DateTime @default(now())
+
+  @@unique([instrument_id, instrument_version], map: "uq_instrument_version")
+  @@map("instrument")
+  @@schema("dala")
+}
+
+/// Append-only. Los eventos NUNCA se actualizan ni borran (correcciones = evento nuevo).
+model DalaBehaviorEvent {
+  id                 String   @id @default(uuid()) @db.Uuid
+  event_id           String   @unique @db.Uuid // idempotencia
+  subject_id         String   @db.VarChar(64) // seudónimo, jamás user_id
+  session_id         String   @db.Uuid
+  event_type         String   @db.VarChar(50)
+  sequence           Int
+  occurred_at        DateTime // reloj del cliente
+  recorded_at        DateTime @default(now()) // reloj del servidor
+  instrument_id      String   @db.VarChar(100)
+  instrument_version String   @db.VarChar(20)
+  schema_version     String   @db.VarChar(40)
+  context_json       Json
+  payload_json       Json
+  consent_scope      String   @db.VarChar(64)
+  research_allowed   Boolean  @default(false)
+
+  @@unique([session_id, sequence], map: "uq_session_sequence")
+  @@index([subject_id, occurred_at])
+  @@index([instrument_id, instrument_version])
+  @@map("behavior_event")
+  @@schema("dala")
+}
+
+/// Evidencia derivada: enlaza evento → regla (versionada) → constructo.
+model DalaEvidenceObservation {
+  observation_id          String   @id @default(uuid()) @db.Uuid
+  subject_id              String   @db.VarChar(64)
+  session_id              String   @db.Uuid
+  source_event_id         String   @db.Uuid
+  rule_id                 String   @db.VarChar(80)
+  rule_version            String   @db.VarChar(20)
+  construct_id            String   @db.VarChar(50)
+  kind                    String   @db.VarChar(30)
+  weight                  Float
+  confidence_contribution Float
+  observed_at             DateTime
+  created_at              DateTime @default(now())
+
+  @@index([subject_id, construct_id])
+  @@index([source_event_id])
+  @@map("evidence_observation")
+  @@schema("dala")
+}
+
+/// Estimación vigente por (sujeto, constructo). El historial vive en snapshots.
+model DalaConstructEstimate {
+  id             String    @id @default(uuid()) @db.Uuid
+  subject_id     String    @db.VarChar(64)
+  construct_id   String    @db.VarChar(50)
+  value          Float
+  confidence     Float
+  stability      Float
+  status         String    @db.VarChar(30)
+  uncertainty    Json
+  evidence_count Int
+  evidence_refs  Json
+  valid_from     DateTime  @default(now())
+  expires_at     DateTime?
+  model_version  String    @db.VarChar(40)
+  updated_at     DateTime  @updatedAt
+
+  @@unique([subject_id, construct_id], map: "uq_subject_construct")
+  @@map("construct_estimate")
+  @@schema("dala")
+}
+
+/// Fotografía reproducible del HumanState con el rango de eventos que la produjo.
+model DalaHumanStateSnapshot {
+  snapshot_id       String   @id @default(uuid()) @db.Uuid
+  subject_id        String   @db.VarChar(64)
+  created_at        DateTime @default(now())
+  state_json        Json
+  source_event_from String   @db.Uuid
+  source_event_to   String   @db.Uuid
+  model_version     String   @db.VarChar(40)
+
+  @@index([subject_id, created_at])
+  @@map("human_state_snapshot")
+  @@schema("dala")
+}
+
+/// Decisión inmutable con snapshot, política y razones (shadow mode en MVP).
+model DalaDecisionRecord {
+  decision_id             String   @id @default(uuid()) @db.Uuid
+  subject_id              String   @db.VarChar(64)
+  objective               String
+  candidate_actions       Json
+  selected_action         String   @db.VarChar(30)
+  reasons                 Json
+  state_snapshot_id       String   @db.Uuid
+  policy_version          String   @db.VarChar(40)
+  model_version           String   @db.VarChar(40)
+  confidence              Float
+  requires_human_approval Boolean  @default(true)
+  expected_outcome        Json?
+  human_verdict           String?  @db.VarChar(20) // approved | rejected | edited
+  human_verdict_reason    String?
+  created_at              DateTime @default(now())
+
+  @@index([subject_id, created_at])
+  @@map("decision_record")
+  @@schema("dala")
+}
+
+/// Cierre del ciclo: efecto observado de una intervención.
+model DalaOutcome {
+  outcome_id      String   @id @default(uuid()) @db.Uuid
+  decision_id     String   @db.Uuid
+  intervention_id String   @db.VarChar(100)
+  subject_id      String   @db.VarChar(64)
+  metrics         Json
+  observed_at     DateTime
+  created_at      DateTime @default(now())
+
+  @@index([decision_id])
+  @@map("outcome")
+  @@schema("dala")
 }

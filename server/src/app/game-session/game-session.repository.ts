@@ -23,6 +23,23 @@ export class GameSessionRepository {
     });
   }
 
+  /**
+   * Sesiones de un usuario con sus intentos, de la más reciente a la más antigua.
+   * Es la fuente del reporte por usuario: `game_attempt` ya guarda qué juego se
+   * jugó, con qué contenido y cómo le fue.
+   */
+  async getSessionsWithAttempts(userId: string) {
+    return this.prisma.gameSession.findMany({
+      where: { user_id: userId },
+      orderBy: { started_at: 'desc' },
+      include: {
+        attempts: {
+          orderBy: { created_at: 'asc' },
+        },
+      },
+    });
+  }
+
   async createAttempt(sessionId: string, dto: SubmitAttemptDto) {
     return this.prisma.gameAttempt.create({
       data: {

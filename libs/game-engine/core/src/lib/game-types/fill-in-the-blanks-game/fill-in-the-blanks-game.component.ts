@@ -16,14 +16,14 @@ import {
     >
       @if (isFinished()) {
         <div class="absolute inset-0 z-20 flex items-center justify-center rounded-[3rem] bg-white/80 backdrop-blur-sm animate-in fade-in duration-500">
-          <div class="flex flex-col items-center gap-4 rounded-[2.5rem] bg-yellow-300 px-12 py-8 shadow-xl border-b-8 border-yellow-500 scale-110 animate-in zoom-in">
-            <h3 class="text-4xl font-black text-[#1b95fb]">WELL DONE! 🚀</h3>
+          <div class="flex flex-col items-center gap-4 rounded-[2.5rem] bg-brand-300 px-12 py-8 shadow-xl border-b-8 border-brand-600 scale-110 animate-in zoom-in">
+            <h3 class="text-4xl font-black text-[#1e90ff]">WELL DONE! 🚀</h3>
           </div>
         </div>
       }
 
       <header class="space-y-4 text-center">
-        <div class="inline-block px-6 py-2 rounded-full bg-[#1b95fb]/10 text-[#1b95fb] text-xs font-black uppercase tracking-[0.2em]">
+        <div class="inline-block px-6 py-2 rounded-full bg-[#1e90ff]/10 text-[#1e90ff] text-xs font-black uppercase tracking-[0.2em]">
           Mission: Word Finder
         </div>
         
@@ -31,7 +31,7 @@ import {
           Complete the sentence
         </h2>
 
-        <p class="rounded-[2rem] border-4 border-dashed border-[#1b95fb]/30 bg-slate-50 px-8 py-6 text-2xl font-bold text-slate-800 shadow-inner">
+        <p class="rounded-[2rem] border-4 border-dashed border-[#1e90ff]/30 bg-slate-50 px-8 py-6 text-2xl font-bold text-slate-800 shadow-inner">
           {{ view.sentence }}
         </p>
       </header>
@@ -42,7 +42,7 @@ import {
           class="rounded-[2rem] border-b-4 border-l-2 border-r-2 border-slate-100 bg-white px-6 py-6 shadow-lg transition-all"
           [class.opacity-50]="isCorrect(blank.index)"
         >
-          <p class="mb-4 text-sm font-black text-[#1b95fb] uppercase tracking-widest">
+          <p class="mb-4 text-sm font-black text-[#1e90ff] uppercase tracking-widest">
             Blank #{{ blank.index + 1 }}
           </p>
           
@@ -52,9 +52,9 @@ import {
               (click)="onChoiceClick(blank.index, choice)"
               [disabled]="isCorrect(blank.index)"
               class="relative inline-flex items-center rounded-2xl border-b-4 border-l-2 border-r-2 border-slate-200 bg-white px-6 py-3 text-lg font-black text-slate-700 transition-all active:translate-y-1 active:border-b-0"
-              [class.!bg-[#1b95fb]]="getSelectedChoice(blank.index) === choice.label && choice.isCorrect"
+              [class.!bg-[#1e90ff]]="getSelectedChoice(blank.index) === choice.label && choice.isCorrect"
               [class.!text-white]="getSelectedChoice(blank.index) === choice.label && choice.isCorrect"
-              [class.!border-[#1b95fb]]="getSelectedChoice(blank.index) === choice.label && choice.isCorrect"
+              [class.!border-[#1e90ff]]="getSelectedChoice(blank.index) === choice.label && choice.isCorrect"
               [class.animate-bounce]="getSelectedChoice(blank.index) === choice.label && choice.isCorrect"
               [class.!bg-red-100]="getSelectedChoice(blank.index) === choice.label && !choice.isCorrect"
               [class.!text-red-500]="getSelectedChoice(blank.index) === choice.label && !choice.isCorrect"

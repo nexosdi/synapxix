@@ -1,6 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+/* Tipografía de marca: sans serif redondeada (ver BRAND.md).
+   Antes usaba Plus Jakarta Sans, que no es redondeada y contradecía el
+   "tono cercano" del manual. */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,800;1,900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
-/* You can add global styles to this file, and also import other style files */
+
+/* Identidad Synapxix — fuente única de verdad en libs/brand/ */
+@import '../../libs/brand/src/tokens.css';
+@import '../../libs/brand/src/base.css';
 
 iframe[src*="silent-check-sso"] {
   position: absolute !important;
@@ -18,7 +24,7 @@ html, body {
   height: 100%;
   width: 100%;
   overflow-x: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  /* La familia la define libs/brand/src/base.css vía --sx-font. */
 }
 
 app-root {

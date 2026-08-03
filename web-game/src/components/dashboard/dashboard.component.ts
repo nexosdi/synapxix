@@ -51,14 +51,14 @@ import { CognitiveChartComponent } from './components/CognitiveCharts.components
   `,
   styles: [`
     /* Tus estilos se mantienen igual */
-    .dashboard { padding: 2rem; background: #f8f9fa; min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
-    .dashboard__title { color: #1e293b; margin-bottom: 2rem; font-weight: 700; }
+    .dashboard { padding: 2rem; background: #f5f9ff; min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
+    .dashboard__title { color: #0a4fbf; margin-bottom: 2rem; font-weight: 700; }
     .dashboard__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
     .dashboard__loading { text-align: center; padding: 3rem; }
-    .dashboard__loading p { margin-top: 1rem; color: #64748b; }
-    .dashboard__error { display: flex; justify-content: space-between; align-items: center; background: #fee2e2; color: #dc2626; padding: 1rem; border-radius: 12px; border: 1px solid #fecaca; margin-bottom: 1.5rem; }
-    .dashboard__error button { background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-    .loader { display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3f51b5; border-radius: 50%; animation: spin 1s linear infinite; }
+    .dashboard__loading p { margin-top: 1rem; color: #4c6c9a; }
+    .dashboard__error { display: flex; justify-content: space-between; align-items: center; background: #fdeaea; color: #d64545; padding: 1rem; border-radius: 12px; border: 1px solid #f7d4d4; margin-bottom: 1.5rem; }
+    .dashboard__error button { background: #d64545; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .loader { display: inline-block; width: 40px; height: 40px; border: 4px solid #f5f9ff; border-top: 4px solid #0a4fbf; border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   `],
 })

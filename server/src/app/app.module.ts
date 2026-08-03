@@ -5,6 +5,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { DalaModule } from './modules/dala/dala.module';
 import { LearningModule } from './learning/learning.module';
 import { EconomyModule } from './economy/economy.module';
 import { GameSessionModule } from './game-session/game-session.module';
@@ -45,6 +46,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
       },
     ]),
     AuthModule,
+    DalaModule,
     LearningModule,
     EconomyModule,
     GameSessionModule,
