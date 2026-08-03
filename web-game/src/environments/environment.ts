@@ -9,7 +9,12 @@
  *   url: 'https://auth.aisuite.neops.ai'
  */
 export const environment = {
-  apiUrl: 'http://localhost:3000',
+  // URL relativa: las llamadas salen al mismo origen y en desarrollo las
+  // redirige el proxy del dev-server (web-game/proxy.conf.js) al backend.
+  // Así el puerto del backend se configura en un solo lugar, y en producción
+  // funciona sin cambios cuando el front se sirve junto a la API.
+  // El /api corresponde al prefijo global que define main.ts (setGlobalPrefix).
+  apiUrl: '/api',
   keycloak: {
     url: 'http://localhost:8081',
     realm: 'Synapxix',
