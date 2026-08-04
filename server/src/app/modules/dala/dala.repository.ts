@@ -186,4 +186,115 @@ export class DalaRepository {
       },
     });
   }
+
+  // ── Fases 3–5: seudónimos, snapshots, decisiones, outcomes, trazas ──────
+
+  /** Resuelve (o crea) el subject_id seudónimo de un usuario. Vive en auth. */
+  async resolveSubject(userId: string): Promise<string> {
+    const row = await this.prisma.dalaSubjectMap.upsert({
+      where: { user_id: userId },
+      update: {},
+      create: { user_id: userId },
+    });
+    return row.subject_id;
+  }
+
+  async saveSnapshot(input: {
+    subjectId: string;
+    state: object;
+    sourceEventFrom: string;
+    sourceEventTo: string;
+    modelVersion: string;
+  }) {
+    return this.prisma.dalaHumanStateSnapshot.create({
+      data: {
+        subject_id: input.subjectId,
+        state_json: input.state,
+        source_event_from: input.sourceEventFrom,
+        source_event_to: input.sourceEventTo,
+        model_version: input.modelVersion,
+      },
+    });
+  }
+
+  async latestSnapshot(subjectId: string) {
+    return this.prisma.dalaHumanStateSnapshot.findFirst({
+      where: { subject_id: subjectId },
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  async saveDecision(input: {
+    subjectId: string;
+    objective: string;
+    candidateActions: string[];
+    selectedAction: string;
+    reasons: object;
+    stateSnapshotId: string;
+    policyVersion: string;
+    modelVersion: string;
+    confidence: number;
+    expectedOutcome?: object;
+  }) {
+    return this.prisma.dalaDecisionRecord.create({
+      data: {
+        subject_id: input.subjectId,
+        objective: input.objective,
+        candidate_actions: input.candidateActions,
+        selected_action: input.selectedAction,
+        reasons: input.reasons,
+        state_snapshot_id: input.stateSnapshotId,
+        policy_version: input.policyVersion,
+        model_version: input.modelVersion,
+        confidence: input.confidence,
+        requires_human_approval: true, // shadow mode: siempre
+        expected_outcome: input.expectedOutcome,
+      },
+    });
+  }
+
+  async getDecision(decisionId: string) {
+    return this.prisma.dalaDecisionRecord.findUnique({ where: { decision_id: decisionId } });
+  }
+
+  /** Registra el veredicto humano SIN sobrescribir la decisión original. */
+  async reviewDecision(decisionId: string, verdict: string, reason?: string) {
+    return this.prisma.dalaDecisionRecord.update({
+      where: { decision_id: decisionId },
+      data: { human_verdict: verdict, human_verdict_reason: reason ?? null },
+    });
+  }
+
+  async saveOutcome(input: {
+    decisionId: string;
+    interventionId: string;
+    subjectId: string;
+    metrics: object;
+    observedAt: string;
+  }) {
+    return this.prisma.dalaOutcome.create({
+      data: {
+        decision_id: input.decisionId,
+        intervention_id: input.interventionId,
+        subject_id: input.subjectId,
+        metrics: input.metrics,
+        observed_at: new Date(input.observedAt),
+      },
+    });
+  }
+
+  async outcomesFor(decisionId: string) {
+    return this.prisma.dalaOutcome.findMany({ where: { decision_id: decisionId } });
+  }
+
+  async getSnapshot(snapshotId: string) {
+    return this.prisma.dalaHumanStateSnapshot.findUnique({ where: { snapshot_id: snapshotId } });
+  }
+
+  async observationsBySubject(subjectId: string) {
+    return this.prisma.dalaEvidenceObservation.findMany({
+      where: { subject_id: subjectId },
+      orderBy: { observed_at: 'asc' },
+    });
+  }
 }

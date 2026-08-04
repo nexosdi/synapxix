@@ -7,6 +7,9 @@ import {
 } from '@nexosdi.synapxix/dala/contracts';
 import {
   CONSTRUCT_REGISTRY,
+  DALA_MODEL_VERSION,
+  DALA_POLICY_VERSION,
+  decideNextAction,
   deriveEvidence,
   estimateConstruct,
 } from '@nexosdi.synapxix/dala/domain';
@@ -81,6 +84,111 @@ export class DalaFacade {
 
   async getTimeline(subjectId: string) {
     return this.repository.timeline(subjectId);
+  }
+
+
+  // ── Fases 3–5 ───────────────────────────────────────────────────────────
+
+  /** Seudónimo del usuario autenticado. El mapeo vive en auth, no en dala. */
+  resolveSubject(userId: string) {
+    return this.repository.resolveSubject(userId).then((subjectId) => ({ subjectId }));
+  }
+
+  /**
+   * Fase 4 — Decisión en shadow mode: congela un snapshot del estado, aplica
+   * la política determinista y persiste el DecisionRecord con sus razones.
+   * Nada cambia para el estudiante hasta que un humano apruebe.
+   */
+  async decide(subjectId: string) {
+    const estimates = await this.repository.estimatesFor(subjectId);
+    const constructs = Object.fromEntries(
+      estimates.map((e) => [
+        e.construct_id,
+        { value: e.value, confidence: e.confidence, status: e.status },
+      ]),
+    );
+
+    // Fase 3 — snapshot reproducible: estado + rango de eventos que lo produjo.
+    const timeline = await this.repository.timeline(subjectId, 1000);
+    const snapshot = await this.repository.saveSnapshot({
+      subjectId,
+      state: { constructs },
+      sourceEventFrom: timeline.at(-1)?.event_id ?? 'none',
+      sourceEventTo: timeline[0]?.event_id ?? 'none',
+      modelVersion: DALA_MODEL_VERSION,
+    });
+
+    const policy = decideNextAction({ subjectId, constructs });
+    const record = await this.repository.saveDecision({
+      subjectId,
+      objective: policy.objective,
+      candidateActions: policy.candidateActions,
+      selectedAction: policy.selectedAction,
+      reasons: policy.reasons,
+      stateSnapshotId: snapshot.snapshot_id,
+      policyVersion: DALA_POLICY_VERSION,
+      modelVersion: DALA_MODEL_VERSION,
+      confidence: policy.confidence,
+      expectedOutcome: policy.expectedOutcome,
+    });
+    return record;
+  }
+
+  /** Veredicto docente sobre una recomendación (aprueba/rechaza/edita). */
+  async review(decisionId: string, verdict: 'approved' | 'rejected' | 'edited', reason?: string) {
+    const decision = await this.repository.getDecision(decisionId);
+    if (!decision) throw new BadRequestException('unknown_decision');
+    return this.repository.reviewDecision(decisionId, verdict, reason);
+  }
+
+  /** Fase 5 — cierre del ciclo: efecto observado vs. esperado. */
+  async recordOutcome(input: {
+    decisionId: string;
+    interventionId: string;
+    metrics: Record<string, unknown>;
+    observedAt?: string;
+  }) {
+    const decision = await this.repository.getDecision(input.decisionId);
+    if (!decision) throw new BadRequestException('unknown_decision');
+    const outcome = await this.repository.saveOutcome({
+      decisionId: input.decisionId,
+      interventionId: input.interventionId,
+      subjectId: decision.subject_id,
+      metrics: input.metrics,
+      observedAt: input.observedAt ?? new Date().toISOString(),
+    });
+    const expected = decision.expected_outcome as { metric?: string } | null;
+    return {
+      outcomeId: outcome.outcome_id,
+      expected,
+      observed: input.metrics,
+      metricMatched: expected?.metric ? input.metrics[expected.metric] !== undefined : null,
+    };
+  }
+
+  /**
+   * Traza completa (spec v3 Anexo B): decisión → snapshot → evidencia →
+   * eventos → outcomes. Responde "¿por qué se decidió esto y qué pasó después?".
+   */
+  async getTrace(decisionId: string) {
+    const decision = await this.repository.getDecision(decisionId);
+    if (!decision) throw new BadRequestException('unknown_decision');
+    const snapshot = await this.repository.getSnapshot(decision.state_snapshot_id);
+    const observations = await this.repository.observationsBySubject(decision.subject_id);
+    const outcomes = await this.repository.outcomesFor(decisionId);
+    return {
+      decision,
+      stateSnapshot: snapshot,
+      evidence: observations.map((o) => ({
+        observationId: o.observation_id,
+        constructId: o.construct_id,
+        rule: `${o.rule_id}@${o.rule_version}`,
+        weight: o.weight,
+        sourceEventId: o.source_event_id,
+        observedAt: o.observed_at,
+      })),
+      outcomes,
+    };
   }
 
   // ── internos ────────────────────────────────────────────────────────────
