@@ -2015,6 +2015,150 @@ h3 em {
   }
 }
 
+/* ── Modo juego (v3): centrado, rápido, sin bloqueos ─────────────────── */
+
+.game-panel {
+  max-width: 860px;
+  text-align: center;
+
+  .game-toolbar {
+    justify-content: center;
+
+    .task-count {
+      margin-right: 0;
+    }
+  }
+
+  .statement-card {
+    text-align: center;
+    border-left: 1px solid var(--sx-border);
+    border-top: 6px solid var(--sx-blue);
+  }
+}
+
+.streak {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--sx-blue-deep);
+  background: var(--px-star-sun);
+  border-radius: var(--sx-radius-pill);
+  padding: 8px 14px;
+  animation: pop 0.25s ease;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.6);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.insight-ticker {
+  margin-top: 20px;
+  min-height: 24px;
+  font-size: 13.5px;
+  font-weight: var(--sx-weight-bold);
+  color: var(--sx-success);
+  line-height: 1.5;
+  animation: arrive 0.25s ease both;
+
+  &.warn {
+    color: var(--sx-warning);
+  }
+}
+
+.shake {
+  animation: shake 0.35s ease !important;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-7px);
+  }
+  75% {
+    transform: translateX(7px);
+  }
+}
+
+.field-card select {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--px-ink);
+  font-family: var(--sx-font);
+  font-weight: var(--sx-weight-bold);
+  font-size: 15px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.link-btn {
+  border: 0;
+  background: none;
+  font-family: var(--sx-font);
+  font-weight: var(--sx-weight-black);
+  font-size: 12px;
+  color: var(--sx-blue);
+  cursor: pointer;
+  padding: 0;
+  margin-left: 8px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.bucket-row.two {
+  grid-template-columns: repeat(2, minmax(150px, 240px));
+  justify-content: center;
+}
+
+.case-board.slim {
+  max-width: 620px;
+  margin: 0 auto 22px;
+  padding: 18px 24px;
+  text-align: left;
+
+  .case-trace {
+    border-top: 0;
+    margin-top: 0;
+    padding-top: 0;
+  }
+}
+
+.case-prompt {
+  font-size: clamp(18px, 2.2vw, 23px);
+  font-weight: var(--sx-weight-black);
+  color: var(--px-ink);
+  letter-spacing: -0.4px;
+  margin: 0 0 16px;
+}
+
+.alt-details {
+  margin-top: 10px;
+
+  summary {
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--sx-blue);
+    list-style: none;
+
+    &::before {
+      content: '▸ ';
+    }
+  }
+
+  &[open] summary::before {
+    content: '▾ ';
+  }
+}
+
 .result-note {
   background: var(--sx-sky);
   border-radius: 16px;

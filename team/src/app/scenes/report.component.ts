@@ -38,12 +38,11 @@ interface TraceEvidence {
     <div class="scene-panel">
       <div class="result-hero">
         <div>
-          <span class="eyebrow">MODELO INICIAL · CORREGIBLE · CONTEXTUAL</span>
-          <h2>Te vimos operar,<br /><em>{{ firstName() }}.</em></h2>
+          <span class="eyebrow">TU PULSO · CORREGIBLE · CONTEXTUAL</span>
+          <h2>Esto leyó el sistema,<br /><em>{{ firstName() }}.</em></h2>
           <p>
-            No es "quién sos". Es lo que D.A.L.A. pudo leer de cómo actuaste acá — con su
-            incertidumbre, sus alternativas y sus límites declarados. Lo mismo que verá una
-            docente sobre sus estudiantes.
+            No es "quién sos" — es cómo jugaste acá, con la incertidumbre a la vista. Lo mismo
+            que verá una docente sobre sus estudiantes.
           </p>
         </div>
         <div class="pulse-score">
@@ -90,12 +89,15 @@ interface TraceEvidence {
                       {{ entry.state.evidenceCount }} observaciones · {{ entry.state.modelVersion }}
                     </div>
                     @if (entry.state.alternatives.length > 0) {
-                      <div class="alt-row">
-                        <b>Alternativas no descartadas:</b> {{ entry.state.alternatives.join(' ') }}
-                        @if (entry.state.nextValidation) {
-                          <br /><b>Próxima validación:</b> {{ entry.state.nextValidation }}
-                        }
-                      </div>
+                      <details class="alt-details">
+                        <summary>¿Qué más podría explicar esto?</summary>
+                        <div class="alt-row">
+                          {{ entry.state.alternatives.join(' ') }}
+                          @if (entry.state.nextValidation) {
+                            <br /><b>Se confirma o se cae:</b> {{ entry.state.nextValidation }}
+                          }
+                        </div>
+                      </details>
                     }
                   </div>
                 }

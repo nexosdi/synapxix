@@ -21,6 +21,8 @@ export class PulseSessionService {
   readonly token = signal<string | null>(null);
   readonly subjectId = signal<string | null>(null);
   readonly memberName = signal<string>('');
+  /** Área elegida al entrar: adapta el lenguaje de toda la experiencia. */
+  readonly area = signal<string>('');
   readonly pendingEvents = signal(0);
   /** Señales emitidas en toda la experiencia (contador vivo del topbar). */
   readonly emittedCount = signal(0);

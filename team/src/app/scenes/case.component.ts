@@ -3,37 +3,21 @@ import { CASE_SUBJECT, CASE_TASKS } from '../content';
 import { PulseSessionService } from '../services/pulse-session.service';
 
 /**
- * Escena 5 — El caso: la prueba de rigor del maestro (§5.2).
- * Una traza real de conducta y tres operaciones del sistema, hechas a mano:
- * separar observado de inferido, sostener la hipótesis que la evidencia
- * aguanta, y elegir la intervención de mínima ayuda eficaz.
- *
- * Corre como sesión del instrumento `categorization` (clasificar lecturas
- * ES categorizar): eventos canónicos, evidencia real.
+ * Escena 5 — El caso exprés. Tres toques: dos de rigor (¿hecho o lectura?)
+ * y uno de política (mínima ayuda eficaz). La traza de M. en tres líneas.
+ * Corre como sesión del instrumento `categorization`.
  */
 @Component({
   selector: 'synapxix-case',
   standalone: true,
   template: `
-    <div class="scene-panel">
-      <div class="scene-heading">
-        <span class="eyebrow">EL CASO · OPERÁS VOS EL SISTEMA</span>
-        <h2>Esto hace D.A.L.A.<br /><em>Ahora hacelo vos.</em></h2>
-        <p>
-          Una traza real de conducta. Tu trabajo es el del motor: leer sin sobreinferir,
-          hipotetizar con alternativas y decidir con límites.
-        </p>
+    <div class="scene-panel game-panel">
+      <div class="scene-heading" style="text-align: center; margin: 0 auto 8px">
+        <span class="eyebrow">FINAL · AHORA EL SISTEMA SOS VOS</span>
+        <h2>La traza de {{ subject.name }}, {{ subject.age }}.</h2>
       </div>
 
-      <div class="case-board">
-        <div class="case-person">
-          <div class="avatar">{{ subject.name }}</div>
-          <div>
-            <span>SUJETO SINTÉTICO · {{ subject.age }}</span>
-            <h3>La traza de {{ subject.name }}</h3>
-            <p>{{ subject.context }}</p>
-          </div>
-        </div>
+      <div class="case-board slim">
         <div class="case-trace">
           @for (line of subject.trace; track line; let i = $index) {
             <div><i>E{{ i + 1 }}</i>{{ line }}</div>
@@ -41,20 +25,11 @@ import { PulseSessionService } from '../services/pulse-session.service';
         </div>
       </div>
 
-      <div class="game-toolbar" style="margin-top: 28px">
-        <span class="task-count">Operación {{ taskIndex() + 1 }} / {{ tasks.length }} · {{ stepLabel() }}</span>
-      </div>
-
-      <p class="scene-lead" style="font-size: 17px; font-weight: 700; color: var(--px-ink)">
-        {{ task().prompt }}
-      </p>
+      <p class="case-prompt">{{ prompt() }}</p>
 
       @if (task().kind === 'clasificar') {
-        <div class="statement-card">“{{ currentStatement().text }}”</div>
-        @if (feedback(); as fb) {
-          <div class="feedback-banner" [class.good]="fb.good" [class.bad]="!fb.good">{{ fb.text }}</div>
-        }
-        <div class="bucket-row">
+        <div class="statement-card" [class.shake]="shaking()">“{{ currentStatement().text }}”</div>
+        <div class="bucket-row two">
           @for (bucket of task().buckets!; track bucket.id) {
             <button class="bucket" (click)="placeStatement(bucket.id)">
               <b>{{ bucket.label }}</b>
@@ -76,15 +51,11 @@ import { PulseSessionService } from '../services/pulse-session.service';
             </button>
           }
         </div>
-        @if (feedback(); as fb) {
-          <div class="feedback-banner" [class.good]="fb.good" [class.bad]="!fb.good">{{ fb.text }}</div>
-        }
       }
 
-      <div class="scene-actions">
-        <span>inferir emociones sin evidencia está prohibido en el piloto — también acá</span>
-        <span></span>
-      </div>
+      @if (ticker(); as t) {
+        <div class="insight-ticker" [class.warn]="t.warn">{{ t.text }}</div>
+      }
     </div>
   `,
 })
@@ -98,7 +69,8 @@ export class CaseComponent implements OnInit {
   readonly taskIndex = signal(0);
   readonly statementIndex = signal(0);
   readonly chosen = signal('');
-  readonly feedback = signal<{ good: boolean; text: string } | null>(null);
+  readonly shaking = signal(false);
+  readonly ticker = signal<{ text: string; warn?: boolean } | null>(null);
 
   private attempt = 1;
   private failedThis = false;
@@ -115,19 +87,12 @@ export class CaseComponent implements OnInit {
     return this.tasks[this.taskIndex()];
   }
 
-  currentStatement() {
-    return this.task().statements![this.statementIndex()];
+  prompt() {
+    return this.task().prompt;
   }
 
-  stepLabel() {
-    switch (this.task().kind) {
-      case 'clasificar':
-        return 'rigor observacional';
-      case 'hipotesis':
-        return 'hipótesis con alternativas';
-      default:
-        return 'política de decisión';
-    }
+  currentStatement() {
+    return this.task().statements![this.statementIndex()];
   }
 
   private presentTask() {
@@ -158,18 +123,15 @@ export class CaseComponent implements OnInit {
 
     if (!correct) {
       this.failedThis = true;
-      this.feedback.set({
-        good: false,
-        text: 'Cuidado: ¿está en la traza, o lo pusiste vos? Releé los eventos E1–E5.',
-      });
+      this.shaking.set(true);
+      setTimeout(() => this.shaking.set(false), 400);
+      this.ticker.set({ text: '¿Está en la traza, o lo pusiste vos?', warn: true });
       return;
     }
 
-    const why = statement.why ? ` ${statement.why}` : '';
-    this.feedback.set({ good: true, text: `Exacto.${why}` });
+    this.ticker.set(statement.why ? { text: `✓ ${statement.why}` } : null);
     this.locked = true;
     setTimeout(() => {
-      this.feedback.set(null);
       this.attempt = 1;
       this.failedThis = false;
       if (this.statementIndex() < this.task().statements!.length - 1) {
@@ -179,7 +141,7 @@ export class CaseComponent implements OnInit {
       } else {
         this.completeTask();
       }
-    }, statement.why ? 2600 : 900);
+    }, statement.why ? 1700 : 620);
   }
 
   pickOption(optionId: string) {
@@ -200,18 +162,18 @@ export class CaseComponent implements OnInit {
 
     if (!option.correct) {
       this.failedThis = true;
-      this.feedback.set({ good: false, text: option.why + ' Elegí otra.' });
+      this.ticker.set({ text: option.why, warn: true });
       return;
     }
 
     this.chosen.set(optionId);
-    this.feedback.set({ good: true, text: option.why });
+    this.ticker.set({ text: `✓ ${option.why}` });
     this.locked = true;
-    setTimeout(() => this.completeTask(), 3200);
+    setTimeout(() => this.completeTask(), 2200);
   }
 
   private completeTask() {
-    this.feedback.set(null);
+    this.ticker.set(null);
     this.session.interact({ kind: 'complete', taskId: this.task().taskId });
     if (this.taskIndex() < this.tasks.length - 1) {
       this.taskIndex.update((i) => i + 1);

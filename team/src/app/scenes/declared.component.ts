@@ -14,12 +14,9 @@ import { PulseApiService } from '../services/pulse-api.service';
     <div class="scene-panel">
       <div class="contract-grid">
         <div class="scene-heading">
-          <span class="eyebrow">EL ACUERDO · DECLARADO, NO INFERIDO</span>
-          <h2>La conducta da señales.<br /><em>Vos tenés la última palabra.</em></h2>
-          <p>
-            Lo que sigue no se infiere: lo declarás vos. Sirve para ajustar tu integración al
-            equipo — y el sistema lo trata como declaración tuya, con tu control.
-          </p>
+          <span class="eyebrow">ÚLTIMO PASO · LO DECLARÁS VOS</span>
+          <h2>Dos preguntas<br /><em>y vemos tu pulso.</em></h2>
+          <p>Esto no se infiere: lo decís vos, y elegís si el equipo lo ve.</p>
         </div>
         <div class="privacy-card">
           <span>CONTROL DE INFORMACIÓN</span>
@@ -51,27 +48,12 @@ import { PulseApiService } from '../services/pulse-api.service';
         </div>
       </div>
 
-      <div class="scope-explainer">
-        <div>
-          <span class="scope-icon">VOS</span>
-          <p><b>Tu lectura</b> incluye señales, alternativas no descartadas, límites y próxima validación.</p>
-        </div>
-        <div>
-          <span class="scope-icon team">SYN</span>
-          <p><b>La vista de equipo</b> conserva solo lo operativo: integración, ritmo y feedback declarados.</p>
-        </div>
-        <div>
-          <span class="scope-icon no">×</span>
-          <p><b>No generamos</b> diagnóstico, ranking, emoción inferida ni predicción de desempeño.</p>
-        </div>
-      </div>
-
       @if (error()) {
         <div class="feedback-banner bad">{{ error() }}</div>
       }
 
       <div class="scene-actions">
-        <span>transparencia por rol: cada quien ve lo que le corresponde, en su idioma</span>
+        <span>sin diagnóstico, sin ranking, sin predicción de desempeño</span>
         <button class="primary" [disabled]="!workRhythm() || !feedbackMode() || saving()" (click)="save()">
           {{ saving() ? 'Guardando…' : 'Ver mi Primer Pulso' }} <span>→</span>
         </button>

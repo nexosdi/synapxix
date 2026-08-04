@@ -3,24 +3,23 @@ import { INTRUDER_TASKS } from '../content';
 import { PulseSessionService } from '../services/pulse-session.service';
 
 /**
- * Reto 3 — Instrumento `intruder`: "El detector de test disfrazado".
- * Directo del maestro §5.2: cada ronda enfrenta sobreinferencias reales
- * (las que la v1 del producto cometía) contra lecturas válidas bajo v3.
+ * Nivel 3 — "La impostora" (instrumento `intruder`).
+ * Dos rondas, un toque cada una: entre frases que son de los nuestros,
+ * una sobreinferencia se esconde.
  */
 @Component({
   selector: 'synapxix-game-intruder',
   standalone: true,
   template: `
-    <div class="scene-panel">
-      <div class="scene-heading">
-        <span class="eyebrow">RETO 3 · EL DETECTOR DE TEST DISFRAZADO</span>
-        <h2>Una de estas frases<br /><em>es una sobreinferencia.</em></h2>
-        <p>{{ task().prompt }}</p>
+    <div class="scene-panel game-panel">
+      <div class="scene-heading" style="text-align: center; margin: 0 auto 8px">
+        <span class="eyebrow">NIVEL 3 · LA IMPOSTORA</span>
+        <h2>Una de estas frases<br /><em>no es de los nuestros.</em></h2>
       </div>
 
       <div class="game-toolbar">
         <span class="task-count">Ronda {{ taskIndex() + 1 }} / {{ tasks.length }}</span>
-        <button class="chip-btn" [disabled]="cleared().length > 0 || found()" (click)="hint()">💡 Descartar una segura</button>
+        <button class="chip-btn" [disabled]="cleared().length > 0 || found()" (click)="hint()">💡 Descartar una</button>
       </div>
 
       <div class="intruder-grid">
@@ -37,17 +36,9 @@ import { PulseSessionService } from '../services/pulse-session.service';
         }
       </div>
 
-      @if (feedback(); as fb) {
-        <div class="feedback-banner" [class.good]="fb.good" [class.bad]="!fb.good">{{ fb.text }}</div>
+      @if (ticker(); as t) {
+        <div class="insight-ticker" [class.warn]="t.warn">{{ t.text }}</div>
       }
-      @if (found()) {
-        <div class="feedback-banner info">{{ task().why }}</div>
-      }
-
-      <div class="scene-actions">
-        <span>la intrusa siempre suena razonable — por eso el detector importa</span>
-        <span></span>
-      </div>
     </div>
   `,
 })
@@ -60,12 +51,11 @@ export class GameIntruderComponent implements OnInit {
   readonly taskIndex = signal(0);
   readonly cleared = signal<string[]>([]);
   readonly found = signal(false);
-  readonly feedback = signal<{ good: boolean; text: string } | null>(null);
+  readonly ticker = signal<{ text: string; warn?: boolean } | null>(null);
 
   private attempt = 1;
   private failedThis = false;
   private shownAt = Date.now();
-  /** Bloquea interacciones durante la transición: evita dobles avances. */
   private locked = false;
   private adapter: ReturnType<PulseSessionService['startInstrument']> | null = null;
 
@@ -83,7 +73,7 @@ export class GameIntruderComponent implements OnInit {
     this.session.interact({ kind: 'task_shown', taskId: task.taskId, skillIds: [task.skillId] });
     this.cleared.set([]);
     this.found.set(false);
-    this.feedback.set(null);
+    this.ticker.set(null);
     this.attempt = 1;
     this.failedThis = false;
     this.shownAt = Date.now();
@@ -104,7 +94,6 @@ export class GameIntruderComponent implements OnInit {
     if (this.failedThis) {
       this.session.interact({ kind: 'retry', taskId: this.task().taskId, attempt: ++this.attempt });
     }
-
     this.session.interact({
       kind: 'answer',
       taskId: this.task().taskId,
@@ -115,15 +104,12 @@ export class GameIntruderComponent implements OnInit {
 
     if (!card.intruder) {
       this.failedThis = true;
-      this.feedback.set({
-        good: false,
-        text: 'Esa lectura sí es legítima bajo v3. La sobreinferencia sigue suelta — buscá la que promete saber demasiado.',
-      });
+      this.ticker.set({ text: 'Esa sí es nuestra. Buscá la que promete saber demasiado.', warn: true });
       return;
     }
 
     this.found.set(true);
-    this.feedback.set({ good: true, text: '¡Detectada!' });
+    this.ticker.set({ text: `✓ ${this.task().why}` });
     this.session.interact({ kind: 'complete', taskId: this.task().taskId });
     this.locked = true;
     setTimeout(() => {
@@ -134,6 +120,6 @@ export class GameIntruderComponent implements OnInit {
       } else {
         void this.session.endInstrument(true, this.adapter ?? undefined).then(() => this.done.emit());
       }
-    }, 3400);
+    }, 2400);
   }
 }
