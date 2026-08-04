@@ -471,3 +471,14 @@ model DalaOutcome {
   @@map("outcome")
   @@schema("dala")
 }
+
+/// Mapeo user ↔ sujeto seudónimo. Vive en `auth` (dominio de alta confianza);
+/// los motores D.A.L.A. solo ven subject_id (spec v3 §10.2, directrices §15).
+model DalaSubjectMap {
+  user_id    String   @id @db.Uuid
+  subject_id String   @unique @default(uuid()) @db.Uuid
+  created_at DateTime @default(now())
+
+  @@map("dala_subject_map")
+  @@schema("auth")
+}
