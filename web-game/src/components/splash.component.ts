@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { KeycloakService } from 'keycloak-angular';
 import { HISTORY_MOCK } from '@nexosdi.synapxix/game-engine/core';
 import { CommonModule } from '@angular/common';
 
@@ -41,12 +42,25 @@ import { CommonModule } from '@angular/common';
   `,
 })
 export class SplashComponent {
-  private router = inject(Router);
+  private readonly router = inject(Router);
+  private readonly keycloak = inject(KeycloakService);
 
   async onPlayClick(): Promise<void> {
     const target = `/history/${HISTORY_MOCK.id}/map`;
-    
-    // Bypassing authentication check for offline local testing
+
+    // Ensure the user is authenticated before entering protected routes.
+    // An active Keycloak session guarantees the Bearer interceptor will
+    // attach a valid token to all subsequent /api/* calls (including
+    // POST /economy/claim-reward after a game is completed).
+    const isLoggedIn = this.keycloak.isLoggedIn();
+
+    if (!isLoggedIn) {
+      await this.keycloak.login({
+        redirectUri: window.location.origin + target,
+      });
+      return;
+    }
+
     this.router.navigateByUrl(target);
   }
-}
+}

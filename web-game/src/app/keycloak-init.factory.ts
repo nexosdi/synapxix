@@ -2,13 +2,17 @@ import { KeycloakService } from 'keycloak-angular';
 import { environment } from '../environments/environment';
 
 /**
- * Inicializa la instancia de Keycloak antes de que Angular inicie.
- * - Conecta con el Keycloak alojado en el VPS.
- * - Habilita la comprobación silenciosa de sesión (SSO).
- * - Activa el Bearer Interceptor para adjuntar automáticamente el token en peticiones al backend.
- * 
- * @param keycloak Instancia inyectada del servicio de Keycloak
- * @returns Promesa que se resuelve cuando Keycloak termina su inicialización
+ * Initializes the Keycloak instance before Angular starts.
+ * - Connects to the Keycloak server hosted on the VPS.
+ * - Enables silent SSO session check.
+ * - Activates the Bearer Interceptor to automatically attach the access token
+ *   to every outgoing request that targets the backend API (/api/*).
+ *
+ * The `bearerExcludedUrls` list prevents the interceptor from forwarding
+ * the app's token to Keycloak's own endpoints, which would cause 401 errors.
+ *
+ * @param keycloak Injected Keycloak service instance
+ * @returns Promise that resolves when Keycloak finishes initialization
  */
 export function initializeKeycloak(keycloak: KeycloakService): () => Promise<boolean> {
   return () =>
@@ -26,6 +30,13 @@ export function initializeKeycloak(keycloak: KeycloakService): () => Promise<boo
       },
       enableBearerInterceptor: true,
       bearerPrefix: 'Bearer',
+      // Exclude Keycloak's own endpoints and the silent SSO page from receiving
+      // the app's Bearer token. All /api/* routes will receive it automatically.
+      bearerExcludedUrls: [
+        '/assets',
+        '/silent-check-sso.html',
+        environment.keycloak.url,
+      ],
     }).catch(err => {
       console.warn('Keycloak initialization failed, proceeding offline/unauthenticated', err);
       return false;
