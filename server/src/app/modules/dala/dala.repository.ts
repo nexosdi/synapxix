@@ -257,6 +257,15 @@ export class DalaRepository {
     return this.prisma.dalaDecisionRecord.findUnique({ where: { decision_id: decisionId } });
   }
 
+  /** Decisiones de un sujeto, más recientes primero (historial shadow-mode). */
+  async decisionsBySubject(subjectId: string, limit = 20) {
+    return this.prisma.dalaDecisionRecord.findMany({
+      where: { subject_id: subjectId },
+      orderBy: { created_at: 'desc' },
+      take: limit,
+    });
+  }
+
   /** Registra el veredicto humano SIN sobrescribir la decisión original. */
   async reviewDecision(decisionId: string, verdict: string, reason?: string) {
     return this.prisma.dalaDecisionRecord.update({

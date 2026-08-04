@@ -134,6 +134,11 @@ export class DalaFacade {
     return record;
   }
 
+  /** Historial de decisiones shadow de un sujeto (más recientes primero). */
+  decisionsFor(subjectId: string, limit = 20) {
+    return this.repository.decisionsBySubject(subjectId, limit);
+  }
+
   /** Veredicto docente sobre una recomendación (aprueba/rechaza/edita). */
   async review(decisionId: string, verdict: 'approved' | 'rejected' | 'edited', reason?: string) {
     const decision = await this.repository.getDecision(decisionId);
