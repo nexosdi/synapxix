@@ -22,6 +22,8 @@ export class PulseSessionService {
   readonly subjectId = signal<string | null>(null);
   readonly memberName = signal<string>('');
   readonly pendingEvents = signal(0);
+  /** Señales emitidas en toda la experiencia (contador vivo del topbar). */
+  readonly emittedCount = signal(0);
 
   private consent: DalaEventConsent = { scopeId: 'team-primer-pulso-v1', researchAllowed: true };
   private emitters: DalaEmitter[] = [];
@@ -62,12 +64,15 @@ export class PulseSessionService {
     this.currentSource = { instrumentId, instrumentVersion: INSTRUMENT_VERSION };
     this.currentAdapter = new GameInstrumentAdapter(instrumentId, INSTRUMENT_VERSION, emitter);
     emitter.emit('session_started', { ...this.currentSource, gameType: instrumentId }, this.baseContext());
+    this.emittedCount.update((n) => n + 1);
     return this.currentAdapter;
   }
 
   /** Mapea una interacción del reto activo (con el contexto base del pulso). */
   interact(interaction: GameInteraction, extra: Partial<DalaEventContext> = {}) {
-    this.currentAdapter?.mapInteraction(interaction, { ...this.baseContext(), ...extra });
+    if (!this.currentAdapter) return;
+    this.currentAdapter.mapInteraction(interaction, { ...this.baseContext(), ...extra });
+    this.emittedCount.update((n) => n + 1);
     this.pendingEvents.set(this.totalPending());
   }
 
@@ -88,6 +93,7 @@ export class PulseSessionService {
         this.currentSource,
         this.baseContext(),
       );
+      this.emittedCount.update((n) => n + 1);
     }
     this.currentAdapter = null;
     this.currentEmitter = null;

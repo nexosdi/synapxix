@@ -1,64 +1,79 @@
 import { Component, EventEmitter, Output, signal } from '@angular/core';
-import { ENTRY_MODES, STORY } from '../content';
+import { ENTRY_MODES, NATURES, STORY } from '../content';
 
 /**
- * Escena 1 — Quiénes somos, y tu primera declaración: cómo preferís entrar
- * a lo nuevo. Es DECLARADO (la persona lo dice), no inferido.
+ * Escena 1 — El sistema: las cuatro naturalezas de Synapxix, la misión y
+ * visión consolidadas (documento maestro §1), y la primera declaración de
+ * la persona: cómo prefiere entrar a lo nuevo. Declarado, no inferido.
  */
 @Component({
   selector: 'synapxix-mission',
   standalone: true,
   template: `
-    <section class="scene-panel">
-      <span class="eyebrow">DE DÓNDE VENIMOS</span>
-      <h2>Una misión, una visión<br /><em>y un estándar que las protege.</em></h2>
-
-      <div class="option-grid">
-        <article class="option-card" [class.active]="opened().includes('origen')" (click)="open('origen')">
-          <i>◍</i>
-          <b>Origen</b>
-          <p>{{ opened().includes('origen') ? story.origin : 'Tocá para abrir' }}</p>
-        </article>
-        <article class="option-card" [class.active]="opened().includes('mision')" (click)="open('mision')">
-          <i>➤</i>
-          <b>Misión</b>
-          <p>{{ opened().includes('mision') ? story.mission : 'Tocá para abrir' }}</p>
-        </article>
-        <article class="option-card" [class.active]="opened().includes('vision')" (click)="open('vision')">
-          <i>✦</i>
-          <b>Visión</b>
-          <p>{{ opened().includes('vision') ? story.vision : 'Tocá para abrir' }}</p>
-        </article>
-        <article class="option-card" [class.active]="opened().includes('dala')" (click)="open('dala')">
-          <i>◎</i>
-          <b>D.A.L.A.</b>
-          <p>{{ opened().includes('dala') ? story.dala : 'Tocá para abrir' }}</p>
-        </article>
+    <div class="scene-panel">
+      <div class="scene-heading">
+        <span class="eyebrow">DE DÓNDE VENIMOS · A DÓNDE VAMOS</span>
+        <h2>Un sistema con cuatro naturalezas<br /><em>y un estándar que las une.</em></h2>
+        <p>{{ story.quienes }} Abrí las cuatro para seguir — confundirlas es el error más caro del pitch.</p>
       </div>
 
-      <h2 style="margin-top: 32px">¿Cómo preferís entrar a algo nuevo?</h2>
-      <p class="scene-lead">No hay respuesta correcta: es tu primera declaración, y podés cambiarla cuando quieras.</p>
-      <div class="option-grid">
+      <div class="nature-grid">
+        @for (nature of natures; track nature.id; let i = $index) {
+          <button
+            class="nature-card tone-{{ i }}"
+            [class.opened]="opened().includes(nature.id)"
+            (click)="open(nature.id)"
+          >
+            <span>{{ '0' + (i + 1) }}</span>
+            <h3>{{ nature.label }}</h3>
+            <p>{{ nature.copy }}</p>
+            <b>{{ opened().includes(nature.id) ? 'ABIERTA' : 'TOCÁ PARA ABRIR' }}</b>
+          </button>
+        }
+      </div>
+
+      <div class="mission-vision">
+        <div>
+          <span>MISIÓN</span>
+          <p>{{ story.mission }}</p>
+        </div>
+        <div>
+          <span>VISIÓN</span>
+          <p>{{ story.vision }}</p>
+        </div>
+      </div>
+
+      <div class="dala-strip">
+        <b>D.A.L.A.</b> Evidencia <i>→</i> HumanState <i>→</i> Estado compartido <i>→</i> Política
+        <i>→</i> Spec <i>→</i> Intervención <i>→</i> Outcome <i>→</i> Actualización
+      </div>
+
+      <div class="scene-heading" style="margin-top: 44px">
+        <h2>¿Cómo preferís entrar<br />a algo nuevo?</h2>
+        <p>No hay respuesta correcta: es tu primera declaración, y podés cambiarla cuando quieras.</p>
+      </div>
+      <div class="entry-grid">
         @for (mode of entryModes; track mode.id) {
-          <button class="option-card" [class.active]="entry() === mode.id" (click)="entry.set(mode.id)">
-            <i>{{ mode.icon }}</i>
-            <b>{{ mode.label }}</b>
+          <button class="entry-card" [class.selected]="entry() === mode.id" (click)="entry.set(mode.id)">
+            <i class="entry-icon">{{ mode.icon }}</i>
+            <h3>{{ mode.label }}</h3>
             <p>{{ mode.copy }}</p>
           </button>
         }
       </div>
 
       <div class="scene-actions">
-        <span></span>
-        <button class="btn btn-primary" [disabled]="opened().length < 4 || !entry()" (click)="continue_()">
-          A los retos <span>→</span>
+        <span>lo declarado pesa más que lo inferido — y lo declaraste vos</span>
+        <button class="primary" [disabled]="opened().length < 4 || !entry()" (click)="continue_()">
+          Entrar a los retos <span>→</span>
         </button>
       </div>
-    </section>
+    </div>
   `,
 })
 export class MissionComponent {
   readonly story = STORY;
+  readonly natures = NATURES;
   readonly entryModes = ENTRY_MODES;
   readonly opened = signal<string[]>([]);
   readonly entry = signal<'explore' | 'map' | 'story' | ''>('');

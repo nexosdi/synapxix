@@ -83,7 +83,7 @@ exigiendo su JWT de Keycloak como siempre.
 | 4 | Idempotencia de ingesta | el smoke reenvía un lote y espera `duplicate` |
 | 5 | Shadow mode intacto | toda decisión sale con `requiresHumanApproval=true` (forzado en repositorio) |
 | 6 | Secretos de producción | `TEAM_JWT_SECRET` fuerte (el server no arranca sin ella), `TEAM_ADMIN_CODE` no trivial |
-| 7 | Experiencia completa a mano | una persona real recorre las 8 escenas y descarga su estrella |
+| 7 | Experiencia completa a mano | una persona real recorre las 9 escenas y descarga su estrella |
 
 ## Privacidad y reglas vigentes (heredadas de D.A.L.A.)
 

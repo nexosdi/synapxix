@@ -3,46 +3,67 @@ import { FEEDBACK_MODES, WORK_RHYTHMS } from '../content';
 import { PulseApiService } from '../services/pulse-api.service';
 
 /**
- * Escena 5 — Acuerdo de colaboración. Todo lo de esta pantalla es DECLARADO:
- * la persona lo dice, decide si se comparte, y nunca se mezcla con la
- * evidencia conductual (vive en team, no en dala).
+ * Escena 6 — El acuerdo. Todo lo de esta pantalla es DECLARADO: la persona
+ * lo dice, decide si se comparte, y nunca se mezcla con la evidencia
+ * conductual (vive en team, no en dala). Transparencia por rol, en chico.
  */
 @Component({
   selector: 'synapxix-declared',
   standalone: true,
   template: `
-    <section class="scene-panel">
-      <span class="eyebrow">ACUERDO DE COLABORACIÓN</span>
-      <h2>La conducta da señales.<br /><em>Vos tenés la última palabra.</em></h2>
-      <p class="scene-lead">
-        Estas respuestas son declaradas por vos, no inferidas. Sirven para ajustar tu integración
-        al equipo, y elegís si se comparten.
-      </p>
-
-      <h3 style="margin-top: 28px">Cuando una tarea es nueva…</h3>
-      <div class="option-grid">
-        @for (rhythm of workRhythms; track rhythm.id) {
-          <button class="option-card" [class.active]="workRhythm() === rhythm.id" (click)="workRhythm.set(rhythm.id)">
-            <b>{{ rhythm.label }}</b>
+    <div class="scene-panel">
+      <div class="contract-grid">
+        <div class="scene-heading">
+          <span class="eyebrow">EL ACUERDO · DECLARADO, NO INFERIDO</span>
+          <h2>La conducta da señales.<br /><em>Vos tenés la última palabra.</em></h2>
+          <p>
+            Lo que sigue no se infiere: lo declarás vos. Sirve para ajustar tu integración al
+            equipo — y el sistema lo trata como declaración tuya, con tu control.
+          </p>
+        </div>
+        <div class="privacy-card">
+          <span>CONTROL DE INFORMACIÓN</span>
+          <b>{{ share() ? 'Compartir con el equipo' : 'Solo en mi resultado' }}</b>
+          <button class="toggle" [class.on]="share()" (click)="share.set(!share())" aria-label="Cambiar permiso de compartir">
+            <i></i>
           </button>
-        }
+        </div>
       </div>
 
-      <h3>El feedback me sirve más cuando…</h3>
-      <div class="option-grid">
-        @for (mode of feedbackModes; track mode.id) {
-          <button class="option-card" [class.active]="feedbackMode() === mode.id" (click)="feedbackMode.set(mode.id)">
-            <b>{{ mode.label }}</b>
-          </button>
-        }
+      <div class="contract-options">
+        <div>
+          <span>Cuando una tarea es nueva…</span>
+          @for (rhythm of workRhythms; track rhythm.id) {
+            <button [class.active]="workRhythm() === rhythm.id" (click)="workRhythm.set(rhythm.id)">
+              {{ rhythm.label }}
+              <small>{{ rhythm.copy }}</small>
+            </button>
+          }
+        </div>
+        <div>
+          <span>El feedback me sirve más cuando…</span>
+          @for (mode of feedbackModes; track mode.id) {
+            <button [class.active]="feedbackMode() === mode.id" (click)="feedbackMode.set(mode.id)">
+              {{ mode.label }}
+              <small>{{ mode.copy }}</small>
+            </button>
+          }
+        </div>
       </div>
 
-      <div class="result-note">
-        <b>Control de información:</b>
-        {{ share() ? 'estas condiciones se compartirán con el equipo en la vista operativa.' : 'estas condiciones quedarán solo en tu resultado.' }}
-        <button class="chip-btn" style="margin-left: 10px" (click)="share.set(!share())">
-          {{ share() ? 'Dejar de compartir' : 'Compartir con el equipo' }}
-        </button>
+      <div class="scope-explainer">
+        <div>
+          <span class="scope-icon">VOS</span>
+          <p><b>Tu lectura</b> incluye señales, alternativas no descartadas, límites y próxima validación.</p>
+        </div>
+        <div>
+          <span class="scope-icon team">SYN</span>
+          <p><b>La vista de equipo</b> conserva solo lo operativo: integración, ritmo y feedback declarados.</p>
+        </div>
+        <div>
+          <span class="scope-icon no">×</span>
+          <p><b>No generamos</b> diagnóstico, ranking, emoción inferida ni predicción de desempeño.</p>
+        </div>
       </div>
 
       @if (error()) {
@@ -50,14 +71,12 @@ import { PulseApiService } from '../services/pulse-api.service';
       }
 
       <div class="scene-actions">
-        <span class="scene-lead" style="font-size: 0.85rem">
-          No generamos diagnóstico, ranking, emoción inferida ni predicción de desempeño.
-        </span>
-        <button class="btn btn-primary" [disabled]="!workRhythm() || !feedbackMode() || saving()" (click)="save()">
-          {{ saving() ? 'Guardando…' : 'Ver mi Primer Pulso →' }}
+        <span>transparencia por rol: cada quien ve lo que le corresponde, en su idioma</span>
+        <button class="primary" [disabled]="!workRhythm() || !feedbackMode() || saving()" (click)="save()">
+          {{ saving() ? 'Guardando…' : 'Ver mi Primer Pulso' }} <span>→</span>
         </button>
       </div>
-    </section>
+    </div>
   `,
 })
 export class DeclaredComponent {

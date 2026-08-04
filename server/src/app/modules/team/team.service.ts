@@ -146,9 +146,55 @@ export class TeamService {
   // ── Modelado por persona ────────────────────────────────────────────────
 
   /**
+   * Capa narrativa del reporte (maestro §5.2): toda lectura viaja con sus
+   * explicaciones alternativas no descartadas y su próxima validación.
+   * Es interpretación acotada del contexto del pulso — nunca entra al motor.
+   */
+  private static readonly CONSTRUCT_NARRATIVE: Record<
+    string,
+    { alternatives: string[]; nextValidation: string }
+  > = {
+    curricular_mastery: {
+      alternatives: [
+        'El contenido era sobre Synapxix mismo: familiaridad previa puede inflar la lectura.',
+        'Una sola jornada con herramienta nueva: efecto novedad no descartado.',
+      ],
+      nextValidation: 'Repetir la señal con material nuevo, sin pistas, en otra sesión.',
+    },
+    persistence: {
+      alternatives: [
+        'Los retos son cortos: la persistencia de horas o días no está observada.',
+        'El contexto era de bajo riesgo: insistir no costaba nada.',
+      ],
+      nextValidation: 'Observar la reacción al primer bloqueo real que dure más de un día.',
+    },
+    help_seeking: {
+      alternatives: [
+        'Pedir poca ayuda puede ser dominio alto, no evitación.',
+        'Pedir mucha puede ser exploración de la interfaz, no dependencia.',
+      ],
+      nextValidation: 'Ver si el apoyo llega a tiempo en la primera tarea con presión real.',
+    },
+    strategy_flexibility: {
+      alternatives: [
+        'Cambiar de enfoque pudo ser curiosidad por la interfaz, no estrategia.',
+        'No cambiar pudo significar que el primer enfoque alcanzaba.',
+      ],
+      nextValidation: 'Confirmar ante un problema real que exija abandonar un camino invertido.',
+    },
+    task_engagement: {
+      alternatives: [
+        'Completar una experiencia guiada y única no equivale a retorno voluntario.',
+      ],
+      nextValidation: 'El retorno voluntario se observa recién en las próximas semanas de trabajo.',
+    },
+  };
+
+  /**
    * El reporte completo de una persona: estado D.A.L.A. real (con
-   * incertidumbre y estados de validez), actividad, lo declarado, la última
-   * decisión shadow con su veredicto, y la afinidad narrativa de arquetipos.
+   * incertidumbre, alternativas y próxima validación), rigor observacional
+   * del caso, actividad, lo declarado, decisiones shadow con veredicto y
+   * la afinidad narrativa de arquetipos.
    */
   async report(auth: TeamTokenPayload) {
     const member = await this.repository.findById(auth.sub);
@@ -165,6 +211,47 @@ export class TeamService {
       sessions.add(event.session_id);
     }
 
+    // Rigor observacional: desempeño en el caso (tareas caso-*), donde la
+    // persona separó observado de inferido y decidió como la política.
+    let caseAnswers = 0;
+    let caseCorrect = 0;
+    for (const event of timeline as Array<{
+      event_type: string;
+      context_json: unknown;
+      payload_json: unknown;
+    }>) {
+      if (event.event_type !== 'answer_submitted') continue;
+      const taskId = (event.context_json as { taskId?: string })?.taskId ?? '';
+      if (!taskId.startsWith('caso-')) continue;
+      caseAnswers += 1;
+      if ((event.payload_json as { correct?: boolean })?.correct === true) caseCorrect += 1;
+    }
+    const rigor =
+      caseAnswers === 0
+        ? null
+        : {
+            answers: caseAnswers,
+            correct: caseCorrect,
+            accuracy: Math.round((caseCorrect / caseAnswers) * 100) / 100,
+            reading:
+              caseCorrect / caseAnswers >= 0.8
+                ? 'Distinguiste observación de inferencia con soltura, y elegiste ayuda mínima.'
+                : caseCorrect / caseAnswers >= 0.5
+                  ? 'El criterio está en construcción: algunas lecturas pidieron más evidencia de la que había.'
+                  : 'La tentación de sobreinferir apareció seguido — el detector de test disfrazado es para practicarlo.',
+          };
+
+    const constructs = Object.fromEntries(
+      Object.entries(state.constructs).map(([id, reading]) => [
+        id,
+        {
+          ...(reading as object),
+          alternatives: TeamService.CONSTRUCT_NARRATIVE[id]?.alternatives ?? [],
+          nextValidation: TeamService.CONSTRUCT_NARRATIVE[id]?.nextValidation ?? null,
+        },
+      ]),
+    );
+
     const declared = (member.declared_json ?? {}) as DeclaredProfile;
     const affinities = computeArchetypeAffinity(
       declared,
@@ -174,7 +261,8 @@ export class TeamService {
     return {
       member: this.publicMember(member),
       subjectId: auth.subjectId,
-      constructs: state.constructs,
+      constructs,
+      rigor,
       activity: { totalEvents: timeline.length, sessions: sessions.size, byType },
       declared,
       decisions: decisions.map((d) => ({

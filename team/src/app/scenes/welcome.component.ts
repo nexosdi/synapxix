@@ -5,62 +5,68 @@ import { PulseSessionService } from '../services/pulse-session.service';
 
 /**
  * Escena 0 — Entrada por invitación + consentimiento explícito.
- * Sin consentimiento no hay eventos: la API los cuarentena. Aquí se explica
- * QUÉ se registra y para qué, antes de tocar nada.
+ * Hero con el mundo orbital: la persona ve el sistema que va a habitar.
+ * Sin consentimiento no hay eventos: la API los cuarentena.
  */
 @Component({
   selector: 'synapxix-welcome',
   standalone: true,
   imports: [FormsModule],
   template: `
-    <section class="scene-panel">
-      <span class="eyebrow">SYNAPXIX · EQUIPO</span>
-      <h1>Primer <em>Pulso</em></h1>
-      <p class="scene-lead">
-        Bienvenida, bienvenido al equipo. Esta experiencia es nuestra primera prueba real de
-        D.A.L.A.: mientras jugás con nuestra misión, visión y principios, el motor que usaremos
-        con niños y niñas te observa a vos — con las mismas reglas, la misma trazabilidad y el
-        mismo respeto.
-      </p>
+    <div class="scene-panel hero">
+      <div class="hero-copy">
+        <span class="eyebrow">SYNAPXIX · EQUIPO · PRUEBA REAL Nº 1</span>
+        <h1>Vas a entrar<br /><em>dentro del sistema.</em></h1>
+        <p>
+          Esta no es una inducción con diapositivas. Mientras jugás con lo que Synapxix es — su
+          misión, su doctrina, sus límites — el motor D.A.L.A. que usaremos con niños y niñas te
+          observa a vos, con las mismas reglas: seudónimo, evidencia, incertidumbre declarada y
+          ninguna decisión sin un humano.
+        </p>
 
-      <label class="field">
-        <span>TU CÓDIGO DE INVITACIÓN</span>
-        <input
-          [(ngModel)]="inviteCode"
-          placeholder="SX-XXXX-XX"
-          autocomplete="off"
-          [disabled]="joining()"
-        />
-      </label>
-      <label class="field">
-        <span>TU NOMBRE</span>
-        <input [(ngModel)]="name" placeholder="¿Cómo te llamamos?" [disabled]="joining()" />
-      </label>
-      <label class="field">
-        <span>TU ROL EN EL EQUIPO (OPCIONAL)</span>
-        <input [(ngModel)]="roleLabel" placeholder="p. ej. psicopedagogía, ingeniería, diseño…" [disabled]="joining()" />
-      </label>
+        <div class="identity-row">
+          <label class="field-card">
+            <span>Tu código de invitación</span>
+            <input [(ngModel)]="inviteCode" placeholder="SX-XXXX-XX" autocomplete="off" [disabled]="joining()" />
+          </label>
+          <label class="field-card">
+            <span>Tu nombre</span>
+            <input [(ngModel)]="name" placeholder="¿Cómo te llamamos?" [disabled]="joining()" />
+          </label>
+          <label class="field-card full">
+            <span>Tu rol en el equipo (opcional)</span>
+            <input [(ngModel)]="roleLabel" placeholder="psicopedagogía, ingeniería, diseño, territorio…" [disabled]="joining()" />
+          </label>
+        </div>
 
-      <div class="result-note">
-        <b>Lo que vamos a registrar, con tu consentimiento:</b> tus interacciones dentro de los
-        retos (respuestas, reintentos, pistas, cambios de estrategia) bajo un
-        <b>seudónimo</b> — los motores nunca ven tu nombre. Toda inferencia declara su
-        incertidumbre, nada se decide sin un humano, y al final vas a ver la traza completa de lo
-        que el sistema leyó de vos. Lo que declares explícitamente se guarda aparte y elegís si se
-        comparte.
+        <div class="consent-note">
+          <b>Lo que registramos, con tu consentimiento:</b> tus interacciones dentro de los retos
+          — respuestas, reintentos, pistas, cambios de estrategia — bajo un <b>seudónimo</b>. Lo
+          que declares se guarda aparte y elegís si se comparte. Al final ves la traza completa:
+          qué leyó el sistema, con cuánta certeza, y qué no puede saber.
+        </div>
+
+        @if (error()) {
+          <div class="feedback-banner bad">{{ error() }}</div>
+        }
+
+        <div class="scene-actions">
+          <span>consentimiento team-primer-pulso-v1 · retirable</span>
+          <button class="primary" [disabled]="!canJoin() || joining()" (click)="join()">
+            {{ joining() ? 'Conectando…' : 'Acepto y entro' }} <span>→</span>
+          </button>
+        </div>
       </div>
 
-      @if (error()) {
-        <div class="feedback-banner bad">{{ error() }}</div>
-      }
-
-      <div class="scene-actions">
-        <span class="scene-lead" style="font-size: 0.85rem">Consentimiento: team-primer-pulso-v1</span>
-        <button class="btn btn-primary" [disabled]="!canJoin() || joining()" (click)="join()">
-          {{ joining() ? 'Conectando…' : 'Acepto y empiezo →' }}
-        </button>
+      <div class="hero-world" aria-hidden="true">
+        <div class="big-orbit">
+          <div class="core-label"><b>D.A.L.A.</b>ESTADO COMPARTIDO</div>
+        </div>
+        <div class="float-card card-a"><i>EV</i> Evidencia, no opinión</div>
+        <div class="float-card card-b"><i>HS</i> Estados, no etiquetas</div>
+        <div class="float-card card-c"><i>HU</i> El humano decide</div>
       </div>
-    </section>
+    </div>
   `,
 })
 export class WelcomeComponent {

@@ -183,6 +183,7 @@ export class DalaRepository {
         occurred_at: true,
         instrument_id: true,
         context_json: true,
+        payload_json: true,
       },
     });
   }

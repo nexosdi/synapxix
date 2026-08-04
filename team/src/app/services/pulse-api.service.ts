@@ -19,12 +19,18 @@ export interface ConstructState {
   evidenceCount: number;
   validUntil: string | null;
   modelVersion: string;
+  /** Explicaciones rivales aún no descartadas (capa narrativa del reporte). */
+  alternatives: string[];
+  /** Qué observación confirmaría o refutaría esta lectura. */
+  nextValidation: string | null;
 }
 
 export interface PulseReport {
   member: { memberId: string; name: string | null; roleLabel: string | null; status: string; archetype: string | null };
   subjectId: string;
   constructs: Record<string, ConstructState>;
+  /** Desempeño en El Caso: separar observado de inferido y decidir con límites. */
+  rigor: { answers: number; correct: number; accuracy: number; reading: string } | null;
   activity: { totalEvents: number; sessions: number; byType: Record<string, number> };
   declared: {
     entryMode?: string;

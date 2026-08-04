@@ -3,22 +3,24 @@ import { INTRUDER_TASKS } from '../content';
 import { PulseSessionService } from '../services/pulse-session.service';
 
 /**
- * Reto 3 — Instrumento `intruder`: encontrar la frase que traiciona los
- * principios. La pista descarta una carta segura (apoyo graduado, nunca
- * resuelve). Al acertar se muestra el porqué: el reto también enseña.
+ * Reto 3 — Instrumento `intruder`: "El detector de test disfrazado".
+ * Directo del maestro §5.2: cada ronda enfrenta sobreinferencias reales
+ * (las que la v1 del producto cometía) contra lecturas válidas bajo v3.
  */
 @Component({
   selector: 'synapxix-game-intruder',
   standalone: true,
   template: `
-    <section class="scene-panel">
-      <span class="eyebrow">RETO 3 · LA SEÑAL INTRUSA</span>
-      <h2>Una de estas frases<br /><em>no es de los nuestros.</em></h2>
-      <p class="scene-lead">{{ task().prompt }}</p>
+    <div class="scene-panel">
+      <div class="scene-heading">
+        <span class="eyebrow">RETO 3 · EL DETECTOR DE TEST DISFRAZADO</span>
+        <h2>Una de estas frases<br /><em>es una sobreinferencia.</em></h2>
+        <p>{{ task().prompt }}</p>
+      </div>
 
       <div class="game-toolbar">
-        <span class="task-count">Ronda {{ taskIndex() + 1 }} de {{ tasks.length }}</span>
-        <button class="chip-btn" [disabled]="cleared().length > 0 || found()" (click)="hint()">💡 Descartar una</button>
+        <span class="task-count">Ronda {{ taskIndex() + 1 }} / {{ tasks.length }}</span>
+        <button class="chip-btn" [disabled]="cleared().length > 0 || found()" (click)="hint()">💡 Descartar una segura</button>
       </div>
 
       <div class="intruder-grid">
@@ -41,7 +43,12 @@ import { PulseSessionService } from '../services/pulse-session.service';
       @if (found()) {
         <div class="feedback-banner info">{{ task().why }}</div>
       }
-    </section>
+
+      <div class="scene-actions">
+        <span>la intrusa siempre suena razonable — por eso el detector importa</span>
+        <span></span>
+      </div>
+    </div>
   `,
 })
 export class GameIntruderComponent implements OnInit {
@@ -108,12 +115,15 @@ export class GameIntruderComponent implements OnInit {
 
     if (!card.intruder) {
       this.failedThis = true;
-      this.feedback.set({ good: false, text: 'Esa frase sí es nuestra. La intrusa sigue suelta — releé con calma.' });
+      this.feedback.set({
+        good: false,
+        text: 'Esa lectura sí es legítima bajo v3. La sobreinferencia sigue suelta — buscá la que promete saber demasiado.',
+      });
       return;
     }
 
     this.found.set(true);
-    this.feedback.set({ good: true, text: '¡Encontrada!' });
+    this.feedback.set({ good: true, text: '¡Detectada!' });
     this.session.interact({ kind: 'complete', taskId: this.task().taskId });
     this.locked = true;
     setTimeout(() => {
@@ -124,6 +134,6 @@ export class GameIntruderComponent implements OnInit {
       } else {
         void this.session.endInstrument(true, this.adapter ?? undefined).then(() => this.done.emit());
       }
-    }, 2600);
+    }, 3400);
   }
 }

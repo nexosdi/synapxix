@@ -3,22 +3,24 @@ import { TIMELINE_TASKS } from '../content';
 import { PulseSessionService } from '../services/pulse-session.service';
 
 /**
- * Reto 2 — Instrumento `timeline-order`.
- * Además de respuestas y reintentos, este reto expone el botón
- * "cambiar de enfoque" (construir desde el final): un `strategy_changed`
- * genuino que alimenta la flexibilidad estratégica.
+ * Reto 2 — Instrumento `timeline-order`: "El encadenamiento".
+ * Tres secuencias del maestro: la cadena única de D.A.L.A., los niveles de
+ * conformidad y el método territorial. El botón "cambiar de enfoque"
+ * (construir desde el final) emite un `strategy_changed` genuino.
  */
 @Component({
   selector: 'synapxix-game-timeline',
   standalone: true,
   template: `
-    <section class="scene-panel">
-      <span class="eyebrow">RETO 2 · EL CICLO VIVO</span>
-      <h2>{{ task().title }}</h2>
-      <p class="scene-lead">{{ task().intro }}</p>
+    <div class="scene-panel">
+      <div class="scene-heading">
+        <span class="eyebrow">RETO 2 · EL ENCADENAMIENTO</span>
+        <h2>{{ task().title }}</h2>
+        <p>{{ task().intro }}</p>
+      </div>
 
       <div class="game-toolbar">
-        <span class="task-count">Secuencia {{ taskIndex() + 1 }} de {{ tasks.length }} · modo: {{ reverse() ? 'desde el final' : 'desde el inicio' }}</span>
+        <span class="task-count">Secuencia {{ taskIndex() + 1 }} / {{ tasks.length }} · modo: {{ reverse() ? 'desde el final' : 'desde el inicio' }}</span>
         <button class="chip-btn" (click)="switchStrategy()">⇄ Cambiar de enfoque</button>
         <button class="chip-btn" [disabled]="hinted()" (click)="hint()">💡 Pista</button>
         <button class="chip-btn" [disabled]="placed().length === 0" (click)="reset()">↺ Reordenar</button>
@@ -26,8 +28,8 @@ import { PulseSessionService } from '../services/pulse-session.service';
 
       <div class="timeline-built">
         @if (placed().length === 0) {
-          <span style="color: var(--sx-text-muted); font-weight: 600">
-            {{ reverse() ? 'Elegí el ÚLTIMO paso primero…' : 'Elegí el PRIMER paso…' }}
+          <span class="placeholder">
+            {{ reverse() ? 'Elegí el ÚLTIMO eslabón primero…' : 'Elegí el PRIMER eslabón…' }}
           </span>
         }
         @for (step of displayPlaced(); track step; let last = $last) {
@@ -39,7 +41,7 @@ import { PulseSessionService } from '../services/pulse-session.service';
       </div>
 
       @if (feedback(); as fb) {
-        <div class="feedback-banner" [class.good]="fb.good" [class.bad]="!fb.good">{{ fb.text }}</div>
+        <div class="feedback-banner" [class.good]="fb.good" [class.bad]="!fb.good" [class.info]="fb.info">{{ fb.text }}</div>
       }
 
       <div class="timeline-pool">
@@ -54,7 +56,12 @@ import { PulseSessionService } from '../services/pulse-session.service';
           </button>
         }
       </div>
-    </section>
+
+      <div class="scene-actions">
+        <span>cambiar de estrategia a tiempo es una señal, no una derrota</span>
+        <span></span>
+      </div>
+    </div>
   `,
 })
 export class GameTimelineComponent implements OnInit {
@@ -68,7 +75,7 @@ export class GameTimelineComponent implements OnInit {
   readonly pool = signal<string[]>([]);
   readonly reverse = signal(false);
   readonly hinted = signal(false);
-  readonly feedback = signal<{ good: boolean; text: string } | null>(null);
+  readonly feedback = signal<{ good: boolean; text: string; info?: boolean } | null>(null);
 
   private attempt = 1;
   private failedThis = false;
@@ -85,7 +92,7 @@ export class GameTimelineComponent implements OnInit {
     return this.tasks[this.taskIndex()];
   }
 
-  /** El paso que corresponde ahora según el modo (inicio o final). */
+  /** El eslabón que corresponde ahora según el modo (inicio o final). */
   expected(): string {
     const steps = this.task().steps;
     const n = this.placed().length;
@@ -115,7 +122,11 @@ export class GameTimelineComponent implements OnInit {
     this.reverse.update((r) => !r);
     this.placed.set([]);
     this.hinted.set(false);
-    this.feedback.set({ good: true, text: `Nuevo enfoque: construir ${to.split('-').join(' ')}. Cambiar de estrategia a tiempo es una señal, no una derrota.` });
+    this.feedback.set({
+      good: true,
+      info: true,
+      text: `Nuevo enfoque: construir ${to.split('-').join(' ')}. A veces el final de la cadena revela el principio.`,
+    });
   }
 
   hint() {
@@ -136,8 +147,7 @@ export class GameTimelineComponent implements OnInit {
     if (this.locked) return;
     const correct = step === this.expected();
 
-    if (this.failedThis && correct === false) {
-      // ya venía de un error: este nuevo intento fallido también es reintento
+    if (this.failedThis && !correct) {
       this.session.interact({ kind: 'retry', taskId: this.task().taskId, attempt: ++this.attempt });
     }
 
@@ -150,7 +160,10 @@ export class GameTimelineComponent implements OnInit {
 
     if (!correct) {
       this.failedThis = true;
-      this.feedback.set({ good: false, text: 'Ese paso va en otro momento del ciclo. Mirá lo ya colocado y probá otro.' });
+      this.feedback.set({
+        good: false,
+        text: 'Ese eslabón va en otro momento. Mirá lo ya encadenado: ¿qué necesita existir antes?',
+      });
       return;
     }
 
@@ -160,7 +173,7 @@ export class GameTimelineComponent implements OnInit {
 
     if (this.placed().length === this.task().steps.length) {
       this.session.interact({ kind: 'complete', taskId: this.task().taskId });
-      this.feedback.set({ good: true, text: '¡Secuencia completa!' });
+      this.feedback.set({ good: true, text: `¡Cadena completa! ${this.task().closing}` });
       this.locked = true;
       setTimeout(() => {
         this.feedback.set(null);
@@ -171,7 +184,7 @@ export class GameTimelineComponent implements OnInit {
         } else {
           void this.session.endInstrument(true, this.adapter ?? undefined).then(() => this.done.emit());
         }
-      }, 900);
+      }, 2600);
     }
   }
 
