@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '@nexosdi.synapxix/prisma';
-import { ResearchModule } from '../research/research.module';
+import { ResearchModule } from '../research.module';
 import { TeacherInsightsController } from './teacher-insights.controller';
 import { TeacherInsightsService } from './teacher-insights.service';
 import { TeacherInsightsRepository } from './teacher-insights.repository';
