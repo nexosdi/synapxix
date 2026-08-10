@@ -1,0 +1,134 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Query,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiTags, ApiQuery } from '@nestjs/swagger';
+import { Request } from 'express';
+import { PrismaService } from '@nexosdi.synapxix/prisma';
+import { JwtAuthGuard } from '../../../auth/jwt-auth.guard';
+import { KeycloakJwtPayload } from '../../../auth/jwt.strategy';
+import { TeacherInsightsService } from './teacher-insights.service';
+import { TeacherInsightReportResponseDto } from './dto/teacher-insights-report-response.dto';
+
+/**
+ * TeacherInsightsController — read access to AI-generated weekly reports,
+ * plus a manual trigger for on-demand generation (backfill / QA).
+ *
+ * Protected by JwtAuthGuard: a teacher can only read their own reports;
+ * admins can read any teacher's reports.
+ */
+@ApiTags('Teacher Insights')
+@Controller('teacher-insights')
+@UseGuards(JwtAuthGuard)
+export class TeacherInsightsController {
+  constructor(
+    private readonly teacherInsightsService: TeacherInsightsService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  /**
+   * Lists the stored weekly reports for a teacher, most recent first.
+   * Used by the dashboard to render the insights history/timeline.
+   */
+  @Get(':teacherId')
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getReports(
+    @Param('teacherId') teacherId: string,
+    @Req() req: Request & { user: KeycloakJwtPayload },
+    @Query('limit') limit?: string,
+  ): Promise<TeacherInsightReportResponseDto[]> {
+    await this.assertCanAccess(teacherId, req);
+
+    const reports = await this.teacherInsightsService.getReportsForTeacher(
+      teacherId,
+      limit ? Number(limit) : undefined,
+    );
+
+    return reports.map((r) => ({
+      reportId: r.report_id,
+      teacherId: r.teacher_id,
+      periodStart: r.period_start,
+      periodEnd: r.period_end,
+      studentCount: r.student_count,
+      activeStudents: r.active_students,
+      reportText: r.report_text,
+      status: r.status,
+      createdAt: r.created_at,
+    }));
+  }
+
+  /**
+   * Manually triggers generation of the current week's report for a
+   * teacher. Intended for QA/backfill — the scheduled cron job is the
+   * primary path in production.
+   */
+  @Post(':teacherId/generate')
+  async generateNow(
+    @Param('teacherId') teacherId: string,
+    @Req() req: Request & { user: KeycloakJwtPayload },
+  ): Promise<TeacherInsightReportResponseDto> {
+    await this.assertCanAccess(teacherId, req, /* requireStaff */ true);
+
+    const now = new Date();
+    const periodEnd = new Date(now);
+    periodEnd.setHours(0, 0, 0, 0);
+    const periodStart = new Date(periodEnd);
+    periodStart.setDate(periodStart.getDate() - 7);
+
+    const report = await this.teacherInsightsService.generateWeeklyReportForTeacher(
+      teacherId,
+      periodStart,
+      periodEnd,
+    );
+
+    return {
+      reportId: report.report_id,
+      teacherId: report.teacher_id,
+      periodStart: report.period_start,
+      periodEnd: report.period_end,
+      studentCount: report.student_count,
+      activeStudents: report.active_students,
+      reportText: report.report_text,
+      status: report.status,
+      createdAt: report.created_at,
+    };
+  }
+
+  /**
+   * A teacher can only see their own reports. Admins can see any teacher's
+  /**
+   * Teachers can only access their own reports. Only admins can access
+   * reports of other teachers.
+   * `requireStaff` additionally restricts write actions (manual generation)
+   * to the target teacher or admins.
+   */
+  private async assertCanAccess(
+    teacherId: string,
+    req: Request & { user: KeycloakJwtPayload },
+    requireStaff = false,
+  ): Promise<void> {
+    const requestingUser = req.user;
+    const isOwnData = requestingUser.sub === teacherId;
+
+    const user = await this.prisma.app_user.findUnique({
+      where: { user_id: requestingUser.sub },
+    });
+
+    const isAdmin = !!user && user.role === 'admin';
+    const isTeacher = !!user && user.role === 'teacher';
+
+    const allowed = requireStaff
+      ? (isOwnData && isTeacher) || isAdmin
+      : isOwnData || isAdmin;
+
+    if (!allowed) {
+      throw new UnauthorizedException('You are not authorized to access this resource.');
+    }
+  }
+}

@@ -61,6 +61,8 @@ model app_user {
   inventory    UserInventory[]       @relation("UserToInventory")
   purchases    PurchaseTransaction[] @relation("UserToPurchases")
   
+  insightReports TeacherInsightReport[] @relation("TeacherToInsightReports")
+
   @@map("app_user")
   @@schema("auth")
 }
@@ -329,5 +331,25 @@ model AiPrompt {
   @@unique([game_type, category, version])
   @@index([game_type, category, is_active])
   @@map("ai_prompt")
+  @@schema("core")
+}
+
+model TeacherInsightReport {
+  report_id       String    @id @default(uuid()) @db.Uuid
+  teacher_id      String    @db.Uuid
+  period_start    DateTime
+  period_end      DateTime
+  student_count   Int       @default(0)
+  active_students Int       @default(0)
+  metrics_summary Json
+  report_text     String    @db.Text
+  status          String    @default("GENERATED") @db.VarChar(20)
+  created_at      DateTime  @default(now())
+
+  teacher app_user @relation("TeacherToInsightReports", fields: [teacher_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([teacher_id, period_start, period_end])
+  @@index([teacher_id, created_at])
+  @@map("teacher_insight_report")
   @@schema("core")
 }
