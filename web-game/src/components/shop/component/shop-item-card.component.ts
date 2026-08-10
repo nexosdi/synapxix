@@ -74,14 +74,14 @@ import { StoreItemViewModel } from '../models/store-item.model';
       box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     }
     .item-card--owned {
-      border-color: #22c55e;
-      background: #f0fdf4;
+      border-color: #1e9e6a;
+      background: #e3f7ef;
     }
 
     /* Preview */
     .item-card__preview-wrapper {
       position: relative;
-      background: #f1f5f9;
+      background: #f5f9ff;
       height: 140px;
       display: flex;
       align-items: center;
@@ -98,7 +98,7 @@ import { StoreItemViewModel } from '../models/store-item.model';
       position: absolute;
       top: 10px;
       left: 10px;
-      background: #1e293b;
+      background: #0a4fbf;
       color: white;
       font-size: 0.65rem;
       font-weight: 700;
@@ -118,11 +118,11 @@ import { StoreItemViewModel } from '../models/store-item.model';
       gap: 4px;
       font-size: 0.75rem;
       font-weight: 600;
-      color: #16a34a;
+      color: #1e9e6a;
     }
     .item-card__owned-icon {
       font-size: 1.5rem;
-      background: #22c55e;
+      background: #1e9e6a;
       color: white;
       border-radius: 50%;
       width: 36px;
@@ -141,12 +141,12 @@ import { StoreItemViewModel } from '../models/store-item.model';
       margin: 0 0 4px;
       font-size: 0.95rem;
       font-weight: 700;
-      color: #1e293b;
+      color: #0a4fbf;
     }
     .item-card__description {
       margin: 0;
       font-size: 0.78rem;
-      color: #64748b;
+      color: #4c6c9a;
       line-height: 1.4;
     }
 
@@ -161,13 +161,13 @@ import { StoreItemViewModel } from '../models/store-item.model';
     .item-card__price {
       font-size: 0.9rem;
       font-weight: 700;
-      color: #1e293b;
+      color: #0a4fbf;
     }
     .item-card__price--unaffordable {
-      color: #dc2626;
+      color: #d64545;
     }
     .item-card__btn {
-      background: #3f51b5;
+      background: #0a4fbf;
       color: white;
       border: none;
       padding: 8px 16px;
@@ -181,13 +181,13 @@ import { StoreItemViewModel } from '../models/store-item.model';
       justify-content: center;
       transition: background 0.2s;
     }
-    .item-card__btn:hover:not(:disabled) { background: #303f9f; }
+    .item-card__btn:hover:not(:disabled) { background: #0a4fbf; }
     .item-card__btn--owned {
-      background: #22c55e;
+      background: #1e9e6a;
       cursor: default;
     }
     .item-card__btn--disabled {
-      background: #cbd5e1;
+      background: #c9e0ff;
       cursor: not-allowed;
     }
 
@@ -210,7 +210,7 @@ import { StoreItemViewModel } from '../models/store-item.model';
       margin: 0;
       padding: 6px 1rem 10px;
       font-size: 0.72rem;
-      color: #dc2626;
+      color: #d64545;
       font-weight: 500;
     }
   `],

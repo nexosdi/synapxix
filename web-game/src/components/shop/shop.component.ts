@@ -10,12 +10,10 @@ import { forkJoin } from 'rxjs';
 
 import { StoreItem, StoreItemViewModel } from './models/store-item.model';
 import { STORE_ITEMS_PROVIDER } from './models/store-items-provider.token';
-import { MockStoreItemsProvider } from './services/mock-store-items.provider';
+import { HttpStoreItemsProvider } from './services/http-store-items.provider';
 import { EconomyStoreService, PurchaseError } from './services/economy-store.service';
 import { StoreItemCardComponent } from './component/shop-item-card.component';
 import { StoreBalanceComponent } from './component/shop-balance.component';
-
-import { MockEconomyStoreService } from './services/mock-economy-store.service'; // MOCK TEMPORAL
 
 type FilterType = 'all' | 'avatar' | 'banner';
 
@@ -29,9 +27,7 @@ interface PurchaseState {
   standalone: true,
   imports: [CommonModule, StoreItemCardComponent, StoreBalanceComponent],
   providers: [
-    { provide: STORE_ITEMS_PROVIDER, useClass: MockStoreItemsProvider },
-    { provide: EconomyStoreService, useClass: MockEconomyStoreService }, // MOCK TEMPORAL
-
+    { provide: STORE_ITEMS_PROVIDER, useClass: HttpStoreItemsProvider },
   ],
   template: `
     <div class="store">
@@ -89,7 +85,7 @@ interface PurchaseState {
   styles: [`
     .store {
       padding: 2rem;
-      background: #f8f9fa;
+      background: #f5f9ff;
       min-height: 100vh;
       font-family: 'Segoe UI', sans-serif;
     }
@@ -106,11 +102,11 @@ interface PurchaseState {
       margin: 0 0 4px;
       font-size: 1.75rem;
       font-weight: 700;
-      color: #1e293b;
+      color: #0a4fbf;
     }
     .store__subtitle {
       margin: 0;
-      color: #64748b;
+      color: #4c6c9a;
       font-size: 0.9rem;
     }
 
@@ -124,12 +120,12 @@ interface PurchaseState {
       font-size: 0.875rem;
     }
     .store__alert--error {
-      background: #fee2e2;
-      color: #dc2626;
-      border: 1px solid #fecaca;
+      background: #fdeaea;
+      color: #d64545;
+      border: 1px solid #f7d4d4;
     }
     .store__alert button {
-      background: #dc2626;
+      background: #d64545;
       color: white;
       border: none;
       padding: 6px 14px;
@@ -138,7 +134,7 @@ interface PurchaseState {
       font-weight: 600;
       font-size: 0.8rem;
     }
-    .store__alert button:hover { background: #b91c1c; }
+    .store__alert button:hover { background: #b03636; }
 
     .store__filters {
       display: flex;
@@ -149,18 +145,18 @@ interface PurchaseState {
     .store__filter-btn {
       padding: 7px 18px;
       border-radius: 99px;
-      border: 2px solid #e2e8f0;
+      border: 2px solid #c9e0ff;
       background: white;
-      color: #64748b;
+      color: #4c6c9a;
       font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
     }
-    .store__filter-btn:hover { border-color: #3f51b5; color: #3f51b5; }
+    .store__filter-btn:hover { border-color: #0a4fbf; color: #0a4fbf; }
     .store__filter-btn--active {
-      background: #3f51b5;
-      border-color: #3f51b5;
+      background: #0a4fbf;
+      border-color: #0a4fbf;
       color: white;
     }
 
@@ -173,7 +169,7 @@ interface PurchaseState {
     .store__skeleton {
       height: 320px;
       border-radius: 16px;
-      background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+      background: linear-gradient(90deg, #f5f9ff 25%, #c9e0ff 50%, #f5f9ff 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
     }
@@ -185,7 +181,7 @@ interface PurchaseState {
     .store__empty {
       text-align: center;
       padding: 4rem;
-      color: #94a3b8;
+      color: #8fb8e0;
       font-style: italic;
     }
 

@@ -51,7 +51,7 @@
   margin-bottom: 2.5rem;
   
   .hero-title {
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: var(--sx-font);
     font-size: 2.5rem;
     font-weight: 800;
     margin-bottom: 0.5rem;
@@ -75,7 +75,7 @@
     margin-bottom: 1.5rem;
 
     .section-title {
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-family: var(--sx-font);
       font-size: 1.25rem;
       font-weight: 700;
       display: flex;

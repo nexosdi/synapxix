@@ -1,0 +1,190 @@
+/* Inter is already loaded globally in index.html — no @import needed */
+
+/* ── Container ─────────────────────────────────────────────────────── */
+.toast-container {
+  position: fixed;
+  bottom: 90px;   /* above the chatbot FAB */
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+  font-family: var(--sx-font);
+  /* Cap total width so it never overflows viewport */
+  max-width: calc(100vw - 48px);
+  width: 340px;
+}
+
+/* Mobile: stretch full width at the bottom */
+@media (max-width: 480px) {
+  .toast-container {
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+    bottom: 80px;
+  }
+}
+
+/* ── Toast card ────────────────────────────────────────────────────── */
+.toast {
+  pointer-events: all;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;          /* fills container (capped by container's width) */
+  padding: 14px 40px 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--sx-border);
+  background: var(--sx-white);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--sx-border) inset;
+  overflow: hidden;
+
+  /* Entry animation: slide in from right */
+  animation: toast-enter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.toast--leaving {
+  animation: toast-leave 0.32s ease-in forwards;
+  pointer-events: none;
+}
+
+/* ── Type accent colours ───────────────────────────────────────────── */
+.toast--achievement {
+  border-color: rgba(30, 144, 255, 0.3);
+  box-shadow:
+    0 8px 32px rgba(10, 79, 191, 0.25), 0 0 0 1px var(--sx-border) inset;
+}
+.toast--achievement .toast__icon { background: rgba(10, 79, 191, 0.2); }
+.toast--achievement .toast__title { color: #1e90ff; }
+
+.toast--feedback {
+  border-color: rgba(74, 163, 163, 0.3);
+  box-shadow:
+    0 8px 32px rgba(219, 39, 119, 0.2), 0 0 0 1px var(--sx-border) inset;
+}
+.toast--feedback .toast__icon { background: rgba(219, 39, 119, 0.2); }
+.toast--feedback .toast__title { color: #4aa3a3; }
+
+.toast--ranking {
+  border-color: rgba(252, 211, 77, 0.3);
+  box-shadow:
+    0 8px 32px rgba(245, 158, 11, 0.2), 0 0 0 1px var(--sx-border) inset;
+}
+.toast--ranking .toast__icon { background: rgba(245, 158, 11, 0.2); }
+.toast--ranking .toast__title { color: #fcd34d; }
+
+/* ── Icon ──────────────────────────────────────────────────────────── */
+.toast__icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: var(--sx-white);
+}
+
+/* ── Content ───────────────────────────────────────────────────────── */
+.toast__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast__title {
+  margin: 0 0 2px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toast__message {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--sx-text-muted);
+  line-height: 1.4;
+  /* Allow up to 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Dismiss button ────────────────────────────────────────────────── */
+.toast__dismiss {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--sx-white);
+  color: var(--sx-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+.toast__dismiss:hover {
+  background: var(--sx-sky);
+  color: white;
+}
+
+/* ── Progress bar ──────────────────────────────────────────────────── */
+.toast__progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--sx-sky);
+  transform-origin: left;
+}
+.toast__progress--draining {
+  animation: progress-drain 4s linear forwards;
+}
+
+/* ── Keyframes ─────────────────────────────────────────────────────── */
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateX(60px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toast-leave {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    max-height: 120px;
+    margin-bottom: 0;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(60px) scale(0.94);
+    max-height: 0;
+    margin-bottom: -12px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+@keyframes progress-drain {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}

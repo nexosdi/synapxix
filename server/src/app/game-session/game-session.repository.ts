@@ -6,10 +6,10 @@ import { StartSessionDto, SubmitAttemptDto } from './dto/game-session.dto';
 export class GameSessionRepository {
   constructor(private prisma: PrismaService) {}
 
-  async createSession(dto: StartSessionDto) {
+  async createSession(userId: string, dto: StartSessionDto) {
     return this.prisma.gameSession.create({
       data: {
-        user_id: dto.userId || null,
+        user_id: userId,
         history_id: dto.historyId,
         category: dto.category,
         status: 'playing',
@@ -20,6 +20,23 @@ export class GameSessionRepository {
   async getSession(sessionId: string) {
     return this.prisma.gameSession.findUnique({
       where: { session_id: sessionId }
+    });
+  }
+
+  /**
+   * Sesiones de un usuario con sus intentos, de la más reciente a la más antigua.
+   * Es la fuente del reporte por usuario: `game_attempt` ya guarda qué juego se
+   * jugó, con qué contenido y cómo le fue.
+   */
+  async getSessionsWithAttempts(userId: string) {
+    return this.prisma.gameSession.findMany({
+      where: { user_id: userId },
+      orderBy: { started_at: 'desc' },
+      include: {
+        attempts: {
+          orderBy: { created_at: 'asc' },
+        },
+      },
     });
   }
 

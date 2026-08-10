@@ -16,14 +16,14 @@ import {
     >
       @if (selectedId()) {
         <div class="absolute inset-0 z-20 flex items-center justify-center rounded-[3rem] bg-white/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div class="flex flex-col items-center gap-4 rounded-[2.5rem] bg-yellow-300 px-12 py-8 shadow-xl border-b-8 border-yellow-500 scale-110 animate-in bounce-in">
-            <h3 class="text-3xl font-black text-[#1b95fb]">GREAT CHOICE! 🛡️</h3>
+          <div class="flex flex-col items-center gap-4 rounded-[2.5rem] bg-brand-300 px-12 py-8 shadow-xl border-b-8 border-brand-600 scale-110 animate-in bounce-in">
+            <h3 class="text-3xl font-black text-[#1e90ff]">GREAT CHOICE! 🛡️</h3>
           </div>
         </div>
       }
 
       <header class="space-y-4 text-center">
-        <div class="inline-block px-6 py-2 rounded-full bg-[#1b95fb]/10 text-[#1b95fb] text-xs font-black uppercase tracking-[0.2em]">
+        <div class="inline-block px-6 py-2 rounded-full bg-[#1e90ff]/10 text-[#1e90ff] text-xs font-black uppercase tracking-[0.2em]">
           Hero Selection
         </div>
         
@@ -44,8 +44,8 @@ import {
           tabindex="0"
           role="button"
           class="group relative flex cursor-pointer flex-col gap-2 rounded-[2rem] border-b-4 border-l-2 border-r-2 border-slate-100 bg-white p-6 shadow-lg transition-all duration-200 hover:-translate-y-1 active:translate-y-1 active:border-b-0"
-          [class.!border-[#1b95fb]]="selectedId() === option.id"
-          [class.!bg-[#1b95fb]]="selectedId() === option.id"
+          [class.!border-[#1e90ff]]="selectedId() === option.id"
+          [class.!bg-[#1e90ff]]="selectedId() === option.id"
         >
           <h3 class="text-2xl font-black text-slate-800 transition-colors"
               [class.!text-white]="selectedId() === option.id">

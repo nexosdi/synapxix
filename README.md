@@ -142,30 +142,28 @@ npm install --legacy-peer-deps
 
 > `--legacy-peer-deps` es necesario por la dependencia transitiva entre `ng2-charts@10` y `@angular/cdk@22` en un proyecto Angular 20.
 
-### 3. Levantar la base de datos
+### 3. Preparar la base de datos
+
+Atajo que levanta Postgres y Redis, genera el cliente de Prisma, aplica las
+migraciones y carga el seed de desarrollo:
 
 ```bash
-# Solo PostgreSQL (modo dev — sin Keycloak ni Neo4j)
-docker compose up -d postgres-app
+npm run dev:setup
 ```
 
-Para levantar Keycloak o Neo4j:
-```bash
-docker compose --profile keycloak up -d
-docker compose --profile neo4j up -d
-```
-
-### 4. Generar cliente Prisma y correr migraciones
+Si preferís los pasos sueltos:
 
 ```bash
-# Generar el cliente de Prisma (SIEMPRE después de un git pull que toque el schema)
-npx prisma generate --config prisma.config.ts
-
-# Aplicar migraciones a la base de datos
-npx prisma migrate deploy --config prisma.config.ts
+npm run db:up        # docker compose up -d postgres-app redis
+npm run db:migrate   # prisma migrate deploy
+npm run db:seed      # usuario de desarrollo + artículos de tienda
 ```
 
-### 5. Levantar los servicios
+> El seed (`libs/prisma/src/seeds/dev.seed.ts`) crea el usuario cuyo id usa el
+> `MockJwtGuard`. Sin él, cualquier escritura falla por clave foránea cuando
+> `DISABLE_AUTH=true`.
+
+### 4. Levantar los servicios
 
 Cada servicio en una terminal separada:
 
@@ -178,17 +176,53 @@ npx nx serve web-game
 
 # Frontend admin (puerto 4200)
 npx nx serve admin-frontend
+```
 
-### 6. Configuración de Keycloak (Desarrollo local)
+### 5. Autenticación en desarrollo
 
-Para que el sistema de autenticación de Keycloak funcione correctamente en tu entorno local:
+Hay dos modos. Elegí uno según lo que necesites probar.
 
-  **Configurar el Backend (`server`)**:
-   Asegúrate de agregar en tu archivo `.env` la dirección pública del realm de Keycloak:
-   ```env
-   KEYCLOAK_REALM_URL=https://auth.aisuite.neops.ai/realms/Synapxix
-   ```
-   *(Si necesitas saltarte la validación en desarrollo local, puedes configurar `DISABLE_AUTH=true` en tu `.env` para usar el guard de prueba `MockJwtGuard`)*.
+#### Modo rápido: saltear la validación (`DISABLE_AUTH`)
+
+Alcanza para probar la API y el `admin-frontend`. En tu `.env`:
+
+```env
+DISABLE_AUTH=true
+```
+
+El backend usa `MockJwtGuard`, que inyecta un usuario docente fijo. No sirve
+para el `web-game`, cuyo guard es de Keycloak y vive en el frontend.
+
+#### Modo completo: Keycloak local
+
+Necesario para probar el `web-game` de punta a punta.
+
+```bash
+docker compose --profile keycloak up -d
+```
+
+El realm `Synapxix` y el cliente `synapxix-app` se importan solos desde
+`keycloak/realm-synapxix.json` en el primer arranque. Variables en `.env`:
+
+```env
+DISABLE_AUTH=false
+KEYCLOAK_PORT=8081          # cambialo si el 8080 está libre en tu máquina
+KEYCLOAK_REALM_URL=http://localhost:8081/realms/Synapxix
+KEYCLOAK_ADMIN=admin
+KEYCLOAK_ADMIN_PASSWORD=changeme
+KEYCLOAK_DB_NAME=keycloak
+KEYCLOAK_DB_USER=keycloak_user
+KEYCLOAK_DB_PASSWORD=changeme
+```
+
+Falta un paso manual: crear tu usuario de prueba. Entrá a la consola de admin
+en `http://localhost:8081`, elegí el realm **Synapxix** → *Users* → *Add user*,
+y asignale una contraseña en la pestaña *Credentials*. Si querés que tenga rol,
+usá *Role mapping* con `teacher` o `student`.
+
+> Para usar el Keycloak del VPS en lugar del local, poné
+> `KEYCLOAK_REALM_URL=https://auth.aisuite.neops.ai/realms/Synapxix` y cambiá
+> `keycloak.url` en `web-game/src/environments/environment.ts`.
 
 ---
 
@@ -307,8 +341,26 @@ app.enableCors({
 
 ---
 
+## Identidad visual
+
+La interfaz sigue el Manual de Marca de Synapxix. Las reglas de uso están en
+**[BRAND.md](BRAND.md)**: leelo antes de escribir estilos.
+
+Regla corta: **ningún color, tipografía o radio se escribe a mano.** Todo sale de
+los tokens en [`libs/brand/src/tokens.css`](libs/brand/src/tokens.css).
+
+```css
+/* mal */            /* bien */
+color: #1e90ff;      color: var(--sx-blue);
+border-radius: 4px;  border-radius: var(--sx-radius-sm);
+```
+
+En `web-game` y `libs` también existen las utilidades de Tailwind equivalentes
+(`bg-synapxix`, `text-blue-deep`, `rounded-sx-lg`).
+
 ## Convenciones del proyecto
 
+- **Marca**: ver [BRAND.md](BRAND.md). Sin colores ni fuentes hardcodeadas.
 - **Commits**: Conventional Commits (`feat:`, `fix:`, `chore:`, etc.)
 - **Idioma del código**: inglés (identificadores, comentarios, mensajes de error)
 - **Idioma de UI**: español (labels, textos visibles al usuario)

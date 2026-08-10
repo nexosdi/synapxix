@@ -36,7 +36,7 @@ export const defaultChartOptions: ChartConfiguration['options'] = {
     y: { 
       min: 0, 
       max: 100, 
-      grid: { color: '#f1f5f9' },
+      grid: { color: '#f5f9ff' },
       ticks: {
         callback: (value) => `${value}%` 
       }
@@ -48,7 +48,7 @@ export const defaultChartOptions: ChartConfiguration['options'] = {
   plugins: { 
     legend: { display: false },
     tooltip: {
-      backgroundColor: '#1e293b',
+      backgroundColor: '#0a4fbf',
       padding: 12,
       bodySpacing: 4,
     }

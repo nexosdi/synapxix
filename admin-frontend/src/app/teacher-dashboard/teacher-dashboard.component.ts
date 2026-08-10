@@ -99,8 +99,8 @@ export class TeacherDashboardComponent implements OnInit, OnDestroy {
     datasets: [{
       label: 'Class Average',
       data: [0, 0, 0, 0],
-      backgroundColor: ['rgba(167,139,250,0.7)', 'rgba(244,114,182,0.7)', 'rgba(52,211,153,0.7)', 'rgba(96,165,250,0.7)'],
-      borderColor:     ['#a78bfa', '#f472b6', '#34d399', '#60a5fa'],
+      backgroundColor: ['rgba(30, 144, 255,0.7)', 'rgba(74, 163, 163,0.7)', 'rgba(10, 79, 191,0.7)', 'rgba(147, 198, 255,0.7)'],
+      borderColor:     ['#1e90ff', '#4aa3a3', '#0a4fbf', '#93c6ff'],
       borderWidth: 2,
       borderRadius: 8,
     }],
@@ -112,8 +112,8 @@ export class TeacherDashboardComponent implements OnInit, OnDestroy {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: 'rgba(15,5,32,0.95)',
-        titleColor: '#c4b5fd',
+        backgroundColor: 'rgba(5,42,102,0.95)',
+        titleColor: '#c9e0ff',
         bodyColor: '#fff',
         borderColor: 'rgba(255,255,255,0.1)',
         borderWidth: 1,
@@ -132,11 +132,11 @@ export class TeacherDashboardComponent implements OnInit, OnDestroy {
     scales: {
       x: {
         grid: { color: 'rgba(255,255,255,0.06)' },
-        ticks: { color: 'rgba(255,255,255,0.6)', font: { family: 'Inter', size: 12 } },
+        ticks: { color: 'rgba(255,255,255,0.6)', font: { family: 'Nunito', size: 12 } },
       },
       y: {
         grid: { color: 'rgba(255,255,255,0.06)' },
-        ticks: { color: 'rgba(255,255,255,0.6)', font: { family: 'Inter', size: 12 } },
+        ticks: { color: 'rgba(255,255,255,0.6)', font: { family: 'Nunito', size: 12 } },
         min: 0,
         max: 100,
       },
@@ -147,8 +147,8 @@ export class TeacherDashboardComponent implements OnInit, OnDestroy {
   readonly lineChartData = signal<ChartData<'line'>>({
     labels: [],
     datasets: [
-      { label: 'Accuracy', data: [], borderColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.1)', tension: 0.4, fill: true, pointBackgroundColor: '#a78bfa' },
-      { label: 'Cognitive Load', data: [], borderColor: '#f472b6', backgroundColor: 'rgba(244,114,182,0.1)', tension: 0.4, fill: false, pointBackgroundColor: '#f472b6' },
+      { label: 'Accuracy', data: [], borderColor: '#1e90ff', backgroundColor: 'rgba(30,144,255,0.1)', tension: 0.4, fill: true, pointBackgroundColor: '#1e90ff' },
+      { label: 'Cognitive Load', data: [], borderColor: '#4aa3a3', backgroundColor: 'rgba(74,163,163,0.1)', tension: 0.4, fill: false, pointBackgroundColor: '#4aa3a3' },
     ],
   });
 
@@ -158,11 +158,11 @@ export class TeacherDashboardComponent implements OnInit, OnDestroy {
     plugins: {
       legend: {
         display: true,
-        labels: { color: 'rgba(255,255,255,0.7)', font: { family: 'Inter', size: 12 } },
+        labels: { color: 'rgba(255,255,255,0.7)', font: { family: 'Nunito', size: 12 } },
       },
       tooltip: {
-        backgroundColor: 'rgba(15,5,32,0.95)',
-        titleColor: '#c4b5fd',
+        backgroundColor: 'rgba(5,42,102,0.95)',
+        titleColor: '#c9e0ff',
         bodyColor: '#fff',
         borderColor: 'rgba(255,255,255,0.1)',
         borderWidth: 1,
@@ -171,11 +171,11 @@ export class TeacherDashboardComponent implements OnInit, OnDestroy {
     scales: {
       x: {
         grid: { color: 'rgba(255,255,255,0.06)' },
-        ticks: { color: 'rgba(255,255,255,0.6)', font: { family: 'Inter', size: 11 }, maxRotation: 0 },
+        ticks: { color: 'rgba(255,255,255,0.6)', font: { family: 'Nunito', size: 11 }, maxRotation: 0 },
       },
       y: {
         grid: { color: 'rgba(255,255,255,0.06)' },
-        ticks: { color: 'rgba(255,255,255,0.6)', font: { family: 'Inter', size: 11 } },
+        ticks: { color: 'rgba(255,255,255,0.6)', font: { family: 'Nunito', size: 11 } },
         min: 0,
         max: 100,
       },
@@ -208,8 +208,8 @@ export class TeacherDashboardComponent implements OnInit, OnDestroy {
               Math.round(stats.avgMemoryRetention * 100),
               Math.round(stats.avgAttentionSpan * 100),
             ],
-            backgroundColor: ['rgba(167,139,250,0.7)', 'rgba(244,114,182,0.7)', 'rgba(52,211,153,0.7)', 'rgba(96,165,250,0.7)'],
-            borderColor:     ['#a78bfa', '#f472b6', '#34d399', '#60a5fa'],
+            backgroundColor: ['rgba(30, 144, 255,0.7)', 'rgba(74, 163, 163,0.7)', 'rgba(10, 79, 191,0.7)', 'rgba(147, 198, 255,0.7)'],
+            borderColor:     ['#1e90ff', '#4aa3a3', '#0a4fbf', '#93c6ff'],
             borderWidth: 2,
             borderRadius: 8,
           }],
@@ -256,21 +256,21 @@ export class TeacherDashboardComponent implements OnInit, OnDestroy {
             {
               label: 'Accuracy %',
               data: metrics.map((m) => Math.round(m.accuracy * 100)),
-              borderColor: '#a78bfa',
-              backgroundColor: 'rgba(167,139,250,0.12)',
+              borderColor: '#1e90ff',
+              backgroundColor: 'rgba(30, 144, 255,0.12)',
               tension: 0.4,
               fill: true,
-              pointBackgroundColor: '#a78bfa',
+              pointBackgroundColor: '#1e90ff',
               pointRadius: 5,
             },
             {
               label: 'Cog. Load',
               data: metrics.map((m) => Math.round(m.cognitiveLoad)),
-              borderColor: '#f472b6',
-              backgroundColor: 'rgba(244,114,182,0.05)',
+              borderColor: '#4aa3a3',
+              backgroundColor: 'rgba(74, 163, 163,0.05)',
               tension: 0.4,
               fill: false,
-              pointBackgroundColor: '#f472b6',
+              pointBackgroundColor: '#4aa3a3',
               pointRadius: 5,
             },
           ],

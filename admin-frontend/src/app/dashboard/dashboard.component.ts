@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 import { ChatbotComponent } from './chatbot/chatbot.component';
 import { CognitiveChartsComponent } from './cognitive-charts/cognitive-charts.component';
+import { NotificationBellComponent } from '../shared/components/notification-bell/notification-bell.component';
 import { environment } from '../../environments/environment';
 
 interface BalanceResponse {
@@ -32,7 +33,7 @@ interface ExerciseCategory {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, ChatbotComponent, CognitiveChartsComponent],
+  imports: [CommonModule, ChatbotComponent, CognitiveChartsComponent, NotificationBellComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
 })
@@ -65,7 +66,7 @@ export class DashboardComponent implements OnInit {
       description: 'Reading comprehension, vocabulary and writing exercises.',
       // Book open icon
       svgPath: 'M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z',
-      gradient: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+      gradient: 'linear-gradient(135deg, var(--sx-blue-900) 0%, var(--sx-blue-deep) 100%)',
       // TODO: Replace 'onboarding' with the real historyId for linguistic exercises
       // once the backend serves history records per category from the DB.
       historyId: 'onboarding',
@@ -77,7 +78,7 @@ export class DashboardComponent implements OnInit {
       description: 'Mathematical reasoning, patterns and problem solving.',
       // Function icon
       svgPath: 'M 7.5 4 C 7.5 4 5 4 5 6.5 L 5 17.5 C 5 17.5 5 20 7.5 20 L 16.5 20 C 16.5 20 19 20 19 17.5 L 19 6.5 C 19 6.5 19 4 16.5 4 Z M 9 8 L 15 8 M 9 12 L 15 12 M 9 16 L 12 16',
-      gradient: 'linear-gradient(135deg, #db2777 0%, #9333ea 100%)',
+      gradient: 'linear-gradient(135deg, var(--sx-blue-deep) 0%, var(--sx-blue) 100%)',
       // TODO: Replace with real historyId for logical exercises
       historyId: 'onboarding',
       tag: 'Reasoning',
@@ -88,7 +89,7 @@ export class DashboardComponent implements OnInit {
       description: 'Visual memory, map navigation and spatial reasoning.',
       // Map icon
       svgPath: 'M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z',
-      gradient: 'linear-gradient(135deg, #0891b2 0%, #7c3aed 100%)',
+      gradient: 'linear-gradient(135deg, var(--sx-chart-4) 0%, var(--sx-blue-600) 100%)',
       // TODO: Replace with real historyId for spatial exercises
       historyId: 'onboarding',
       tag: 'Visual',
@@ -99,7 +100,7 @@ export class DashboardComponent implements OnInit {
       description: 'Sound recognition, rhythm and auditory memory.',
       // Music note icon
       svgPath: 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z',
-      gradient: 'linear-gradient(135deg, #f59e0b 0%, #db2777 100%)',
+      gradient: 'linear-gradient(135deg, var(--sx-blue-400) 0%, var(--sx-blue-700) 100%)',
       // TODO: Replace with real historyId for musical exercises
       historyId: 'onboarding',
       tag: 'Auditory',

@@ -13,6 +13,7 @@ import {
   DestroyRef,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { KeycloakService } from 'keycloak-angular';
 import { resolveGameLoader } from '../game-registry';
 import { HistoryService } from '../services/history.service';
 import { GameSessionService } from '../services/game-session.service';
@@ -62,12 +63,12 @@ import { Subscription } from 'rxjs';
           <div
             class="relative px-8 pt-10 pb-8 flex flex-col items-center gap-4 text-white overflow-hidden"
             [style.background]="feedbackResult()?.isCorrect
-              ? 'linear-gradient(135deg, #5b21b6 0%, #2e1065 100%)'
-              : 'linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%)'"
+              ? 'linear-gradient(135deg, var(--sx-blue-deep) 0%, var(--sx-blue-900) 100%)'
+              : 'linear-gradient(135deg, #b03636 0%, #7a2020 100%)'"
           >
             <!-- Logo in corner -->
             <img
-              src="/logo.png"
+              src="/logo-light.png"
               alt="Synapxix"
               class="absolute top-4 right-4 h-8 w-8 object-contain mix-blend-screen opacity-90"
               aria-hidden="true"
@@ -80,7 +81,7 @@ import { Subscription } from 'rxjs';
             <!-- Premium Icon Badge -->
             <div class="relative z-10 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white shadow-2xl ring-8 ring-white/20"
                  [class.shadow-emerald-900]="feedbackResult()?.isCorrect"
-                 [class.shadow-rose-900]="!feedbackResult()?.isCorrect"
+                 [class.shadow-brand-700]="!feedbackResult()?.isCorrect"
                  style="transform: rotate(-3deg);">
               @if (feedbackResult()?.isCorrect) {
                 <!-- Success Star Icon -->
@@ -90,7 +91,7 @@ import { Subscription } from 'rxjs';
                 <div class="absolute -top-1 -right-1 h-5 w-5 animate-ping rounded-full bg-emerald-400 opacity-60"></div>
               } @else {
                 <!-- Try Again Icon -->
-                <svg class="h-10 w-10 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <svg class="h-10 w-10 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               }
@@ -121,16 +122,16 @@ import { Subscription } from 'rxjs';
             @if (flowService.feedbackContent() || feedbackResult()?.feedback) {
               <div class="rounded-2xl px-5 py-4 ring-1"
                 [style]="feedbackResult()?.isCorrect
-                  ? 'background:rgba(52,211,153,0.08);border-color:rgba(52,211,153,0.25)'
+                  ? 'background:rgba(30, 158, 106,0.08);border-color:rgba(30, 158, 106,0.25)'
                   : 'background:rgba(248,113,113,0.08);border-color:rgba(248,113,113,0.25)'"
               >
                 <p class="text-[10px] font-black uppercase tracking-widest mb-1.5"
-                  [style.color]="feedbackResult()?.isCorrect ? '#059669' : '#dc2626'"
+                  [style.color]="feedbackResult()?.isCorrect ? '#1e9e6a' : '#d64545'"
                 >AI Feedback</p>
                 <p class="text-sm font-semibold text-gray-700 leading-relaxed">
                   {{ flowService.feedbackContent() || feedbackResult()?.feedback }}
                   @if (flowService.feedbackContent() && !feedbackResult()?.feedback) {
-                    <span class="inline-block w-1.5 h-4 bg-violet-500 animate-pulse ml-0.5 align-text-bottom rounded-sm"></span>
+                    <span class="inline-block w-1.5 h-4 bg-brand-500 animate-pulse ml-0.5 align-text-bottom rounded-sm"></span>
                   }
                 </p>
               </div>
@@ -141,7 +142,7 @@ import { Subscription } from 'rxjs';
               type="button"
               (click)="onManualAdvance()"
               class="w-full py-4 rounded-2xl text-white text-sm font-black tracking-wide shadow-lg transition-transform active:scale-95"
-              style="background: linear-gradient(135deg,#b794f4 0%,#f687b3 45%,#fbd38d 100%);"
+              style="background: linear-gradient(135deg,var(--sx-sky) 0%,var(--sx-blue-300) 45%,var(--sx-blue) 100%);"
             >
               Continue →
             </button>
@@ -174,6 +175,7 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly http = inject(HttpClient);
+  private readonly keycloak = inject(KeycloakService, { optional: true });
 
   // Default base URL for API, normally injected or from environment
   private readonly apiUrl = '/api/game-session';
@@ -278,23 +280,25 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
       const totalGames = historyContext?.contentMap.length || 0;
       const category = historyContext?.category;
 
-      // Auth0 / user logic: We use null for now until we define Auth0 / Keycloak 
-      const userId: string | null = null;
-      
-      // Enviamos la petición al backend para iniciar sesión.
-      // Cuando tengamos el session ID real, actualizamos el modelo.
-      this.http.post<{sessionId: string}>(`${this.apiUrl}/start`, { 
-        historyId, 
-        category, 
-        userId 
+      // Read the real authenticated user ID from the Keycloak token (sub claim).
+      // The Bearer token is automatically added to this request by KeycloakBearerInterceptor,
+      // but we also send userId explicitly in the body so the backend can bind the session.
+      const userId: string = this.getAuthenticatedUserId();
+
+      // Send request to backend to start a real session.
+      // The backend validates the Bearer token and binds the session to the authenticated user.
+      this.http.post<{sessionId: string}>(`${this.apiUrl}/start`, {
+        historyId,
+        category,
+        userId,
       }).subscribe({
         next: (res) => {
-          // Usamos el ID devuelto por el backend para mantener la sincronización exacta
-          this.sessionService.startSession(historyId, userId ?? '', totalGames, category, res.sessionId);
+          // Use the backend-generated session ID to keep frontend and backend in sync.
+          this.sessionService.startSession(historyId, userId, totalGames, category, res.sessionId);
         },
         error: (err) => {
           console.warn('Backend session start failed, continuing with local session', err);
-          this.sessionService.startSession(historyId, userId ?? '', totalGames, category);
+          this.sessionService.startSession(historyId, userId, totalGames, category);
         }
       });
     }
@@ -477,10 +481,29 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Retrieves the authenticated user's ID (the `sub` claim) from the Keycloak token.
+   *
+   * The `sub` claim is the canonical user identifier shared between the frontend
+   * and the backend. The backend extracts it from the Bearer token via JwtStrategy;
+   * we mirror it here so the session body is consistent with what the server sees.
+   *
+   * Falls back to an empty string when Keycloak is unavailable (e.g., DISABLE_AUTH=true
+   * in dev — the backend mock guard provides a fixed sub from its side).
+   */
+  private getAuthenticatedUserId(): string {
+    try {
+      const tokenParsed = this.keycloak?.getKeycloakInstance()?.tokenParsed;
+      return tokenParsed?.['sub'] ?? '';
+    } catch {
+      return '';
+    }
+  }
+
   public onManualAdvance(): void {
     this.cleanupStream();
     this.flowService.clearFeedbackContent();
     this.feedbackResult.set(null); // Prevent stale state leaking to next game
     this.flowService.advanceNext();
   }
-}
+}

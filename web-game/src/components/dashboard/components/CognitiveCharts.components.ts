@@ -37,15 +37,15 @@ Chart.register(...registerables);
   styles: [`
     .chart-wrapper {
       background: white; border-radius: 20px; padding: 2rem;
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #c9e0ff;
     }
     .chart-wrapper--empty { 
       display: flex; align-items: center; justify-content: center; 
-      height: 400px; color: #64748b; font-style: italic;
+      height: 400px; color: #4c6c9a; font-style: italic;
     }
     .chart-wrapper__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-    .chart-wrapper__title { margin: 0; color: #1e293b; font-size: 1.25rem; }
-    .chart-wrapper__badge { background: #f1f5f9; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; color: #64748b; font-weight: 600; }
+    .chart-wrapper__title { margin: 0; color: #0a4fbf; font-size: 1.25rem; }
+    .chart-wrapper__badge { background: #f5f9ff; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; color: #4c6c9a; font-weight: 600; }
     .chart-wrapper__canvas-container { height: 400px; position: relative; }
   `],
 })

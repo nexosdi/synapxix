@@ -70,7 +70,8 @@
       "executor": "@angular/build:dev-server",
       "options": {
         "buildTarget": "admin-frontend:build:development",
-        "port": 4200
+        "port": 4200,
+        "proxyConfig": "admin-frontend/proxy.conf.js"
       },
       "configurations": {
         "production": {

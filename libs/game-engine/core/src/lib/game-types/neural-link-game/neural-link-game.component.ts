@@ -79,7 +79,7 @@ export class NeuralLinkGameComponent implements OnInit, BaseGameComponent {
 
   readonly feedbackConfig = computed(() => ({
     success: { title: '¡SÚPER PAR!', icon: '✨', class: 'bg-emerald-500 border-emerald-700' },
-    error: { title: '¡CASI!', icon: '🧐', class: 'bg-rose-500 border-rose-700' }
+    error: { title: '¡CASI!', icon: '🧐', class: 'bg-brand-500 border-brand-700' }
   }[this.feedbackState() as 'success' | 'error'] || { title: '', icon: '', class: '' }));
 
   ngOnInit() {

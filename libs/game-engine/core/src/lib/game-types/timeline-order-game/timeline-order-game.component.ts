@@ -27,7 +27,7 @@ import {
       }
 
       <header class="text-center space-y-4">
-        <div class="inline-block px-6 py-2 rounded-full bg-amber-100 text-amber-600 text-xs font-black uppercase tracking-[0.2em]">
+        <div class="inline-block px-6 py-2 rounded-full bg-brand-100 text-brand-600 text-xs font-black uppercase tracking-[0.2em]">
           Misión Histórica
         </div>
         <h2 class="text-3xl font-black text-slate-800 italic leading-tight">
@@ -39,22 +39,22 @@ import {
         @for (event of shuffledEvents(); track event.id) {
           <button (click)="selectEvent(event)" [disabled]="isEventSelected(event)"
             class="px-6 py-3 rounded-2xl border-b-4 font-bold transition-all shadow-md active:translate-y-1 active:border-b-0 disabled:opacity-20"
-            [class.bg-white]="!isEventSelected(event)" [class.border-amber-400]="!isEventSelected(event)">
+            [class.bg-white]="!isEventSelected(event)" [class.border-brand-300]="!isEventSelected(event)">
             {{ event.text }}
           </button>
         }
       </div>
 
       <div class="relative py-10 px-4">
-        <div class="absolute left-1/2 top-0 bottom-0 w-2 -translate-x-1/2 bg-amber-100 rounded-full"></div>
+        <div class="absolute left-1/2 top-0 bottom-0 w-2 -translate-x-1/2 bg-brand-100 rounded-full"></div>
         <div class="flex flex-col gap-8 relative z-10">
           @for (selected of userOrder(); track selected.id) {
             <div class="flex items-center gap-6 animate-in slide-in-from-bottom-4 duration-300"
                  [class.flex-row]=" $index % 2 === 0" [class.flex-row-reverse]=" $index % 2 !== 0">
-              <div class="flex-1 p-5 rounded-2xl border-2 border-amber-200 bg-amber-50 shadow-sm font-black text-amber-900">
+              <div class="flex-1 p-5 rounded-2xl border-2 border-brand-100 bg-brand-100 shadow-sm font-black text-brand-600">
                 {{ selected.text }}
               </div>
-              <div class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-4 border-white bg-amber-500 shadow-xl scale-110">
+              <div class="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-4 border-white bg-brand-600 shadow-xl scale-110">
                 <span class="text-xl font-black text-white italic">{{ $index + 1 }}</span>
               </div>
               <div class="flex-1"></div>
@@ -104,7 +104,7 @@ export class TimelineOrderGameComponent implements BaseGameComponent {
       title: '¡UY, CASI!',
       message: 'Parece que el tiempo se mezcló un poco.',
       icon: '⏳',
-      containerClass: 'bg-rose-500 border-rose-700'
+      containerClass: 'bg-brand-500 border-brand-700'
     };
   });
 

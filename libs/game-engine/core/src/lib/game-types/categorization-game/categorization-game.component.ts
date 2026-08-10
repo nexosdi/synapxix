@@ -65,8 +65,8 @@ import {
             class="relative flex flex-col items-center justify-center gap-6 rounded-[4rem] border-4 border-dashed p-12 transition-all duration-300"
             [class.bg-emerald-50]="cat.id === 'cat1'"
             [class.border-emerald-300]="cat.id === 'cat1'"
-            [class.bg-amber-50]="cat.id === 'cat2'"
-            [class.border-amber-300]="cat.id === 'cat2'"
+            [class.bg-brand-100]="cat.id === 'cat2'"
+            [class.border-brand-300]="cat.id === 'cat2'"
             [class.scale-110]="isHovering() === cat.id"
             [class.ring-8]="isHovering() === cat.id"
             [class.ring-white/50]="isHovering() === cat.id"
@@ -119,7 +119,7 @@ export class CategorizationGameComponent implements OnInit, BaseGameComponent {
 
   readonly feedbackConfig = computed(() => ({
     success: { title: '¡EXCELENTE!', icon: '🎈', class: 'bg-emerald-500 border-emerald-700' },
-    error: { title: '¡CASI!', icon: '🧐', class: 'bg-rose-500 border-rose-700' }
+    error: { title: '¡CASI!', icon: '🧐', class: 'bg-brand-500 border-brand-700' }
   }[this.feedbackState() as 'success' | 'error'] || { title: '', icon: '', class: '' }));
 
   // --- LÓGICA DE DRAG & DROP VANILLA ---

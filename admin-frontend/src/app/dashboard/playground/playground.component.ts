@@ -80,7 +80,7 @@ export class PlaygroundComponent {
           next: () => {
             console.log('¡Conexión con la API exitosa!');
             this.isSubmitting = false;
-            alert('¡Selección registrada con éxito en Synapsis!');
+            alert('¡Selección registrada con éxito en Synapxix!');
           },
           error: (err) => {
             console.error('Error al registrar:', err);

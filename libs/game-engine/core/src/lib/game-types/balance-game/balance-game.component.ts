@@ -77,7 +77,7 @@ export class BalanceMasterComponent implements BaseGameComponent {
 
   readonly feedbackConfig = computed(() => ({
     success: { title: '¡EQUILIBRADO!', icon: '⚖️', class: 'bg-emerald-500 border-emerald-700' },
-    error: { title: '¡INTENTA DE NUEVO!', icon: '🧐', class: 'bg-rose-500 border-rose-700' }
+    error: { title: '¡INTENTA DE NUEVO!', icon: '🧐', class: 'bg-brand-500 border-brand-700' }
   }[this.feedbackState() as 'success' | 'error'] || { title: '', icon: '', class: '' }));
 
   checkAnswer(op: string) {

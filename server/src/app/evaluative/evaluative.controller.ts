@@ -27,7 +27,7 @@ export class EvaluativeController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async evaluateSession(
-    @GetUser('user_id') userId: string,
+    @GetUser('sub') userId: string,
     @Body() dto: EvaluateSessionDto,
   ) {
     const metric = await this.evaluativeService.evaluateAndPersist({ ...dto, userId });
@@ -47,7 +47,7 @@ export class EvaluativeController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async evaluateAiSession(
-    @GetUser('user_id') userId: string,
+    @GetUser('sub') userId: string,
     @Body() dto: EvaluateAiInputDto,
   ) {
     let aiResponseText: string;

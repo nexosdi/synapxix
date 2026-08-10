@@ -1,0 +1,105 @@
+/**
+ * Synapxix — Tokens de marca
+ * =========================================================================
+ * Fuente única de verdad de la identidad visual. Derivado del Manual de Marca.
+ *
+ * REGLA: ningún componente debe escribir un color de marca a mano. Siempre
+ * `var(--sx-...)`. Si necesitás un valor que no está acá, se agrega acá.
+ *
+ * Ver BRAND.md en la raíz del repo para el uso completo.
+ * =========================================================================
+ */
+
+:root {
+  /* ── Paleta oficial ───────────────────────────────────────────────────
+     Los cuatro colores del manual. No se modifican ni se reinterpretan.   */
+  --sx-blue: #1e90ff; /* Azul Synapxix — color principal, acciones, marca */
+  --sx-blue-deep: #0a4fbf; /* Azul Profundo — títulos, hover, contraste alto */
+  --sx-sky: #eaf3ff; /* Azul Cielo — fondos suaves, superficies, estados */
+  --sx-white: #ffffff; /* Blanco — lienzo base */
+
+  /* ── Escala derivada ──────────────────────────────────────────────────
+     Variaciones del azul de marca para jerarquía visual. No son colores
+     nuevos: son el mismo azul con distinta intensidad.                    */
+  --sx-blue-50: #f5f9ff;
+  --sx-blue-100: var(--sx-sky);
+  --sx-blue-200: #c9e0ff;
+  --sx-blue-300: #93c6ff;
+  --sx-blue-400: #52a8ff;
+  --sx-blue-500: var(--sx-blue);
+  --sx-blue-600: #1573d6;
+  --sx-blue-700: var(--sx-blue-deep);
+  --sx-blue-800: #073a8c;
+  --sx-blue-900: #052a66;
+
+  /* ── Texto ────────────────────────────────────────────────────────────
+     Alto contraste es un principio de marca: el texto principal usa el
+     azul profundo, no gris ni negro puro.                                 */
+  --sx-text: var(--sx-blue-deep);
+  /* Calibrado para superar 4.5:1 sobre blanco (WCAG AA en texto normal):
+     "alto contraste" es un principio del manual, no un detalle opcional. */
+  --sx-text-muted: #4c6c9a;
+  --sx-text-on-blue: var(--sx-white);
+
+  /* ── Superficies ──────────────────────────────────────────────────────  */
+  --sx-surface: var(--sx-white);
+  --sx-surface-soft: var(--sx-sky);
+  --sx-surface-sunken: var(--sx-blue-50);
+  --sx-border: var(--sx-blue-200);
+  --sx-border-strong: var(--sx-blue-300);
+
+  /* ── Colores de estado ────────────────────────────────────────────────
+     Fuera de la paleta de marca por necesidad funcional: un error tiene que
+     leerse como error. Se usan SOLO para feedback (validación, alertas),
+     nunca como color decorativo ni de marca.                              */
+  --sx-success: #1e9e6a;
+  --sx-success-soft: #e3f7ef;
+  --sx-warning: #c77700;
+  --sx-warning-soft: #fdf1de;
+  --sx-danger: #d64545;
+  --sx-danger-soft: #fdeaea;
+
+  /* ── Serie para gráficos ──────────────────────────────────────────────
+     Categorías construidas sobre el azul de marca más neutros fríos.
+     Evita violetas y rosas: el manual los marca como uso incorrecto.      */
+  --sx-chart-1: var(--sx-blue);
+  --sx-chart-2: var(--sx-blue-deep);
+  --sx-chart-3: var(--sx-blue-300);
+  --sx-chart-4: #4aa3a3;
+  /* Variante oscura del acento teal, para cuando se usa como texto pequeño:
+     #4aa3a3 sobre blanco da 2.97:1 y no alcanza AA. */
+  --sx-chart-4-text: #2f7070;
+  --sx-chart-5: var(--sx-blue-800);
+  --sx-chart-6: #8fb8e0;
+
+  /* ── Tipografía ───────────────────────────────────────────────────────
+     Sans serif redondeada: amigable, clara, moderna.                      */
+  --sx-font: 'Nunito', ui-rounded, 'Segoe UI Rounded', system-ui, -apple-system,
+    'Segoe UI', Roboto, sans-serif;
+  --sx-weight-regular: 400;
+  --sx-weight-medium: 600;
+  --sx-weight-bold: 700;
+  --sx-weight-black: 800;
+
+  /* ── Formas redondeadas ───────────────────────────────────────────────
+     Principio visual del manual: nada con esquina viva.                   */
+  --sx-radius-sm: 8px;
+  --sx-radius-md: 14px;
+  --sx-radius-lg: 22px;
+  --sx-radius-xl: 32px;
+  --sx-radius-pill: 999px;
+
+  /* ── Elevación ────────────────────────────────────────────────────────
+     Sombras teñidas de azul, nunca negro plano.                           */
+  --sx-shadow-sm: 0 2px 6px rgba(10, 79, 191, 0.08);
+  --sx-shadow-md: 0 6px 18px rgba(10, 79, 191, 0.12);
+  --sx-shadow-lg: 0 14px 38px rgba(10, 79, 191, 0.16);
+
+  /* ── Espaciado y movimiento ───────────────────────────────────────────  */
+  --sx-space-xs: 4px;
+  --sx-space-sm: 8px;
+  --sx-space-md: 16px;
+  --sx-space-lg: 24px;
+  --sx-space-xl: 40px;
+  --sx-transition: 180ms ease;
+}
