@@ -20,6 +20,10 @@ export interface InteractiveContentBase<
   id: string;
   gameType: TType;
   gameInput: TData;
+  result?: {
+    isCorrect: boolean;
+    score: number;
+  };
 }
 
 export type InteractiveContent<

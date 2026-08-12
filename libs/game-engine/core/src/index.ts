@@ -13,6 +13,7 @@ export * from './lib/services/sse-stream.service';
 export * from './lib/services/history-route.resolver';
 export * from './lib/services/history-data-provider';
 export * from './lib/services/mock-history-data-provider';
+export * from './lib/services/real-history-data-provider';
 export * from './lib/history-mock';
 
 // Game-specific models

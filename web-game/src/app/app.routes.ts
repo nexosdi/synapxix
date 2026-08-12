@@ -5,7 +5,7 @@ import {
   HistoryService,
   historyRouteResolver,
   HISTORY_DATA_PROVIDER,
-  MockHistoryDataProvider,
+  RealHistoryDataProvider,
 } from '@nexosdi.synapxix/game-engine/core';
 import { MapComponent } from '../components/map.component';
 import { SplashComponent } from '../components/splash.component';
@@ -39,8 +39,8 @@ export const routes: Routes = [
     canActivate: [keycloakAuthGuard],
     providers: [
       HistoryService,
-      MockHistoryDataProvider,
-      { provide: HISTORY_DATA_PROVIDER, useExisting: MockHistoryDataProvider },
+      RealHistoryDataProvider,
+      { provide: HISTORY_DATA_PROVIDER, useExisting: RealHistoryDataProvider },
     ],
     resolve: {
       historyReady: historyRouteResolver,
