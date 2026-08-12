@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
 import { HistoryDataProvider, HistoryFilter } from './history-data-provider';
@@ -29,7 +29,7 @@ interface GameSession {
 
 @Injectable()
 export class RealHistoryDataProvider implements HistoryDataProvider {
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
 
   async getHistory(sessionId: string): Promise<History | null> {
     try {
@@ -80,7 +80,7 @@ export class RealHistoryDataProvider implements HistoryDataProvider {
     }
   }
 
-  async getHistories(filter?: HistoryFilter): Promise<History[]> {
+  async getHistories(_filter?: HistoryFilter): Promise<History[]> {
     // There is no backend endpoint to list all histories/journeys yet.
     // Returning an empty array as a placeholder.
     console.warn('[RealHistoryDataProvider] getHistories is not implemented yet, returning empty array.');
