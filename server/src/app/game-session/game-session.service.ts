@@ -11,6 +11,14 @@ export class GameSessionService {
     return { sessionId: session.session_id };
   }
 
+  async getSessionById(sessionId: string) {
+    const session = await this.repository.getSessionWithAttempts(sessionId);
+    if (!session) {
+      throw new NotFoundException(`Session ${sessionId} not found`);
+    }
+    return session;
+  }
+
   async submitAttempt(userId: string, sessionId: string, dto: SubmitAttemptDto) {
     // Verificar si la sesión existe
     const session = await this.repository.getSession(sessionId);

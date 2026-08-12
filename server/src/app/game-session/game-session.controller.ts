@@ -31,6 +31,24 @@ export class GameSessionController {
     return this.gameSessionService.completeSession(userId, id);
   }
 
+  @Get(':id')
+  async getSessionById(
+    @Req() req: Request & { user: KeycloakJwtPayload },
+    @Param('id') id: string
+  ) {
+    const session = await this.gameSessionService.getSessionById(id);
+
+    const requesterId = req.user.sub!;
+    const roles = req.user.realm_access?.roles ?? [];
+    const isStaff = roles.some((role) => STAFF_ROLES.includes(role));
+
+    if (session.user_id !== requesterId && !isStaff) {
+      throw new ForbiddenException('No tienes acceso a esta sesión');
+    }
+
+    return session;
+  }
+
   /** Reporte propio: qué juegos jugó quien hace la llamada y cómo le fue. */
   @Get('me/report')
   getOwnReport(@Req() req: Request & { user: KeycloakJwtPayload }) {
