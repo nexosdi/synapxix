@@ -21,8 +21,16 @@ export type TeamArchetype = (typeof TEAM_ARCHETYPES)[number];
 
 export interface DeclaredProfile {
   entryMode?: 'explore' | 'map' | 'story';
+  /** Puerta declarada del onboarding web (flujo del diseñador). */
+  portal?: 'visual' | 'story' | 'logic';
+  /** Área declarada en la inscripción abierta. */
+  area?: string;
+  /** Banda etaria declarada (el año exacto no se conserva). */
+  ageBand?: string;
   workRhythm?: 'prototype' | 'align' | 'hybrid';
   feedbackMode?: 'direct' | 'questions' | 'context';
+  /** "¿Esta lectura te representa?" — revisión humana del propio estado. */
+  stateReview?: 'yes' | 'partial' | 'no';
   shareConditions?: boolean;
 }
 

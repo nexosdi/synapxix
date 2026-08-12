@@ -26,6 +26,33 @@ export class PulseSessionService {
   readonly pendingEvents = signal(0);
   /** Señales emitidas en toda la experiencia (contador vivo del topbar). */
   readonly emittedCount = signal(0);
+  /** Contadores de la sesión para narrar la recomendación shadow. */
+  readonly hintCount = signal(0);
+  readonly retryCount = signal(0);
+  readonly shiftCount = signal(0);
+  /** Sonido ambiental (WebAudio). La persona puede silenciarlo. */
+  readonly soundOn = signal(true);
+  private audioCtx: AudioContext | null = null;
+
+  /** Tono corto de interfaz. Falla en silencio si el navegador lo bloquea. */
+  tone(freq = 520, duration = 0.06) {
+    if (!this.soundOn()) return;
+    try {
+      this.audioCtx = this.audioCtx ?? new AudioContext();
+      const osc = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.025, this.audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(this.audioCtx.destination);
+      osc.start();
+      osc.stop(this.audioCtx.currentTime + duration);
+    } catch {
+      // sin audio disponible: la experiencia sigue igual
+    }
+  }
 
   private consent: DalaEventConsent = { scopeId: 'team-primer-pulso-v1', researchAllowed: true };
   private emitters: DalaEmitter[] = [];
@@ -74,6 +101,9 @@ export class PulseSessionService {
   interact(interaction: GameInteraction, extra: Partial<DalaEventContext> = {}) {
     if (!this.currentAdapter) return;
     this.currentAdapter.mapInteraction(interaction, { ...this.baseContext(), ...extra });
+    if (interaction.kind === 'hint') this.hintCount.update((n) => n + 1);
+    if (interaction.kind === 'retry') this.retryCount.update((n) => n + 1);
+    if (interaction.kind === 'strategy_shift') this.shiftCount.update((n) => n + 1);
     this.emittedCount.update((n) => n + 1);
     this.pendingEvents.set(this.totalPending());
   }

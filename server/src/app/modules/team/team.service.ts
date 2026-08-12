@@ -62,6 +62,49 @@ export class TeamService {
     };
   }
 
+  /**
+   * Inscripción abierta (onboarding web): nombre + email + edad + área, sin
+   * código. Idempotente por email — la misma persona que vuelve recupera su
+   * miembro y su seudónimo, y su modelo dinámico ACUMULA entre sesiones.
+   * Se desactiva con TEAM_OPEN_REGISTRATION=0.
+   */
+  async register(input: { name?: string; email?: string; age?: number; area?: string }) {
+    if (process.env['TEAM_OPEN_REGISTRATION'] === '0') {
+      throw new ForbiddenException('open_registration_disabled');
+    }
+    const name = input.name?.trim() ?? '';
+    const email = input.email?.trim().toLowerCase() ?? '';
+    const age = Number(input.age);
+    if (name.length < 2) throw new BadRequestException('invalid_name');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new BadRequestException('invalid_email');
+    // Piloto adultos: fuera de rango no se procesa (regla del protocolo v0.2).
+    if (!Number.isInteger(age) || age < 21 || age > 36) {
+      throw new BadRequestException('age_out_of_pilot_range');
+    }
+
+    const existing = await this.repository.findByEmail(email);
+    const member = existing
+      ? await this.repository.markJoined(existing.member_id, name, input.area)
+      : await this.repository.createOpen({ name, email, roleLabel: input.area });
+
+    const { subjectId } = await this.dala.resolveSubject(member.member_id);
+    const payload: TeamTokenPayload = {
+      sub: member.member_id,
+      subjectId,
+      name: member.name ?? 'pulso',
+      scope: 'team-pulse',
+    };
+    const token = jwt.sign(payload, TEAM_JWT_SECRET(), { expiresIn: '24h' });
+
+    return {
+      token,
+      subjectId,
+      returning: Boolean(existing),
+      consent: { scopeId: TEAM_CONSENT_SCOPE, researchAllowed: true },
+      member: this.publicMember(member),
+    };
+  }
+
   async me(auth: TeamTokenPayload) {
     const member = await this.repository.findById(auth.sub);
     if (!member) throw new NotFoundException('unknown_member');
@@ -89,18 +132,42 @@ export class TeamService {
   // ── Declarado (nunca se mezcla con evidencia conductual) ────────────────
 
   async saveDeclared(auth: TeamTokenPayload, declared: DeclaredProfile) {
+    // Se fusiona con lo ya declarado: cada pantalla aporta su parte sin
+    // pisar a las demás (portal al inicio, revisión del estado al final).
+    const member = await this.repository.findById(auth.sub);
+    const prior = (member?.declared_json ?? {}) as DeclaredProfile;
     const clean: DeclaredProfile = {
-      entryMode: declared.entryMode,
-      workRhythm: declared.workRhythm,
-      feedbackMode: declared.feedbackMode,
-      shareConditions: declared.shareConditions !== false,
+      ...prior,
+      ...(declared.entryMode !== undefined ? { entryMode: declared.entryMode } : {}),
+      ...(declared.portal !== undefined ? { portal: declared.portal } : {}),
+      ...(declared.area !== undefined ? { area: declared.area } : {}),
+      ...(declared.ageBand !== undefined ? { ageBand: declared.ageBand } : {}),
+      ...(declared.workRhythm !== undefined ? { workRhythm: declared.workRhythm } : {}),
+      ...(declared.feedbackMode !== undefined ? { feedbackMode: declared.feedbackMode } : {}),
+      ...(declared.stateReview !== undefined ? { stateReview: declared.stateReview } : {}),
+      ...(declared.shareConditions !== undefined
+        ? { shareConditions: declared.shareConditions !== false }
+        : {}),
     };
     await this.repository.saveDeclared(auth.sub, clean as object);
     return { saved: true, declared: clean };
   }
 
+  /** Nombres de la Estrella generativa (una por dimensión dominante). */
+  private static readonly STAR_NAMES = [
+    'Estrella del Rigor',
+    'Estrella Persistente',
+    'Estrella Vincular',
+    'Estrella Mutante',
+    'Estrella Presente',
+  ];
+
   async complete(auth: TeamTokenPayload, archetype?: string) {
-    if (archetype && !TEAM_ARCHETYPES.includes(archetype as TeamArchetype)) {
+    if (
+      archetype &&
+      !TEAM_ARCHETYPES.includes(archetype as TeamArchetype) &&
+      !TeamService.STAR_NAMES.includes(archetype)
+    ) {
       throw new BadRequestException('unknown_archetype');
     }
     const member = await this.repository.markCompleted(auth.sub, archetype);

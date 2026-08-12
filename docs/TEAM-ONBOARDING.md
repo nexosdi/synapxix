@@ -35,6 +35,7 @@ la API directo.
 | `DATABASE_URL` | ✅ | Postgres administrado (Railway la inyecta al vincular el plugin) |
 | `TEAM_JWT_SECRET` | ✅ en prod | Firma de los tokens de invitación. **El server no arranca en producción sin ella.** Generar con `openssl rand -hex 32` |
 | `TEAM_ADMIN_CODE` | ✅ | Código operativo para crear invitaciones y ver la vista de equipo |
+| `TEAM_OPEN_REGISTRATION` | opcional | `0` desactiva la inscripción abierta (`POST /team/v1/register`). Por defecto está activa: nombre + email + edad (21–36) + área, idempotente por email — la misma persona acumula modelo entre sesiones |
 | `PORT` | — | Railway la define sola; local usa 3001 |
 | `GEMINI_API_KEY` | opcional | Habilita la estrella ilustrada con IA. Sin key, la SVG paramétrica es la estrella |
 | `CORS_ORIGINS` | opcional | Orígenes extra separados por coma (solo si no se usa el rewrite) |

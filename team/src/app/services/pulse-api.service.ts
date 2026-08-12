@@ -34,8 +34,11 @@ export interface PulseReport {
   activity: { totalEvents: number; sessions: number; byType: Record<string, number> };
   declared: {
     entryMode?: string;
+    portal?: string;
+    area?: string;
     workRhythm?: string;
     feedbackMode?: string;
+    stateReview?: string;
     shareConditions?: boolean;
   };
   decisions: Array<{
@@ -68,10 +71,19 @@ export class PulseApiService {
     return this.post(`${API}/join`, { inviteCode, name, roleLabel }, false);
   }
 
+  /** Inscripción abierta del onboarding web. Idempotente por email. */
+  register(input: { name: string; email: string; age: number; area: string }): Promise<JoinResponse & { returning: boolean }> {
+    return this.post(`${API}/register`, input, false);
+  }
+
   saveDeclared(declared: {
     entryMode?: string;
+    portal?: string;
+    area?: string;
+    ageBand?: string;
     workRhythm?: string;
     feedbackMode?: string;
+    stateReview?: string;
     shareConditions?: boolean;
   }) {
     return this.post(`${API}/declared`, declared);

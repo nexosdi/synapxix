@@ -1,134 +1,138 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { PulseSessionService } from './services/pulse-session.service';
-import type { PulseReport } from './services/pulse-api.service';
-import { WelcomeComponent } from './scenes/welcome.component';
-import { MissionComponent } from './scenes/mission.component';
-import { GameCategorizationComponent } from './scenes/game-categorization.component';
-import { GameTimelineComponent } from './scenes/game-timeline.component';
-import { GameIntruderComponent } from './scenes/game-intruder.component';
-import { CaseComponent } from './scenes/case.component';
-import { DeclaredComponent } from './scenes/declared.component';
-import { ReportComponent } from './scenes/report.component';
-import { StarComponent } from './scenes/star.component';
-import { OrbitalComponent } from './orbital.component';
+import { UiService } from './services/ui.service';
+import { EntryComponent } from './scenes/entry.component';
+import { VisionComponent } from './scenes/vision.component';
+import { PortalComponent } from './scenes/portal.component';
+import { MissionCategorizeComponent } from './scenes/mission-categorize.component';
+import { MissionTimelineComponent } from './scenes/mission-timeline.component';
+import { MissionIntruderComponent } from './scenes/mission-intruder.component';
+import { ShadowComponent } from './scenes/shadow.component';
+import { ResultComponent } from './scenes/result.component';
 
-const SCENE_NAMES = [
-  'Entrada',
-  'El sistema',
-  'El mapa',
-  'La cadena',
-  'El detector',
-  'El caso',
-  'El acuerdo',
-  'Tu pulso',
-  'Tu estrella',
-];
+const SCREENS = ['entry', 'vision', 'portal', 'categorize', 'timeline', 'intruder', 'shadow', 'result'] as const;
+type Screen = (typeof SCREENS)[number];
 
 /**
- * Primer Pulso · Dentro del Sistema — cáscara de la experiencia.
- * Nueve escenas; cada reto es un instrumento D.A.L.A. real en su propia
- * sesión. El contador de señales muestra los eventos emitidos en vivo.
+ * Primer Pulso · onboarding web — cáscara de la experiencia.
+ * Implementa el flujo del diseño de experiencia conectado al motor
+ * D.A.L.A. real: cada misión es un instrumento con sesión propia y el
+ * modelo dinámico de la persona se persiste en el servidor.
  */
 @Component({
   selector: 'synapxix-root',
   standalone: true,
   imports: [
-    WelcomeComponent,
-    MissionComponent,
-    GameCategorizationComponent,
-    GameTimelineComponent,
-    GameIntruderComponent,
-    CaseComponent,
-    DeclaredComponent,
-    ReportComponent,
-    StarComponent,
-    OrbitalComponent,
+    EntryComponent,
+    VisionComponent,
+    PortalComponent,
+    MissionCategorizeComponent,
+    MissionTimelineComponent,
+    MissionIntruderComponent,
+    ShadowComponent,
+    ResultComponent,
   ],
   template: `
-    <main class="experience-shell">
-      <span class="ambient ambient-one"></span>
-      <span class="ambient ambient-two"></span>
+    <div class="app">
+      <div class="orb a"></div>
+      <div class="orb b"></div>
 
       <header class="topbar">
-        <div class="brand">
-          <img src="logo.png" alt="Synapxix" />
-          <div>
-            <b>Primer Pulso</b>
-            <small>DENTRO DEL SISTEMA</small>
+        <div class="brand"><img src="logo.png" alt="" /><span>Synapxix</span></div>
+        <div class="topright">
+          <button class="sound" (click)="toggleSound()" aria-label="Activar o silenciar sonido">
+            {{ session.soundOn() ? '♪' : '×' }}
+          </button>
+          <div class="status">
+            <i class="dot" [class.live]="screen() !== 'entry'"></i>
+            <span>{{ statusText() }}</span>
           </div>
-        </div>
-        <div class="progress-wrap">
-          <div class="progress-meta">
-            <span>ESCENA {{ scene() + 1 }} · <b>{{ sceneName() }}</b></span>
-            <span>{{ progress() }}%</span>
-          </div>
-          <div class="progress-track"><i [style.width.%]="progress()"></i></div>
-        </div>
-        <div class="signal-count">
-          <span class="live-dot"></span>
-          <span><b>{{ session.emittedCount() }}</b> señales · D.A.L.A. en vivo</span>
         </div>
       </header>
+      <div class="progress"><i [style.width.%]="progress()"></i></div>
 
-      <section class="stage">
-        @switch (scene()) {
-          @case (0) {
-            <synapxix-welcome (joined)="go(1)" />
-          }
-          @case (1) {
-            <synapxix-mission (done)="entryChosen($event)" />
-          }
-          @case (2) {
-            <synapxix-game-categorization (done)="go(3)" />
-          }
-          @case (3) {
-            <synapxix-game-timeline (done)="go(4)" />
-          }
-          @case (4) {
-            <synapxix-game-intruder (done)="go(5)" />
-          }
-          @case (5) {
-            <synapxix-case (done)="go(6)" />
-          }
-          @case (6) {
-            <synapxix-declared [entryMode]="entryMode()" (done)="go(7)" />
-          }
-          @case (7) {
-            <synapxix-report (done)="reportReady($event)" />
-          }
-          @case (8) {
-            <synapxix-star [report]="report()!" />
-          }
+      @switch (screen()) {
+        @case ('entry') {
+          <section class="screen"><synapxix-entry (done)="go('vision')" /></section>
         }
-      </section>
+        @case ('vision') {
+          <section class="screen"><synapxix-vision (done)="go('portal')" /></section>
+        }
+        @case ('portal') {
+          <section class="screen"><synapxix-portal (done)="go('categorize')" /></section>
+        }
+        @case ('categorize') {
+          <section class="screen"><synapxix-mission-categorize (done)="go('timeline')" /></section>
+        }
+        @case ('timeline') {
+          <section class="screen"><synapxix-mission-timeline (done)="go('intruder')" /></section>
+        }
+        @case ('intruder') {
+          <section class="screen"><synapxix-mission-intruder (done)="go('shadow')" /></section>
+        }
+        @case ('shadow') {
+          <section class="screen"><synapxix-shadow (done)="go('result')" /></section>
+        }
+        @case ('result') {
+          <section class="screen"><synapxix-result /></section>
+        }
+      }
+
+      <footer class="footer">
+        <span>v0.2 · PILOTO ADULTOS 21–36</span>
+        <span>EVENTO → EVIDENCIA → ESTADO → DECISIÓN → OUTCOME</span>
+      </footer>
 
       @if (session.pendingEvents() > 0) {
-        <div class="sync-pill">⇅ {{ session.pendingEvents() }} señales por sincronizar</div>
+        <div class="syncPill">⇅ {{ session.pendingEvents() }} SEÑALES POR SINCRONIZAR</div>
       }
-    </main>
+
+      <div class="toast" [class.show]="ui.toastVisible()">{{ ui.toastText() }}</div>
+
+      @if (ui.modal(); as m) {
+        <div class="modal" (click)="ui.closeModal()">
+          <div class="modalCard" (click)="$event.stopPropagation()">
+            <h3>{{ m.title }}</h3>
+            <p>{{ m.text }}</p>
+            @if (m.list?.length) {
+              <ul>
+                @for (item of m.list; track item) {
+                  <li>{{ item }}</li>
+                }
+              </ul>
+            }
+            <div class="modalActions">
+              <button class="btn secondary" (click)="ui.closeModal()">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
   `,
 })
 export class AppComponent {
   readonly session = inject(PulseSessionService);
+  readonly ui = inject(UiService);
 
-  readonly scene = signal(0);
-  readonly entryMode = signal<'explore' | 'map' | 'story'>('explore');
-  readonly report = signal<PulseReport | null>(null);
-  readonly progress = computed(() => Math.round((this.scene() / (SCENE_NAMES.length - 1)) * 100));
-  readonly sceneName = computed(() => SCENE_NAMES[this.scene()]);
+  readonly screen = signal<Screen>('entry');
+  readonly progress = computed(() => (SCREENS.indexOf(this.screen()) / (SCREENS.length - 1)) * 100);
+  readonly statusText = computed(() =>
+    this.screen() === 'entry'
+      ? 'NÚCLEO EN ESPERA'
+      : this.screen() === 'result'
+        ? 'MODELO PROVISIONAL'
+        : `NÚCLEO ACTIVO · ${this.session.emittedCount()} SEÑALES`,
+  );
 
-  go(next: number) {
-    this.scene.set(next);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  go(next: Screen) {
+    this.screen.set(next);
+    this.session.tone(480 + SCREENS.indexOf(next) * 35);
+    window.scrollTo({ top: 0 });
   }
 
-  entryChosen(mode: 'explore' | 'map' | 'story') {
-    this.entryMode.set(mode);
-    this.go(2);
-  }
-
-  reportReady(report: PulseReport) {
-    this.report.set(report);
-    this.go(8);
+  toggleSound() {
+    this.session.soundOn.update((s) => !s);
+    this.ui.toast(this.session.soundOn() ? 'Sonido activado' : 'Sonido silenciado');
+    this.session.tone();
   }
 }

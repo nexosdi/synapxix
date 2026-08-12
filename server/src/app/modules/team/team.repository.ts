@@ -36,6 +36,28 @@ export class TeamRepository {
     return this.prisma.teamMember.findUnique({ where: { invite_code: code } });
   }
 
+  /** Identidad de la inscripción abierta: el email (case-insensitive). */
+  findByEmail(email: string) {
+    return this.prisma.teamMember.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
+      orderBy: { created_at: 'asc' },
+    });
+  }
+
+  /** Alta por inscripción abierta: nace directamente en estado joined. */
+  createOpen(input: { name: string; email: string; roleLabel?: string }) {
+    return this.prisma.teamMember.create({
+      data: {
+        invite_code: this.generateCode(),
+        name: input.name,
+        email: input.email,
+        role_label: input.roleLabel ?? null,
+        status: 'joined',
+        joined_at: new Date(),
+      },
+    });
+  }
+
   findById(memberId: string) {
     return this.prisma.teamMember.findUnique({ where: { member_id: memberId } });
   }

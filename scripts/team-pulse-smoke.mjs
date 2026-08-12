@@ -62,6 +62,36 @@ assert(joined.token && joined.subjectId, 'token y subjectId emitidos');
 const auth = { Authorization: `Bearer ${joined.token}`, 'Content-Type': 'application/json' };
 const consent = joined.consent;
 
+// ── 2b. Inscripción abierta (onboarding web) ───────────────────────────────
+const openEmail = `pulso-smoke-${Date.now()}@synapxix.test`;
+const registered = await json(
+  await fetch(`${API}/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'Pulso Abierto', email: openEmail, age: 28, area: 'Tecnología y datos' }),
+  }),
+  'inscripción abierta (register)',
+);
+assert(registered.token && registered.subjectId && registered.returning === false, 'alta abierta con sujeto nuevo');
+const reRegistered = await json(
+  await fetch(`${API}/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'Pulso Abierto', email: openEmail.toUpperCase(), age: 28, area: 'Tecnología y datos' }),
+  }),
+  're-inscripción con el mismo email',
+);
+assert(
+  reRegistered.returning === true && reRegistered.subjectId === registered.subjectId,
+  'mismo email → mismo sujeto (el modelo acumula entre sesiones)',
+);
+const underage = await fetch(`${API}/register`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name: 'Fuera De Rango', email: `menor-${Date.now()}@synapxix.test`, age: 17, area: 'X' }),
+});
+assert(underage.status === 400, 'edad fuera del piloto (17) rechazada con 400');
+
 // ── 3. Sesiones de instrumento ────────────────────────────────────────────
 function makeSession(instrumentId) {
   const sessionId = randomUUID();

@@ -16,11 +16,21 @@ type TeamRequest = Request & { teamMember: TeamTokenPayload };
 export class TeamController {
   constructor(private readonly service: TeamService) {}
 
-  /** Entrada con link/código de invitación. Único endpoint sin token. */
+  /** Entrada con link/código de invitación. */
   @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 20, ttl: 10000 } })
   @Post('join')
   join(@Body() body: { inviteCode: string; name?: string; roleLabel?: string }) {
     return this.service.join(body?.inviteCode, body?.name, body?.roleLabel);
+  }
+
+  /**
+   * Inscripción abierta del onboarding web (sin código). Idempotente por
+   * email: la persona que vuelve recupera su sujeto y acumula modelo.
+   */
+  @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 15, ttl: 10000 } })
+  @Post('register')
+  register(@Body() body: { name?: string; email?: string; age?: number; area?: string }) {
+    return this.service.register(body ?? {});
   }
 
   @UseGuards(TeamAuthGuard)
