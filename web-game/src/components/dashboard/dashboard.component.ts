@@ -1,17 +1,33 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KeycloakService } from 'keycloak-angular';
-import { take } from 'rxjs';
 import { CognitiveElement } from './models/CognitiveElement.model';
+import { BalanceData, StudentProgressData } from './models/DashboardData.model';
+import { SessionSummary } from './models/SessionReport.model';
 import { CognitiveService } from './services/Cognitive.service';
+import { EconomyService } from './services/Economy.service';
+import { GameSessionService } from './services/GameSession.service';
 import { CognitiveCardComponent } from './components/CognitiveCard.component';
 import { CognitiveChartComponent } from './components/CognitiveCharts.components';
+import { BalanceHeaderComponent } from './components/BalanceHeader.component';
+import { StudentProgressComponent } from './components/StudentProgress.component';
+import { SessionSummaryComponent } from './components/SessionSummary.component';
 
 /**
- * Componente principal del Dashboard.
- * Muestra el progreso cognitivo del usuario.
- * Utiliza `KeycloakService` para la autenticación y no requiere esperar a que cargue
- * de forma asíncrona porque Keycloak ya fue inicializado por el APP_INITIALIZER.
+ * Componente principal del Dashboard del Alumno.
+ *
+ * Conecta cuatro fuentes de datos reales del backend:
+ *   1. GET /api/economy/balance                      → créditos y XP
+ *   2. GET /api/analytics/individual-average/:userId → métricas cognitivas
+ *   3. GET /api/analytics/student-progress/:userId   → progreso curricular
+ *   4. GET /api/game-session/me/report               → sesiones jugadas
+ *
+ * Cada sección es independiente: si un endpoint falla, los demás
+ * siguen mostrándose. Los botones de "Reintentar" usan binding @Output
+ * estándar de Angular — el hijo emite, el padre reacciona.
+ *
+ * El token Keycloak fluye automáticamente vía KeycloakBearerInterceptor
+ * registrado en app.config.ts.
  */
 @Component({
   selector: 'app-dashboard',
@@ -20,82 +36,156 @@ import { CognitiveChartComponent } from './components/CognitiveCharts.components
     CommonModule,
     CognitiveCardComponent,
     CognitiveChartComponent,
+    BalanceHeaderComponent,
+    StudentProgressComponent,
+    SessionSummaryComponent,
   ],
-  template: `
-    <div class="dashboard">
-      <div *ngIf="errorMessage" class="dashboard__error">
-        <span><strong>⚠️ Error:</strong> {{ errorMessage }}</span>
-        <button (click)="fetchData()">Reintentar</button>
-      </div>
-
-      <h1 class="dashboard__title">Análisis de Progreso Cognitivo</h1>
-
-      <div *ngIf="isLoading && !errorMessage" class="dashboard__loading">
-        <div class="loader"></div>
-        <p>Sincronizando con Synapxix...</p>
-      </div>
-
-      <ng-container *ngIf="!isLoading && !errorMessage">
-        <div class="dashboard__grid">
-          <app-cognitive-card
-            *ngFor="let item of elements"
-            [element]="item"
-            [isSelected]="selectedElement?.id === item.id"
-            (selected)="onElementSelected($event)"
-          ></app-cognitive-card>
-        </div>
-
-        <app-cognitive-chart [element]="selectedElement"></app-cognitive-chart>
-      </ng-container>
-    </div>
-  `,
-  styles: [`
-    /* Tus estilos se mantienen igual */
-    .dashboard { padding: 2rem; background: #f5f9ff; min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
-    .dashboard__title { color: #0a4fbf; margin-bottom: 2rem; font-weight: 700; }
-    .dashboard__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
-    .dashboard__loading { text-align: center; padding: 3rem; }
-    .dashboard__loading p { margin-top: 1rem; color: #4c6c9a; }
-    .dashboard__error { display: flex; justify-content: space-between; align-items: center; background: #fdeaea; color: #d64545; padding: 1rem; border-radius: 12px; border: 1px solid #f7d4d4; margin-bottom: 1.5rem; }
-    .dashboard__error button { background: #d64545; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-    .loader { display: inline-block; width: 40px; height: 40px; border: 4px solid #f5f9ff; border-top: 4px solid #0a4fbf; border-radius: 50%; animation: spin 1s linear infinite; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  `],
+  templateUrl: './dashboard.component.html',
+  styleUrls: ['./Dashboard.component.css'],
 })
 export class DashboardComponent implements OnInit {
+  // ── Estado de balance (economía) ──────────────────────────────────────
+  public balance: BalanceData | null = null;
+  public balanceLoading = true;
+  public balanceError = false;
+
+  // ── Estado de métricas cognitivas ─────────────────────────────────────
   public elements: CognitiveElement[] = [];
   public selectedElement: CognitiveElement | null = null;
-  public isLoading = true;
-  public errorMessage = '';
+  public cognitiveLoading = true;
+  public cognitiveError = false;
 
-  private keycloak = inject(KeycloakService);
-  private cognitiveService = inject(CognitiveService);
+  // ── Estado de progreso curricular ─────────────────────────────────────
+  public studentProgress: StudentProgressData | null = null;
+  public progressLoading = true;
+  public progressError = false;
+
+  // ── Estado de sesiones jugadas ────────────────────────────────────────
+  public sessionSummary: SessionSummary | null = null;
+  public sessionsLoading = true;
+  public sessionsError = false;
+
+  private readonly keycloak = inject(KeycloakService);
+  private readonly cognitiveService = inject(CognitiveService);
+  private readonly economyService = inject(EconomyService);
+  private readonly gameSessionService = inject(GameSessionService);
 
   ngOnInit(): void {
-    this.fetchData();
+    this.loadBalance();
+    this.loadCognitiveData();
+    this.loadStudentProgress();
+    this.loadSessionSummary();
   }
 
-  fetchData(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+  // ── Carga de balance ──────────────────────────────────────────────────
 
-    this.cognitiveService.getElements().subscribe({
+  loadBalance(): void {
+    this.balanceLoading = true;
+    this.balanceError = false;
+
+    this.economyService.getBalance().subscribe({
       next: (data) => {
-        this.elements = data;
-        this.selectedElement = data[0] ?? null;
-        this.isLoading = false;
+        this.balance = data;
+        this.balanceLoading = false;
       },
       error: (err) => {
-        this.isLoading = false;
-        this.errorMessage = err.status === 401 
-          ? 'Sesión inválida o expirada. Por favor, reintenta el login.' 
-          : 'No se pudo conectar con el backend de Synapxix.';
-        console.error('Error en Dashboard:', err);
+        this.balanceLoading = false;
+        this.balanceError = true;
+        console.error('Error cargando balance:', err);
       },
     });
   }
 
+  // ── Carga de métricas cognitivas ──────────────────────────────────────
+
+  loadCognitiveData(): void {
+    this.cognitiveLoading = true;
+    this.cognitiveError = false;
+
+    const userId = this.getUserId();
+    if (!userId) {
+      this.cognitiveLoading = false;
+      this.cognitiveError = true;
+      return;
+    }
+
+    this.cognitiveService.getElements(userId).subscribe({
+      next: (data) => {
+        this.elements = data;
+        this.selectedElement = data[0] ?? null;
+        this.cognitiveLoading = false;
+      },
+      error: (err) => {
+        this.cognitiveLoading = false;
+        this.cognitiveError = true;
+        console.error('Error cargando métricas cognitivas:', err);
+      },
+    });
+  }
+
+  // ── Carga de progreso curricular ──────────────────────────────────────
+
+  loadStudentProgress(): void {
+    this.progressLoading = true;
+    this.progressError = false;
+
+    const userId = this.getUserId();
+    if (!userId) {
+      this.progressLoading = false;
+      this.progressError = true;
+      return;
+    }
+
+    this.cognitiveService.getStudentProgress(userId).subscribe({
+      next: (data) => {
+        this.studentProgress = data;
+        this.progressLoading = false;
+      },
+      error: (err) => {
+        this.progressLoading = false;
+        this.progressError = true;
+        console.error('Error cargando progreso del alumno:', err);
+      },
+    });
+  }
+
+  // ── Carga de sesiones jugadas ─────────────────────────────────────────
+
+  loadSessionSummary(): void {
+    this.sessionsLoading = true;
+    this.sessionsError = false;
+
+    this.gameSessionService.getMyReport().subscribe({
+      next: (data) => {
+        this.sessionSummary = data.summary;
+        this.sessionsLoading = false;
+      },
+      error: (err) => {
+        this.sessionsLoading = false;
+        this.sessionsError = true;
+        console.error('Error cargando sesiones:', err);
+      },
+    });
+  }
+
+  // ── Handler UI: selección de elemento cognitivo ───────────────────────
+
   onElementSelected(element: CognitiveElement): void {
     this.selectedElement = element;
+  }
+
+  // ── Helper: userId del token Keycloak ─────────────────────────────────
+
+  /**
+   * Obtiene el `sub` (userId) del token Keycloak.
+   * Keycloak ya fue inicializado por APP_INITIALIZER antes de llegar aquí.
+   */
+  private getUserId(): string | null {
+    try {
+      return this.keycloak.getKeycloakInstance().subject ?? null;
+    } catch {
+      console.error('No se pudo obtener el userId de Keycloak.');
+      return null;
+    }
   }
 }

@@ -12,7 +12,6 @@ Chart.register(...registerables);
   standalone: true,
   imports: [CommonModule, BaseChartDirective],
   template: `
-    <!-- Agregamos un contenedor condicional para evitar canvas vacíos -->
     <div class="chart-wrapper" *ngIf="element; else noData">
       <div class="chart-wrapper__header">
         <h3 class="chart-wrapper__title">Histórico: {{ element.name }}</h3>
@@ -36,17 +35,27 @@ Chart.register(...registerables);
   `,
   styles: [`
     .chart-wrapper {
-      background: white; border-radius: 20px; padding: 2rem;
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: 1px solid #c9e0ff;
+      background: var(--sx-surface);
+      border-radius: var(--sx-radius-xl);
+      padding: 2rem;
+      box-shadow: var(--sx-shadow-sm);
+      border: 1px solid var(--sx-border);
     }
-    .chart-wrapper--empty { 
-      display: flex; align-items: center; justify-content: center; 
-      height: 400px; color: #4c6c9a; font-style: italic;
+    .chart-wrapper--empty {
+      display: flex; align-items: center; justify-content: center;
+      height: 400px; color: var(--sx-text-muted); font-style: italic;
     }
     .chart-wrapper__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-    .chart-wrapper__title { margin: 0; color: #0a4fbf; font-size: 1.25rem; }
-    .chart-wrapper__badge { background: #f5f9ff; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; color: #4c6c9a; font-weight: 600; }
+    .chart-wrapper__title { margin: 0; color: var(--sx-blue-deep); font-size: 1.25rem; }
+    .chart-wrapper__badge { background: var(--sx-blue-50); padding: 6px 12px; border-radius: var(--sx-radius-sm); font-size: 0.8rem; color: var(--sx-text-muted); font-weight: var(--sx-weight-medium); }
     .chart-wrapper__canvas-container { height: 400px; position: relative; }
+
+    @media (max-width: 640px) {
+      .chart-wrapper { padding: 1.25rem; }
+      .chart-wrapper__canvas-container,
+      .chart-wrapper--empty { height: 280px; }
+      .chart-wrapper__header { flex-wrap: wrap; gap: var(--sx-space-sm); margin-bottom: var(--sx-space-md); }
+    }
   `],
 })
 export class CognitiveChartComponent implements OnChanges {
