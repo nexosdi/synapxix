@@ -21,7 +21,7 @@ export class ExercisesService {
     );
 
     try {
-      const cleanJson = result.replace(/```json/g, '',).replace(/```/g, '').trim();
+      const cleanJson = result.replace(/```json/g, '').replace(/```/g, '').trim();
       return JSON.parse(cleanJson);
     } catch {
       return {
@@ -93,13 +93,13 @@ export class ExercisesService {
     body: unknown,
     file?: UploadedAudioFile,
   ): Promise<any> {
+    // This is a stub for endpoints that are not yet implemented.
+    // It returns a successful evaluation so the game engine can proceed.
+    console.log('Received evaluation request for unimplemented endpoint:', { body, file: file ? file.originalname : null });
     return Promise.resolve({
-      status: 'success',
-      message: 'Endpoint not implemented yet.',
-      body,
-      file: file
-        ? { originalname: file.originalname, mimetype: file.mimetype }
-        : null,
+      isCorrect: true,
+      score: 100,
+      feedback: 'This exercise is not fully implemented yet, so you get a free pass!',
     });
   }
 }
