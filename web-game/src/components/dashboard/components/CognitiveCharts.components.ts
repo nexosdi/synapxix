@@ -12,7 +12,7 @@ Chart.register(...registerables);
   standalone: true,
   imports: [CommonModule, BaseChartDirective],
   template: `
-    <div class="chart-wrapper" *ngIf="element; else noData">
+    <div class="chart-wrapper" *ngIf="element && element.history.length > 0; else noData">
       <div class="chart-wrapper__header">
         <h3 class="chart-wrapper__title">Histórico: {{ element.name }}</h3>
         <span class="chart-wrapper__badge">Sincronizado con Prisma</span>
@@ -29,7 +29,9 @@ Chart.register(...registerables);
 
     <ng-template #noData>
       <div class="chart-wrapper chart-wrapper--empty">
-        <p>Selecciona un elemento para ver su evolución.</p>
+        <p>{{ element
+          ? 'Todavía no hay histórico disponible para ' + element.name + '.'
+          : 'Selecciona un elemento para ver su evolución.' }}</p>
       </div>
     </ng-template>
   `,

@@ -1,6 +1,6 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { KeycloakService } from 'keycloak-angular';
+import { AuthService } from '../../app/services/auth.service';
 import { CognitiveElement } from './models/CognitiveElement.model';
 import { BalanceData, StudentProgressData } from './models/DashboardData.model';
 import { SessionSummary } from './models/SessionReport.model';
@@ -14,20 +14,20 @@ import { StudentProgressComponent } from './components/StudentProgress.component
 import { SessionSummaryComponent } from './components/SessionSummary.component';
 
 /**
- * Componente principal del Dashboard del Alumno.
+ * Main Student Dashboard component.
  *
- * Conecta cuatro fuentes de datos reales del backend:
- *   1. GET /api/economy/balance                      → créditos y XP
- *   2. GET /api/analytics/individual-average/:userId → métricas cognitivas
- *   3. GET /api/analytics/student-progress/:userId   → progreso curricular
- *   4. GET /api/game-session/me/report               → sesiones jugadas
+ * Connects four real backend data sources:
+ *   1. GET /api/economy/balance                      → credits and XP
+ *   2. GET /api/analytics/individual-average/:userId → cognitive metrics
+ *   3. GET /api/analytics/student-progress/:userId   → curricular progress
+ *   4. GET /api/game-session/me/report               → sessions played
  *
- * Cada sección es independiente: si un endpoint falla, los demás
- * siguen mostrándose. Los botones de "Reintentar" usan binding @Output
- * estándar de Angular — el hijo emite, el padre reacciona.
+ * Each section is independent: if one endpoint fails, the others keep
+ * rendering. "Retry" buttons use standard Angular @Output binding — the
+ * child emits, the parent reacts.
  *
- * El token Keycloak fluye automáticamente vía KeycloakBearerInterceptor
- * registrado en app.config.ts.
+ * The Keycloak token flows automatically via KeycloakBearerInterceptor
+ * registered in app.config.ts.
  */
 @Component({
   selector: 'app-dashboard',
@@ -44,28 +44,28 @@ import { SessionSummaryComponent } from './components/SessionSummary.component';
   styleUrls: ['./Dashboard.component.css'],
 })
 export class DashboardComponent implements OnInit {
-  // ── Estado de balance (economía) ──────────────────────────────────────
-  public balance: BalanceData | null = null;
-  public balanceLoading = true;
-  public balanceError = false;
+  // ── Balance (economy) state ─────────────────────────────────────────
+  readonly balance = signal<BalanceData | null>(null);
+  readonly balanceLoading = signal(true);
+  readonly balanceError = signal(false);
 
-  // ── Estado de métricas cognitivas ─────────────────────────────────────
-  public elements: CognitiveElement[] = [];
-  public selectedElement: CognitiveElement | null = null;
-  public cognitiveLoading = true;
-  public cognitiveError = false;
+  // ── Cognitive metrics state ─────────────────────────────────────────
+  readonly elements = signal<CognitiveElement[]>([]);
+  readonly selectedElement = signal<CognitiveElement | null>(null);
+  readonly cognitiveLoading = signal(true);
+  readonly cognitiveError = signal(false);
 
-  // ── Estado de progreso curricular ─────────────────────────────────────
-  public studentProgress: StudentProgressData | null = null;
-  public progressLoading = true;
-  public progressError = false;
+  // ── Curricular progress state ───────────────────────────────────────
+  readonly studentProgress = signal<StudentProgressData | null>(null);
+  readonly progressLoading = signal(true);
+  readonly progressError = signal(false);
 
-  // ── Estado de sesiones jugadas ────────────────────────────────────────
-  public sessionSummary: SessionSummary | null = null;
-  public sessionsLoading = true;
-  public sessionsError = false;
+  // ── Sessions played state ───────────────────────────────────────────
+  readonly sessionSummary = signal<SessionSummary | null>(null);
+  readonly sessionsLoading = signal(true);
+  readonly sessionsError = signal(false);
 
-  private readonly keycloak = inject(KeycloakService);
+  private readonly auth = inject(AuthService);
   private readonly cognitiveService = inject(CognitiveService);
   private readonly economyService = inject(EconomyService);
   private readonly gameSessionService = inject(GameSessionService);
@@ -77,115 +77,100 @@ export class DashboardComponent implements OnInit {
     this.loadSessionSummary();
   }
 
-  // ── Carga de balance ──────────────────────────────────────────────────
+  // ── Load balance ─────────────────────────────────────────────────────
 
   loadBalance(): void {
-    this.balanceLoading = true;
-    this.balanceError = false;
+    this.balanceLoading.set(true);
+    this.balanceError.set(false);
 
     this.economyService.getBalance().subscribe({
       next: (data) => {
-        this.balance = data;
-        this.balanceLoading = false;
+        this.balance.set(data);
+        this.balanceLoading.set(false);
       },
       error: (err) => {
-        this.balanceLoading = false;
-        this.balanceError = true;
-        console.error('Error cargando balance:', err);
+        this.balanceLoading.set(false);
+        this.balanceError.set(true);
+        console.error('Error loading balance:', err);
       },
     });
   }
 
-  // ── Carga de métricas cognitivas ──────────────────────────────────────
+  // ── Load cognitive metrics ──────────────────────────────────────────
 
   loadCognitiveData(): void {
-    this.cognitiveLoading = true;
-    this.cognitiveError = false;
+    this.cognitiveLoading.set(true);
+    this.cognitiveError.set(false);
 
-    const userId = this.getUserId();
+    const userId = this.auth.getUserId();
     if (!userId) {
-      this.cognitiveLoading = false;
-      this.cognitiveError = true;
+      this.cognitiveLoading.set(false);
+      this.cognitiveError.set(true);
       return;
     }
 
     this.cognitiveService.getElements(userId).subscribe({
       next: (data) => {
-        this.elements = data;
-        this.selectedElement = data[0] ?? null;
-        this.cognitiveLoading = false;
+        this.elements.set(data);
+        this.selectedElement.set(data[0] ?? null);
+        this.cognitiveLoading.set(false);
       },
       error: (err) => {
-        this.cognitiveLoading = false;
-        this.cognitiveError = true;
-        console.error('Error cargando métricas cognitivas:', err);
+        this.cognitiveLoading.set(false);
+        this.cognitiveError.set(true);
+        console.error('Error loading cognitive metrics:', err);
       },
     });
   }
 
-  // ── Carga de progreso curricular ──────────────────────────────────────
+  // ── Load curricular progress ────────────────────────────────────────
 
   loadStudentProgress(): void {
-    this.progressLoading = true;
-    this.progressError = false;
+    this.progressLoading.set(true);
+    this.progressError.set(false);
 
-    const userId = this.getUserId();
+    const userId = this.auth.getUserId();
     if (!userId) {
-      this.progressLoading = false;
-      this.progressError = true;
+      this.progressLoading.set(false);
+      this.progressError.set(true);
       return;
     }
 
     this.cognitiveService.getStudentProgress(userId).subscribe({
       next: (data) => {
-        this.studentProgress = data;
-        this.progressLoading = false;
+        this.studentProgress.set(data);
+        this.progressLoading.set(false);
       },
       error: (err) => {
-        this.progressLoading = false;
-        this.progressError = true;
-        console.error('Error cargando progreso del alumno:', err);
+        this.progressLoading.set(false);
+        this.progressError.set(true);
+        console.error('Error loading student progress:', err);
       },
     });
   }
 
-  // ── Carga de sesiones jugadas ─────────────────────────────────────────
+  // ── Load sessions played ────────────────────────────────────────────
 
   loadSessionSummary(): void {
-    this.sessionsLoading = true;
-    this.sessionsError = false;
+    this.sessionsLoading.set(true);
+    this.sessionsError.set(false);
 
     this.gameSessionService.getMyReport().subscribe({
       next: (data) => {
-        this.sessionSummary = data.summary;
-        this.sessionsLoading = false;
+        this.sessionSummary.set(data.summary);
+        this.sessionsLoading.set(false);
       },
       error: (err) => {
-        this.sessionsLoading = false;
-        this.sessionsError = true;
-        console.error('Error cargando sesiones:', err);
+        this.sessionsLoading.set(false);
+        this.sessionsError.set(true);
+        console.error('Error loading sessions:', err);
       },
     });
   }
 
-  // ── Handler UI: selección de elemento cognitivo ───────────────────────
+  // ── UI handler: cognitive element selection ─────────────────────────
 
   onElementSelected(element: CognitiveElement): void {
-    this.selectedElement = element;
-  }
-
-  // ── Helper: userId del token Keycloak ─────────────────────────────────
-
-  /**
-   * Obtiene el `sub` (userId) del token Keycloak.
-   * Keycloak ya fue inicializado por APP_INITIALIZER antes de llegar aquí.
-   */
-  private getUserId(): string | null {
-    try {
-      return this.keycloak.getKeycloakInstance().subject ?? null;
-    } catch {
-      console.error('No se pudo obtener el userId de Keycloak.');
-      return null;
-    }
+    this.selectedElement.set(element);
   }
 }

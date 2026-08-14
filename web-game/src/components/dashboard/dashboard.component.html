@@ -7,23 +7,23 @@
 
   <div class="dashboard__top-grid">
     <app-balance-header
-      [isLoading]="balanceLoading"
-      [hasError]="balanceError"
-      [balance]="balance"
+      [isLoading]="balanceLoading()"
+      [hasError]="balanceError()"
+      [balance]="balance()"
       (retryClicked)="loadBalance()"
     ></app-balance-header>
 
     <app-student-progress
-      [isLoading]="progressLoading"
-      [hasError]="progressError"
-      [data]="studentProgress"
+      [isLoading]="progressLoading()"
+      [hasError]="progressError()"
+      [data]="studentProgress()"
       (retryClicked)="loadStudentProgress()"
     ></app-student-progress>
 
     <app-session-summary
-      [isLoading]="sessionsLoading"
-      [hasError]="sessionsError"
-      [summary]="sessionSummary"
+      [isLoading]="sessionsLoading()"
+      [hasError]="sessionsError()"
+      [summary]="sessionSummary()"
       (retryClicked)="loadSessionSummary()"
     ></app-session-summary>
   </div>
@@ -35,7 +35,7 @@
     <h2 class="dashboard__section-title" id="cognitive-heading">Análisis Cognitivo</h2>
 
     <!-- Cognitive metrics error -->
-    <div *ngIf="cognitiveError && !cognitiveLoading" class="dashboard__error" role="alert">
+    <div *ngIf="cognitiveError() && !cognitiveLoading()" class="dashboard__error" role="alert">
       <span class="dashboard__error-content">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
           <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
@@ -46,7 +46,7 @@
     </div>
 
     <!-- Cognitive cards skeleton -->
-    <div *ngIf="cognitiveLoading"
+    <div *ngIf="cognitiveLoading()"
          class="dashboard__grid"
          aria-busy="true"
          aria-label="Cargando métricas…">
@@ -58,17 +58,17 @@
     </div>
 
     <!-- Real cognitive cards -->
-    <ng-container *ngIf="!cognitiveLoading && !cognitiveError">
+    <ng-container *ngIf="!cognitiveLoading() && !cognitiveError()">
       <div class="dashboard__grid">
         <app-cognitive-card
-          *ngFor="let item of elements"
+          *ngFor="let item of elements()"
           [element]="item"
-          [isSelected]="selectedElement?.id === item.id"
+          [isSelected]="selectedElement()?.id === item.id"
           (selected)="onElementSelected($event)"
         ></app-cognitive-card>
       </div>
 
-      <app-cognitive-chart [element]="selectedElement"></app-cognitive-chart>
+      <app-cognitive-chart [element]="selectedElement()"></app-cognitive-chart>
     </ng-container>
   </section>
 
