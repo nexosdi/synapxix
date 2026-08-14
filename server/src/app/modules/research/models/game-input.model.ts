@@ -3,7 +3,7 @@ export type GameType =
   | 'avatar'
   | 'read-select'
   | 'listen-type'
-  | 'fill-in-the-blank'
+  | 'fill-in-the-blanks'
   | 'read-aloud'
   | 'timeline-order'
   | 'categorization'
