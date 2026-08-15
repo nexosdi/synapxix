@@ -47,10 +47,10 @@ async function main() {
       content: 'You are a pedagogical analyst evaluating a listen-type activity',
     },
     {
-      game_type: 'fill-in-the-blank',
+      game_type: 'fill-in-the-blanks',
       category: 'SYSTEM_ANALYSIS',
-      name: 'Fill in the Blank Analysis',
-      content: 'You are a pedagogical analyst evaluating a fill-in-the-blank activity',
+      name: 'Fill in the Blanks Analysis',
+      content: 'You are a pedagogical analyst evaluating a fill-in-the-blanks activity',
     },
     {
       game_type: 'read-aloud',
