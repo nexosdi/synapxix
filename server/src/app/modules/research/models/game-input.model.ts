@@ -1,18 +1,5 @@
+import { GameType } from '@nexosdi.synapxix/game-engine/core';
 import{ IsString, IsNotEmpty, IsObject } from 'class-validator';
-export type GameType =
-  | 'avatar'
-  | 'read-select'
-  | 'listen-type'
-  | 'fill-in-the-blanks'
-  | 'read-aloud'
-  | 'timeline-order'
-  | 'categorization'
-  | 'spotlight'
-  | 'neural-link'
-  | 'intruder'
-  | 'balance-master'
-  | 'sound-match'
-  | 'speak-about-photo';
 
 export interface BaseGameInput {
     locale: string;

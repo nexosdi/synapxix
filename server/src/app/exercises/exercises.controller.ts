@@ -42,40 +42,40 @@ export class ExercisesController {
 
   // --- STUBBED ENDPOINTS --- //
 
-  @Post('avatar-game')
+  @Post('avatar')
   @UseGuards(JwtAuthGuard)
   evaluateAvatarGame(@Body() body: unknown) {
     return this.exercisesService.evaluateGeneric(body);
   }
 
-  @Post('balance-game')
+  @Post('balance-master')
   @UseGuards(JwtAuthGuard)
   evaluateBalanceGame(@Body() body: unknown) {
     return this.exercisesService.evaluateGeneric(body);
   }
 
-  @Post('categorization-game')
+  @Post('categorization')
   @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   evaluateCategorizationGame(@Body() body: EvaluateCategorizationDto) {
     return this.exercisesService.evaluateCategorization(body);
   }
 
-  @Post('fill-in-the-blanks-game')
+  @Post('fill-in-the-blanks')
   @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   evaluateFillInTheBlanksGame(@Body() body: EvaluateFillInTheBlanksDto) {
     return this.exercisesService.evaluateFillInTheBlanks(body);
   }
 
-  @Post('intruder-game')
+  @Post('intruder')
   @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   evaluateIntruderGame(@Body() body: EvaluateIntruderDto) {
     return this.exercisesService.evaluateIntruder(body);
   }
 
-  @Post('listen-type-game')
+  @Post('listen-type')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('audio'))
   evaluateListenTypeGame(
@@ -85,13 +85,13 @@ export class ExercisesController {
     return this.exercisesService.evaluateGeneric(body, file);
   }
 
-  @Post('neural-link-game')
+  @Post('neural-link')
   @UseGuards(JwtAuthGuard)
   evaluateNeuralLinkGame(@Body() body: unknown) {
     return this.exercisesService.evaluateGeneric(body);
   }
 
-  @Post('read-select-game')
+  @Post('read-select')
   @UseGuards(JwtAuthGuard)
   evaluateReadSelectGame(@Body() body: unknown) {
     return this.exercisesService.evaluateGeneric(body);
@@ -107,7 +107,7 @@ export class ExercisesController {
     return this.exercisesService.evaluateGeneric(body, file);
   }
 
-  @Post('speak-about-photo-game')
+  @Post('speak-about-photo')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('media'))
   evaluateSpeakAboutPhotoGame(
@@ -117,13 +117,13 @@ export class ExercisesController {
     return this.exercisesService.evaluateGeneric(body, file);
   }
 
-  @Post('spotlight-game')
+  @Post('spotlight')
   @UseGuards(JwtAuthGuard)
   evaluateSpotlightGame(@Body() body: unknown) {
     return this.exercisesService.evaluateGeneric(body);
   }
 
-  @Post('timeline-order-game')
+  @Post('timeline-order')
   @UseGuards(JwtAuthGuard)
   evaluateTimelineOrderGame(@Body() body: unknown) {
     return this.exercisesService.evaluateGeneric(body);
