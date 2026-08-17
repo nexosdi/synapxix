@@ -145,3 +145,4 @@ Ejecución de la suite completa de pruebas unitarias del módulo:
 ```bash
 npx jest server/src/app/modules/research/teacher-insights
 ```
+## Perez Sofia

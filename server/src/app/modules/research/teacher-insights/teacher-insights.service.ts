@@ -7,22 +7,10 @@ import { TeacherInsightsRepository } from './teacher-insights.repository';
 const DEFAULT_SYSTEM_PROMPT = `
 You are an expert pedagogical AI assistant. You analyze a teacher's class
 weekly performance metrics (accuracy, reaction time, cognitive load, game
-results, and content progress) and write a comprehensive pedagogical report in
-English that helps the teacher understand where to focus their next lessons.
+results, and content progress) and write a report in Spanish that helps the
+teacher understand where to focus their next lessons.
 `;
 
-/**
- * TeacherInsightsService — generates AI-assisted weekly pedagogical reports.
- *
- * Flow per teacher:
- *   1. Resolve the teacher's group of students (UserLink TEACHER -> STUDENT).
- *   2. Compile aggregated metrics for the given period (TeacherInsightsRepository).
- *   3. Inject the metrics JSON into AiProvider to get a formatted report.
- *   4. Persist the report associated to the teacher (for the dashboard).
- *
- * Triggered weekly by TeacherInsightsCron, but also exposed for manual runs
- * (e.g. an admin endpoint or a backfill script).
- */
 @Injectable()
 export class TeacherInsightsService {
   private readonly logger = new Logger(TeacherInsightsService.name);
@@ -33,11 +21,6 @@ export class TeacherInsightsService {
     private readonly aiPromptService: AiPromptService,
   ) {}
 
-  /**
-   * Generates and stores the weekly report for every teacher that has at
-   * least one linked student. Failures for a single teacher are logged and
-   * skipped so one bad report doesn't abort the whole batch.
-   */
   async generateWeeklyReportsForAllTeachers(
     periodStart: Date,
     periodEnd: Date,
@@ -69,9 +52,7 @@ export class TeacherInsightsService {
     return { processed, failed };
   }
 
-  /**
-   * Generates and stores the weekly report for a single teacher.
-   */
+  
   async generateWeeklyReportForTeacher(
     teacherId: string,
     periodStart: Date,
@@ -112,10 +93,6 @@ export class TeacherInsightsService {
     });
   }
 
-  /**
-   * Returns the stored reports for a teacher, most recent first, for
-   * consumption by the dashboard.
-   */
   async getReportsForTeacher(teacherId: string, limit?: number): Promise<TeacherInsightReport[]> {
     return this.repository.findReportsByTeacher(teacherId, limit);
   }

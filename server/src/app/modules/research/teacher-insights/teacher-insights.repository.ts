@@ -7,25 +7,12 @@ import {
   StrugglingContent,
 } from './dto/teacher-metrics-summary.dto';
 
-/**
- * TeacherInsightsRepository — data access for the weekly teacher-insights
- * cron job.
- *
- * Responsible for:
- *   1. Resolving which teachers have an active group of students
- *      (via UserLink with link_type = TEACHER).
- *   2. Aggregating that group's weekly performance metrics
- *      (CognitiveMetric, GameAttempt, UserContentProgress).
- *   3. Persisting the AI-generated report, associated to the teacher.
- */
+
 @Injectable()
 export class TeacherInsightsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Returns the distinct list of teacher user_ids that currently have at
-   * least one linked student (UserLink TEACHER -> STUDENT).
-   */
+ 
   async findTeacherIdsWithStudents(): Promise<string[]> {
     const links = await this.prisma.userLink.findMany({
       where: {
@@ -42,9 +29,6 @@ export class TeacherInsightsRepository {
       .filter((id): id is string => !!id);
   }
 
-  /**
-   * Returns the student user_ids linked to a given teacher.
-   */
   async findStudentIdsForTeacher(teacherId: string): Promise<string[]> {
     const links = await this.prisma.userLink.findMany({
       where: {
@@ -60,108 +44,122 @@ export class TeacherInsightsRepository {
       .filter((id): id is string => !!id);
   }
 
-  /**
-   * Compiles the aggregated weekly metrics for a teacher's group of
-   * students within [periodStart, periodEnd).
-   */
   async buildWeeklyMetricsSummary(
-    teacherId: string,
-    studentIds: string[],
-    periodStart: Date,
-    periodEnd: Date,
-  ): Promise<TeacherMetricsSummaryDto> {
-    const dateRange = { gte: periodStart, lt: periodEnd };
+  teacherId: string,
+  studentIds: string[],
+  periodStart: Date,
+  periodEnd: Date,
+): Promise<TeacherMetricsSummaryDto> {
+  const dateRange = { gte: periodStart, lt: periodEnd };
+  const attemptsWhere = {
+    created_at: dateRange,
+    session: { user_id: { in: studentIds } },
+  };
 
-    const [cognitiveAgg, activeStudentIds, attemptRows, progressAgg, progressByContent] =
-      await Promise.all([
-        this.prisma.cognitiveMetric.aggregate({
-          where: { user_id: { in: studentIds }, created_at: dateRange },
-          _avg: {
-            accuracy: true,
-            reaction_time: true,
-            cognitive_load: true,
-            memory_retention: true,
-            attention_span: true,
-          },
-        }),
-        this.prisma.gameSession.findMany({
-          where: {
-            user_id: { in: studentIds },
-            started_at: dateRange,
-          },
-          select: { user_id: true },
-          distinct: ['user_id'],
-        }),
-        this.prisma.gameAttempt.findMany({
-          where: {
-            created_at: dateRange,
-            session: { user_id: { in: studentIds } },
-          },
-          select: {
-            game_type: true,
-            is_correct: true,
-            score: true,
-            completed_quickly: true,
-          },
-        }),
-        this.prisma.userContentProgress.aggregate({
-          where: { user_id: { in: studentIds }, last_update: dateRange },
-          _avg: { progress: true },
-          _count: { _all: true },
-        }),
-        this.prisma.userContentProgress.groupBy({
-          by: ['content_id'],
-          where: { user_id: { in: studentIds }, last_update: dateRange },
-          _avg: { progress: true },
-          orderBy: { _avg: { progress: 'asc' } },
-          take: 5,
-        }),
-      ]);
+  const [
+    cognitiveAgg,
+    activeStudentIds,
+    byGameTypeTotal,
+    byGameTypeCorrect,
+    overallAgg,
+    correctCount,
+    quickCount,
+    progressAgg,
+    progressByContent,
+  ] = await Promise.all([
+    this.prisma.cognitiveMetric.aggregate({
+      where: { user_id: { in: studentIds }, created_at: dateRange },
+      _avg: {
+        accuracy: true,
+        reaction_time: true,
+        cognitive_load: true,
+        memory_retention: true,
+        attention_span: true,
+      },
+    }),
+    this.prisma.gameSession.findMany({
+      where: { user_id: { in: studentIds }, started_at: dateRange },
+      select: { user_id: true },
+      distinct: ['user_id'],
+    }),
+    this.prisma.gameAttempt.groupBy({
+      by: ['game_type'],
+      where: attemptsWhere,
+      _count: { _all: true },
+      _avg: { score: true },
+    }),
+    this.prisma.gameAttempt.groupBy({
+      by: ['game_type'],
+      where: { ...attemptsWhere, is_correct: true },
+      _count: { _all: true },
+    }),
+    this.prisma.gameAttempt.aggregate({
+      where: attemptsWhere,
+      _count: { _all: true },
+      _avg: { score: true },
+    }),
+    this.prisma.gameAttempt.count({ where: { ...attemptsWhere, is_correct: true } }),
+    this.prisma.gameAttempt.count({ where: { ...attemptsWhere, completed_quickly: true } }),
+    this.prisma.userContentProgress.aggregate({
+      where: { user_id: { in: studentIds }, last_update: dateRange },
+      _avg: { progress: true },
+      _count: { _all: true },
+    }),
+    this.prisma.userContentProgress.groupBy({
+      by: ['content_id'],
+      where: { user_id: { in: studentIds }, last_update: dateRange },
+      _avg: { progress: true },
+      orderBy: { _avg: { progress: 'asc' } },
+      take: 5,
+    }),
+  ]);
 
-    const totalAttempts = attemptRows.length;
-    const correctAttempts = attemptRows.filter((a) => a.is_correct).length;
-    const quickAttempts = attemptRows.filter((a) => a.completed_quickly).length;
-    const averageScore =
-      totalAttempts > 0
-        ? attemptRows.reduce((sum, a) => sum + a.score, 0) / totalAttempts
-        : 0;
+  const totalAttempts = overallAgg._count._all;
+  const averageScore = overallAgg._avg.score ?? 0;
 
-    const byGameType = this.buildGameTypeBreakdown(attemptRows);
-    const strugglingContent = await this.resolveContentTitles(progressByContent);
-
+  const correctByType = new Map(
+    byGameTypeCorrect.map((g) => [g.game_type, g._count._all]),
+  );
+  const byGameType: GameTypeBreakdown[] = byGameTypeTotal.map((g) => {
+    const attempts = g._count._all;
+    const correct = correctByType.get(g.game_type) ?? 0;
     return {
-      teacherId,
-      periodStart: periodStart.toISOString(),
-      periodEnd: periodEnd.toISOString(),
-      studentCount: studentIds.length,
-      activeStudents: activeStudentIds.length,
-      cognitive: {
-        accuracy: cognitiveAgg._avg.accuracy ?? 0,
-        reactionTime: cognitiveAgg._avg.reaction_time ?? 0,
-        cognitiveLoad: cognitiveAgg._avg.cognitive_load ?? 0,
-        memoryRetention: cognitiveAgg._avg.memory_retention ?? 0,
-        attentionSpan: cognitiveAgg._avg.attention_span ?? 0,
-      },
-      gameAttempts: {
-        totalAttempts,
-        successRate: totalAttempts > 0 ? correctAttempts / totalAttempts : 0,
-        averageScore,
-        quickCompletionRate: totalAttempts > 0 ? quickAttempts / totalAttempts : 0,
-        byGameType,
-      },
-      contentProgress: {
-        averageProgress: progressAgg._avg.progress ?? 0,
-        completedCount: progressAgg._count._all,
-        strugglingContent,
-      },
+      gameType: g.game_type,
+      attempts,
+      successRate: attempts > 0 ? correct / attempts : 0,
+      averageScore: g._avg.score ?? 0,
     };
-  }
+  });
 
-  /**
-   * Persists the generated report. Uses upsert so a manual re-run for the
-   * same period doesn't violate the unique (teacher_id, period_start, period_end)
-   * constraint — it simply overwrites the previous version.
-   */
+  const strugglingContent = await this.resolveContentTitles(progressByContent);
+
+  return {
+    teacherId,
+    periodStart: periodStart.toISOString(),
+    periodEnd: periodEnd.toISOString(),
+    studentCount: studentIds.length,
+    activeStudents: activeStudentIds.length,
+    cognitive: {
+      accuracy: cognitiveAgg._avg.accuracy ?? 0,
+      reactionTime: cognitiveAgg._avg.reaction_time ?? 0,
+      cognitiveLoad: cognitiveAgg._avg.cognitive_load ?? 0,
+      memoryRetention: cognitiveAgg._avg.memory_retention ?? 0,
+      attentionSpan: cognitiveAgg._avg.attention_span ?? 0,
+    },
+    gameAttempts: {
+      totalAttempts,
+      successRate: totalAttempts > 0 ? correctCount / totalAttempts : 0,
+      averageScore,
+      quickCompletionRate: totalAttempts > 0 ? quickCount / totalAttempts : 0,
+      byGameType,
+    },
+    contentProgress: {
+      averageProgress: progressAgg._avg.progress ?? 0,
+      completedCount: progressAgg._count._all,
+      strugglingContent,
+    },
+  };
+}
   async saveReport(params: {
     teacherId: string;
     periodStart: Date;
@@ -202,37 +200,12 @@ export class TeacherInsightsRepository {
     });
   }
 
-  /**
-   * Fetches the reports stored for a teacher, most recent first — used to
-   * feed the dashboard.
-   */
   async findReportsByTeacher(teacherId: string, limit = 12): Promise<TeacherInsightReport[]> {
     return this.prisma.teacherInsightReport.findMany({
       where: { teacher_id: teacherId },
       orderBy: { period_start: 'desc' },
       take: limit,
     });
-  }
-
-  private buildGameTypeBreakdown(
-    attempts: { game_type: string; is_correct: boolean; score: number; completed_quickly: boolean | null }[],
-  ): GameTypeBreakdown[] {
-    const groups = new Map<string, { attempts: number; correct: number; scoreSum: number }>();
-
-    for (const attempt of attempts) {
-      const bucket = groups.get(attempt.game_type) ?? { attempts: 0, correct: 0, scoreSum: 0 };
-      bucket.attempts += 1;
-      bucket.correct += attempt.is_correct ? 1 : 0;
-      bucket.scoreSum += attempt.score;
-      groups.set(attempt.game_type, bucket);
-    }
-
-    return Array.from(groups.entries()).map(([gameType, bucket]) => ({
-      gameType,
-      attempts: bucket.attempts,
-      successRate: bucket.attempts > 0 ? bucket.correct / bucket.attempts : 0,
-      averageScore: bucket.attempts > 0 ? bucket.scoreSum / bucket.attempts : 0,
-    }));
   }
 
   private async resolveContentTitles(

@@ -16,13 +16,7 @@ import { KeycloakJwtPayload } from '../../../auth/jwt.strategy';
 import { TeacherInsightsService } from './teacher-insights.service';
 import { TeacherInsightReportResponseDto } from './dto/teacher-insights-report-response.dto';
 
-/**
- * TeacherInsightsController — read access to AI-generated weekly reports,
- * plus a manual trigger for on-demand generation (backfill / QA).
- *
- * Protected by JwtAuthGuard: a teacher can only read their own reports;
- * admins can read any teacher's reports.
- */
+
 @ApiTags('Teacher Insights')
 @Controller('teacher-insights')
 @UseGuards(JwtAuthGuard)
@@ -32,10 +26,7 @@ export class TeacherInsightsController {
     private readonly prisma: PrismaService,
   ) {}
 
-  /**
-   * Lists the stored weekly reports for a teacher, most recent first.
-   * Used by the dashboard to render the insights history/timeline.
-   */
+
   @Get(':teacherId')
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getReports(
@@ -63,17 +54,12 @@ export class TeacherInsightsController {
     }));
   }
 
-  /**
-   * Manually triggers generation of the current week's report for a
-   * teacher. Intended for QA/backfill — the scheduled cron job is the
-   * primary path in production.
-   */
   @Post(':teacherId/generate')
   async generateNow(
     @Param('teacherId') teacherId: string,
     @Req() req: Request & { user: KeycloakJwtPayload },
   ): Promise<TeacherInsightReportResponseDto> {
-    await this.assertCanAccess(teacherId, req, /* requireStaff */ true);
+    await this.assertCanAccess(teacherId, req, true);
 
     const now = new Date();
     const periodEnd = new Date(now);
@@ -100,14 +86,6 @@ export class TeacherInsightsController {
     };
   }
 
-  /**
-   * A teacher can only see their own reports. Admins can see any teacher's
-  /**
-   * Teachers can only access their own reports. Only admins can access
-   * reports of other teachers.
-   * `requireStaff` additionally restricts write actions (manual generation)
-   * to the target teacher or admins.
-   */
   private async assertCanAccess(
     teacherId: string,
     req: Request & { user: KeycloakJwtPayload },
@@ -119,13 +97,9 @@ export class TeacherInsightsController {
     const user = await this.prisma.app_user.findUnique({
       where: { user_id: requestingUser.sub },
     });
+    const isTeacherOrAdmin = !!user && ['teacher', 'admin'].includes(user.role);
 
-    const isAdmin = !!user && user.role === 'admin';
-    const isTeacher = !!user && user.role === 'teacher';
-
-    const allowed = requireStaff
-      ? (isOwnData && isTeacher) || isAdmin
-      : isOwnData || isAdmin;
+    const allowed = requireStaff ? isTeacherOrAdmin : isOwnData || isTeacherOrAdmin;
 
     if (!allowed) {
       throw new UnauthorizedException('You are not authorized to access this resource.');
