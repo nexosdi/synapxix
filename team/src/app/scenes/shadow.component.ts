@@ -27,23 +27,15 @@ interface ShadowDecision {
     <div class="mission">
       <aside class="rail">
         <span class="missionId">CIERRE / SHADOW MODE</span>
-        <h3>La máquina propone.<br />El humano decide.</h3>
-        <p>
-          La recomendación queda registrada antes de generar una intervención. Tú puedes
-          aprobarla, rechazarla o corregirla.
-        </p>
-        <div class="capture">
-          <b>Ciclo demostrable:</b><br />
-          estado → candidato → decisión → veredicto → outcome.
-        </div>
+        <span class="chainNote">estado → candidato → decisión → veredicto → outcome</span>
       </aside>
 
       <div class="game">
         <p class="eyebrow"><b>DECISION RECORD</b> · POLÍTICA {{ decision()?.policyVersion ?? '…' }}</p>
         <h2 style="margin: 0; letter-spacing: -0.04em">Tu primera recomendación.</h2>
         <p class="lead" style="margin: 14px 0 0">
-          Calculada por el motor real con las señales de esta sesión — y con las explicaciones
-          alternativas todavía abiertas.
+          La máquina propone; vos decidís. Calculada por el motor real con las señales de esta
+          sesión — y con las explicaciones alternativas todavía abiertas.
         </p>
 
         @if (decision(); as d) {

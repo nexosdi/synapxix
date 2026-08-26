@@ -16,15 +16,9 @@ import { UiService } from '../services/ui.service';
     <div class="mission">
       <aside class="rail">
         <span class="missionId">MISIÓN 02 / CICLO</span>
-        <h3>Reconstruye la arquitectura.</h3>
-        <p>D.A.L.A. no termina al inferir. Una adaptación solo aprende cuando mide su efecto.</p>
         <div class="signalMeter">
-          <header><span>SEÑALES CAPTURADAS</span><b>{{ session.emittedCount() }}</b></header>
+          <header><span>SEÑALES</span><b>{{ session.emittedCount() }}</b></header>
           <div class="meter"><i [style.width.%]="meterPct()"></i></div>
-        </div>
-        <div class="capture">
-          <b>D.A.L.A. observa:</b><br />
-          orden de acciones, revisiones, alternativa explorada y cambio deliberado de estrategia.
         </div>
       </aside>
 

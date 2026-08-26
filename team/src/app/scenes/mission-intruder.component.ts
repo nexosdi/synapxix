@@ -1,5 +1,5 @@
 import { Component, EventEmitter, OnInit, Output, computed, inject, signal } from '@angular/core';
-import { MISSION3_ROUNDS } from '../content';
+import { MISSION3_INSTRUCTIONS, MISSION3_ROUNDS } from '../content';
 import { PulseSessionService } from '../services/pulse-session.service';
 import { UiService } from '../services/ui.service';
 
@@ -15,15 +15,9 @@ import { UiService } from '../services/ui.service';
     <div class="mission">
       <aside class="rail">
         <span class="missionId">MISIÓN 03 / CÁMARA DE ECO</span>
-        <h3>Detecta la sobreinferencia.</h3>
-        <p>Una lectura responsable describe conducta situada. No convierte un momento en identidad.</p>
         <div class="signalMeter">
-          <header><span>SEÑALES CAPTURADAS</span><b>{{ session.emittedCount() }}</b></header>
+          <header><span>SEÑALES</span><b>{{ session.emittedCount() }}</b></header>
           <div class="meter"><i [style.width.%]="meterPct()"></i></div>
-        </div>
-        <div class="capture">
-          <b>D.A.L.A. observa:</b><br />
-          selección, latencia, revisión y uso de apoyo.
         </div>
       </aside>
 
@@ -35,6 +29,7 @@ import { UiService } from '../services/ui.service';
             <p>Tres frases respetan la evidencia. Una dice más de lo que puede sostener.</p>
           </div>
           <div class="gameTools">
+            <button class="tool" (click)="openInstructions()">? Consigna</button>
             <button class="tool" [disabled]="hinted() || solved()" (click)="hint()">✦ Descartar una</button>
           </div>
         </div>
@@ -128,6 +123,11 @@ export class MissionIntruderComponent implements OnInit {
       taskId: this.round().taskId,
       detail: { action: 'select', item: index },
     });
+  }
+
+  openInstructions() {
+    this.session.interact({ kind: 'instructions_opened', taskId: this.round().taskId });
+    this.ui.openModal(MISSION3_INSTRUCTIONS);
   }
 
   hint() {

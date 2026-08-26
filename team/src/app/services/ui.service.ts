@@ -4,6 +4,8 @@ export interface ModalContent {
   title: string;
   text: string;
   list?: string[];
+  /** Qué observa D.A.L.A. en esta misión. Transparencia, siempre a un toque. */
+  observes?: string;
 }
 
 /** Toast y modal compartidos por toda la experiencia. */

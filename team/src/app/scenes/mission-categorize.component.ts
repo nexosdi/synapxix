@@ -16,15 +16,9 @@ import { UiService } from '../services/ui.service';
     <div class="mission">
       <aside class="rail">
         <span class="missionId">MISIÓN 01 / OBSERVATORIO</span>
-        <h3>Separa señal de historia.</h3>
-        <p>Una experiencia nunca envía "es impulsivo" o "se frustró". Envía hechos con contexto.</p>
         <div class="signalMeter">
-          <header><span>SEÑALES CAPTURADAS</span><b>{{ session.emittedCount() }}</b></header>
+          <header><span>SEÑALES</span><b>{{ session.emittedCount() }}</b></header>
           <div class="meter"><i [style.width.%]="meterPct()"></i></div>
-        </div>
-        <div class="capture">
-          <b>D.A.L.A. observa:</b><br />
-          latencia, acierto, revisión, reintento, ayuda y tarea. No inferirá personalidad.
         </div>
       </aside>
 

@@ -124,6 +124,8 @@ export const MISSION1_INSTRUCTIONS = {
   title: 'Consigna',
   text: 'Clasifica cada tarjeta según su procedencia. Una categoría no es "mejor" que otra; el riesgo aparece cuando se mezclan.',
   list: ['Toca una de las tres categorías.', 'Puedes reintentar sin penalización.', 'La pista queda registrada como apoyo, no como déficit.'],
+  observes:
+    'Latencia, acierto, revisión, reintento, ayuda y tarea. No inferirá personalidad ni emociones.',
 };
 
 // ── Misión 2 — Ciclo (instrumento `timeline-order`) ───────────────────────
@@ -137,6 +139,19 @@ export const MISSION2_INSTRUCTIONS = {
   title: 'Consigna del ciclo',
   text: 'Ordena las seis piezas desde lo que ocurre hasta lo que el sistema aprende.',
   list: ['La intervención no es el final.', 'Puedes deshacer sin costo.', 'Cambiar de enfoque es una acción válida y observable.'],
+  observes:
+    'Orden de acciones, revisiones, alternativa explorada y cambio deliberado de estrategia.',
+};
+
+export const MISSION3_INSTRUCTIONS = {
+  title: 'Consigna de la cámara',
+  text: 'Tres frases respetan la evidencia. Una convierte una conducta puntual en identidad permanente: esa es la impostora.',
+  list: [
+    'Selecciona una y verifica; equivocarte no resta.',
+    'Puedes pedir que se descarte una afirmación responsable.',
+    'La intrusa siempre suena razonable — por eso el detector importa.',
+  ],
+  observes: 'Selección, latencia, revisión y uso de apoyo. Nada más.',
 };
 
 // ── Misión 3 — Cámara de eco (instrumento `intruder`) ─────────────────────
