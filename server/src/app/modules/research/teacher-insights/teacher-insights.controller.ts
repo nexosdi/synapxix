@@ -97,9 +97,10 @@ export class TeacherInsightsController {
     const user = await this.prisma.app_user.findUnique({
       where: { user_id: requestingUser.sub },
     });
-    const isTeacherOrAdmin = !!user && ['teacher', 'admin'].includes(user.role);
+    const isAdmin = !!user && user.role === 'admin';
+    const isTeacher = !!user && user.role === 'teacher';
 
-    const allowed = requireStaff ? isTeacherOrAdmin : isOwnData || isTeacherOrAdmin;
+    const allowed = isAdmin || (isOwnData && (isTeacher || !requireStaff));
 
     if (!allowed) {
       throw new UnauthorizedException('You are not authorized to access this resource.');

@@ -24,7 +24,9 @@ describe('TeacherInsightsRepository', () => {
         findMany: jest.fn(),
       },
       gameAttempt: {
-        findMany: jest.fn(),
+        groupBy: jest.fn(),
+        aggregate: jest.fn(),
+        count: jest.fn(),
       },
       userContentProgress: {
         aggregate: jest.fn(),
@@ -109,10 +111,22 @@ describe('TeacherInsightsRepository', () => {
 
       (prisma.gameSession.findMany as jest.Mock).mockResolvedValue([{ user_id: mockStudentId }]);
 
-      (prisma.gameAttempt.findMany as jest.Mock).mockResolvedValue([
-        { game_type: 'MATH', is_correct: true, score: 100, completed_quickly: true },
-        { game_type: 'MATH', is_correct: false, score: 50, completed_quickly: false },
-      ]);
+      (prisma.gameAttempt.groupBy as jest.Mock)
+        .mockResolvedValueOnce([
+          { game_type: 'MATH', _count: { _all: 2 }, _avg: { score: 75 } },
+        ])
+        .mockResolvedValueOnce([
+          { game_type: 'MATH', _count: { _all: 1 } },
+        ]);
+
+      (prisma.gameAttempt.aggregate as jest.Mock).mockResolvedValue({
+        _count: { _all: 2 },
+        _avg: { score: 75 },
+      });
+
+      (prisma.gameAttempt.count as jest.Mock)
+        .mockResolvedValueOnce(1)
+        .mockResolvedValueOnce(1);
 
       (prisma.userContentProgress.aggregate as jest.Mock).mockResolvedValue({
         _avg: { progress: 0.8 },
