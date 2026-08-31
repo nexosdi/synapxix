@@ -1,6 +1,8 @@
 import {
   Controller,
+  DefaultValuePipe,
   Get,
+  ParseIntPipe,
   Post,
   Param,
   Query,
@@ -16,7 +18,6 @@ import { KeycloakJwtPayload } from '../../../auth/jwt.strategy';
 import { TeacherInsightsService } from './teacher-insights.service';
 import { TeacherInsightReportResponseDto } from './dto/teacher-insights-report-response.dto';
 
-
 @ApiTags('Teacher Insights')
 @Controller('teacher-insights')
 @UseGuards(JwtAuthGuard)
@@ -26,20 +27,17 @@ export class TeacherInsightsController {
     private readonly prisma: PrismaService,
   ) {}
 
-
   @Get(':teacherId')
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getReports(
     @Param('teacherId') teacherId: string,
     @Req() req: Request & { user: KeycloakJwtPayload },
-    @Query('limit') limit?: string,
+    
+    @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
   ): Promise<TeacherInsightReportResponseDto[]> {
     await this.assertCanAccess(teacherId, req);
 
-    const reports = await this.teacherInsightsService.getReportsForTeacher(
-      teacherId,
-      limit ? Number(limit) : undefined,
-    );
+    const reports = await this.teacherInsightsService.getReportsForTeacher(teacherId, limit);
 
     return reports.map((r) => ({
       reportId: r.report_id,
@@ -63,9 +61,9 @@ export class TeacherInsightsController {
 
     const now = new Date();
     const periodEnd = new Date(now);
-    periodEnd.setHours(0, 0, 0, 0);
+    periodEnd.setUTCHours(0, 0, 0, 0);
     const periodStart = new Date(periodEnd);
-    periodStart.setDate(periodStart.getDate() - 7);
+    periodStart.setUTCDate(periodStart.getUTCDate() - 7);
 
     const report = await this.teacherInsightsService.generateWeeklyReportForTeacher(
       teacherId,
