@@ -12,6 +12,8 @@ describe('TeacherInsightsController', () => {
   const mockTeacherId = '11111111-1111-1111-1111-111111111111';
   const mockOtherId = '99999999-9999-9999-9999-999999999999';
 
+  const DEFAULT_LIMIT = 12;
+
   const mockReport = {
     report_id: 'report-uuid',
     teacher_id: mockTeacherId,
@@ -63,7 +65,7 @@ describe('TeacherInsightsController', () => {
 
       const req: any = { user: { sub: mockTeacherId } };
 
-      const result = await controller.getReports(mockTeacherId, req, '5');
+      const result = await controller.getReports(mockTeacherId, req, 5);
 
       expect(service.getReportsForTeacher).toHaveBeenCalledWith(mockTeacherId, 5);
       expect(result).toHaveLength(1);
@@ -88,9 +90,9 @@ describe('TeacherInsightsController', () => {
 
       const req: any = { user: { sub: mockOtherId } };
 
-      const result = await controller.getReports(mockTeacherId, req);
+      const result = await controller.getReports(mockTeacherId, req, DEFAULT_LIMIT);
 
-      expect(service.getReportsForTeacher).toHaveBeenCalledWith(mockTeacherId, undefined);
+      expect(service.getReportsForTeacher).toHaveBeenCalledWith(mockTeacherId, DEFAULT_LIMIT);
       expect(result).toHaveLength(1);
     });
 
@@ -102,9 +104,9 @@ describe('TeacherInsightsController', () => {
 
       const req: any = { user: { sub: mockOtherId } };
 
-      await expect(controller.getReports(mockTeacherId, req)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        controller.getReports(mockTeacherId, req, DEFAULT_LIMIT),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException when a student tries to access teacher reports', async () => {
@@ -115,9 +117,9 @@ describe('TeacherInsightsController', () => {
 
       const req: any = { user: { sub: mockOtherId } };
 
-      await expect(controller.getReports(mockTeacherId, req)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        controller.getReports(mockTeacherId, req, DEFAULT_LIMIT),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
