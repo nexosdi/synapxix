@@ -1,4 +1,3 @@
-// internal service event, if the user does not exist create it, idempotent check
 import { IsString, IsNotEmpty, IsOptional, IsNumber, IsArray } from 'class-validator';
 
 export class CreateUserDto {
@@ -8,7 +7,7 @@ export class CreateUserDto {
 
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string; // <-- Agregado el !
 
   @IsArray()
   @IsOptional()
@@ -22,11 +21,11 @@ export class CreateTopicDto {
 
   @IsString()
   @IsNotEmpty()
-  topicId: string;
+  topicId!: string; // <-- Agregado el !
 
   @IsString()
   @IsNotEmpty()
-  topicContent: string;
+  topicContent!: string; // <-- Agregado el !
 
   @IsArray()
   @IsOptional()
@@ -44,11 +43,11 @@ export class ReinforceTopicDto {
 
   @IsString()
   @IsNotEmpty()
-  topicId: string;
+  topicId!: string; // <-- Agregado el !
 
   @IsNumber()
   @IsNotEmpty()
-  delta: number;
+  delta!: number; // <-- Agregado el !
 }
 
 export class SetPreferencesDto {
@@ -59,7 +58,7 @@ export class SetPreferencesDto {
   @IsArray()
   @IsString({ each: true })
   @IsNotEmpty()
-  prefKeys: string[];
+  prefKeys!: string[]; // <-- Agregado el !
 
   @IsNumber()
   @IsOptional()
@@ -73,7 +72,7 @@ export class InitMethodDto {
 
   @IsString()
   @IsNotEmpty({ message: 'El methodKey es obligatorio' })
-  methodKey: string;
+  methodKey!: string; // <-- Agregado el !
 
   @IsNumber()
   @IsOptional()
@@ -87,9 +86,9 @@ export class MethodFeedbackDto {
 
   @IsString()
   @IsNotEmpty()
-  methodKey: string;
+  methodKey!: string; // <-- Agregado el !
 
   @IsNumber()
   @IsNotEmpty()
-  delta: number;
+  delta!: number; // <-- Agregado el !
 }
