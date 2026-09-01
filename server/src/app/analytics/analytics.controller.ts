@@ -71,19 +71,24 @@ export class AnalyticsController {
     @Param('userId') userId: string,
     @Req() req: Request & { user: KeycloakJwtPayload },
   ): Promise<IndividualCognitiveAverageDto> {
-    const requestingUser = req.user;
-    const user = await this.prisma.app_user.findUnique({
-      where: { user_id: requestingUser.sub },
-    });
+    const requestingUser = req?.user;
+    if (!requestingUser?.sub) {
+      throw new UnauthorizedException('Invalid or missing user token.');
+    }
 
     const isOwnData = requestingUser.sub === userId;
-    const isTeacherOrAdmin = user && ['teacher', 'admin'].includes(user.role);
-
-    if (!isOwnData && !isTeacherOrAdmin) {
-      throw new UnauthorizedException(
-        'You are not authorized to access this resource.',
-      );
+    if (!isOwnData) {
+      const user = await this.prisma.app_user.findUnique({
+        where: { user_id: requestingUser.sub },
+      });
+      const isTeacherOrAdmin = user && ['teacher', 'admin'].includes(user.role);
+      if (!isTeacherOrAdmin) {
+        throw new UnauthorizedException(
+          'You are not authorized to access this resource.',
+        );
+      }
     }
+
     return this.analyticsService.getIndividualCognitiveAverage(userId);
   }
 
@@ -109,19 +114,24 @@ export class AnalyticsController {
     @Param('studentId') studentId: string,
     @Req() req: Request & { user: KeycloakJwtPayload },
   ): Promise<StudentProgressDto> {
-    const requestingUser = req.user;
-    const user = await this.prisma.app_user.findUnique({
-      where: { user_id: requestingUser.sub },
-    });
+    const requestingUser = req?.user;
+    if (!requestingUser?.sub) {
+      throw new UnauthorizedException('Invalid or missing user token.');
+    }
 
     const isOwnData = requestingUser.sub === studentId;
-    const isTeacherOrAdmin = user && ['teacher', 'admin'].includes(user.role);
-
-    if (!isOwnData && !isTeacherOrAdmin) {
-      throw new UnauthorizedException(
-        'You are not authorized to access this resource.',
-      );
+    if (!isOwnData) {
+      const user = await this.prisma.app_user.findUnique({
+        where: { user_id: requestingUser.sub },
+      });
+      const isTeacherOrAdmin = user && ['teacher', 'admin'].includes(user.role);
+      if (!isTeacherOrAdmin) {
+        throw new UnauthorizedException(
+          'You are not authorized to access this resource.',
+        );
+      }
     }
+
     return this.analyticsService.getStudentProgress(studentId);
   }
 
