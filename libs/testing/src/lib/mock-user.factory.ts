@@ -3,15 +3,16 @@ import { randomUUID } from 'crypto';
 
 export const createMockUser = (overrides?: Partial<app_user>): app_user => {
   return {
-    id: randomUUID(),
+    user_id: randomUUID(),
+    username: 'testuser',
     email: 'test@example.com',
-    auth0_id: `auth0|${randomUUID()}`,
-    first_name: 'Test',
-    last_name: 'User',
+    firstname: 'Test',
+    lastname: 'User',
+    role: 'user',
     created_at: new Date(),
-    updated_at: new Date(),
-    status: 'ACTIVE',
-    settings: {},
+    active: true,
+    credits: 0,
+    experience_points: 0,
     ...overrides,
   };
 };

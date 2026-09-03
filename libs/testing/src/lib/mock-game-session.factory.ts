@@ -1,15 +1,15 @@
-import { game_session } from '@prisma/client';
+import { GameSession } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
-export const createMockGameSession = (overrides?: Partial<game_session>): game_session => {
+export const createMockGameSession = (overrides?: Partial<GameSession>): GameSession => {
   return {
-    id: randomUUID(),
+    session_id: randomUUID(),
     user_id: randomUUID(),
-    game_type: 'DALA',
+    history_id: 'hist-1',
+    category: 'DALA',
     started_at: new Date(),
-    ended_at: null,
-    status: 'IN_PROGRESS',
-    data: {},
+    finished_at: null,
+    status: 'playing',
     ...overrides,
   };
 };

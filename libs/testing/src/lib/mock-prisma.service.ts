@@ -10,7 +10,7 @@ export const createMockPrismaService = () => ({
     update: jest.fn(),
     delete: jest.fn(),
   },
-  game_session: {
+  gameSession: {
     findUnique: jest.fn(),
     findFirst: jest.fn(),
     findMany: jest.fn(),
@@ -18,7 +18,7 @@ export const createMockPrismaService = () => ({
     update: jest.fn(),
     delete: jest.fn(),
   },
-  game_metrics: {
+  cognitiveMetric: {
     findUnique: jest.fn(),
     findFirst: jest.fn(),
     findMany: jest.fn(),
