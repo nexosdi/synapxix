@@ -6,13 +6,10 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AiProvider } from '../modules/research/providers/ai.provider';
 import { Response, Request } from 'express';
 
-export const GetUser = createParamDecorator((data: string | undefined, ctx: ExecutionContext) => {
-  const request = ctx.switchToHttp().getRequest();
-  if (data) return request.user?.[data];
-  return request.user;
-});
+import { GetUser } from '../decorators/get-user.decorator';
 
 @Controller('evaluative')
+@UseGuards(JwtAuthGuard)
 export class EvaluativeController {
   constructor(
     private readonly evaluativeService: EvaluativeService,
@@ -24,7 +21,6 @@ export class EvaluativeController {
    * Expects an exact structure of game data (EvaluateSessionDto).
    */
   @Post('evaluate')
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async evaluateSession(
     @GetUser('sub') userId: string,
@@ -44,7 +40,6 @@ export class EvaluativeController {
    */
   @Throttle({ long: { limit: 10, ttl: 60000 } })
   @Post('evaluate-ai')
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async evaluateAiSession(
     @GetUser('sub') userId: string,
@@ -83,13 +78,11 @@ export class EvaluativeController {
 
 
   @Get('students')
-  @UseGuards(JwtAuthGuard)
   async getStudentList() {
     return this.evaluativeService.getStudentList();
   }
 
   @Get('students/:id/metrics')
-  @UseGuards(JwtAuthGuard)
   async getStudentDetail(@Param('id') userId: string) {
     return this.evaluativeService.getStudentDetail(userId);
   }
@@ -114,6 +107,7 @@ export class EvaluativeController {
   @SkipThrottle()
   @Post('evaluate-ai/stream')
   async evaluateAiStream(
+    @GetUser('sub') userId: string,
     @Body() dto: EvaluateAiInputDto,
     @Res() res: Response,
     @Req() req: Request,

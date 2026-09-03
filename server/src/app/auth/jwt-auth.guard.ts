@@ -7,7 +7,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   private readonly mockGuard = new MockJwtGuard();
 
   override canActivate(context: ExecutionContext) {
-    if (process.env.DISABLE_AUTH === 'true') {
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    if (!isProduction && process.env.DISABLE_AUTH === 'true') {
       return this.mockGuard.canActivate(context);
     }
 
