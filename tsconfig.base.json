@@ -16,7 +16,9 @@
     "baseUrl": ".",
     "paths": {
       "@nexosdi.synapxix/dala/contracts": ["libs/dala/contracts/src/index.ts"],
-      "@nexosdi.synapxix/dala/instrumentation": ["libs/dala/instrumentation/src/index.ts"],
+      "@nexosdi.synapxix/dala/instrumentation": [
+        "libs/dala/instrumentation/src/index.ts"
+      ],
       "@nexosdi.synapxix/dala/domain": ["libs/dala/domain/src/index.ts"],
       "@nexosdi.synapxix/game-engine/core": [
         "libs/game-engine/core/src/index.ts"
@@ -26,7 +28,8 @@
       ],
       "@nexosdi.synapxix/prisma": ["libs/prisma/src/index.ts"],
       "@nexosdi.synapxix/baseRepository": ["libs/baseRepository/src/index.ts"],
-      "@nexosdi.synapxix/envValidator": ["libs/envValidator/src/index.ts"]
+      "@nexosdi.synapxix/envValidator": ["libs/envValidator/src/index.ts"],
+      "@nexosdi.synapxix/testing": ["libs/testing/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

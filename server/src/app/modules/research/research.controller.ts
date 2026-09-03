@@ -1,10 +1,13 @@
-import { Controller, Post, Body, UseInterceptors, Res, Req, HttpStatus } from "@nestjs/common";
+import { Controller, Post, Body, UseInterceptors, Res, Req, HttpStatus, UseGuards } from "@nestjs/common";
 import { ResearchService } from "./research.service";
 import { ProcessGameActivityDto } from "./models/game-input.model";
 import { AiCacheInterceptor } from "./interceptors/ai-cache.interceptor";
 import { Response, Request } from "express";
 
+import { JwtAuthGuard } from "../../auth/jwt-auth.guard";
+
 @Controller('research')
+@UseGuards(JwtAuthGuard)
 export class ResearchController {
     constructor(
         private readonly researchService: ResearchService,
