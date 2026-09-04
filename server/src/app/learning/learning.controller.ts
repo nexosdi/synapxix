@@ -1,10 +1,11 @@
-import {Body,Controller,Get,Param,Post,Query,UseGuards} from '@nestjs/common';
-import {CreateTopicDto,CreateUserDto,InitMethodDto,MethodFeedbackDto,ReinforceTopicDto,SetPreferencesDto,} from '@nexosdi.synapxix/learning/shared';
+import { Body, Controller, Get, Post, Query, UseGuards, UsePipes, ValidationPipe, Request } from '@nestjs/common';
+import { CreateTopicDto, CreateUserDto, InitMethodDto, MethodFeedbackDto, ReinforceTopicDto, SetPreferencesDto } from '@nexosdi.synapxix/learning/shared';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { LearningService } from './learning.service';
 
 @Controller('learning')
 @UseGuards(JwtAuthGuard)
+@UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
 export class LearningController {
   constructor(private readonly learningService: LearningService) {}
 
@@ -14,55 +15,58 @@ export class LearningController {
   }
 
   @Post('users')
-  createUser(@Body() body: CreateUserDto) {
+  createUser(@Request() req: any, @Body() body: CreateUserDto) {
+    body.userId = req.user.id;
     return this.learningService.createUser(body);
   }
 
   @Post('topics')
-  createTopic(@Body() body: CreateTopicDto) {
+  createTopic(@Request() req: any, @Body() body: CreateTopicDto) {
+    body.userId = req.user.id;
     return this.learningService.createTopic(body);
   }
 
-  @Post('topics/reinforce')
-  reinforceTopic(@Body() body: ReinforceTopicDto) {
+  @Post('topics/feedback')
+  feedbackTopic(@Request() req: any, @Body() body: ReinforceTopicDto) {
+    body.userId = req.user.id;
     return this.learningService.reinforceTopic(body);
   }
 
   @Post('preferences')
-  setPreferences(@Body() body: SetPreferencesDto) {
+  setPreferences(@Request() req: any, @Body() body: SetPreferencesDto) {
+    body.userId = req.user.id;
     return this.learningService.setPreferences(body);
   }
 
   @Post('methods/init')
-  initMethod(@Body() body: InitMethodDto) {
+  initMethod(@Request() req: any, @Body() body: InitMethodDto) {
+    body.userId = req.user.id;
     return this.learningService.initMethod(body);
   }
 
   @Post('methods/feedback')
-  reinforceMethod(@Body() body: MethodFeedbackDto) {
+  feedbackMethod(@Request() req: any, @Body() body: MethodFeedbackDto) {
+    body.userId = req.user.id;
     return this.learningService.reinforceMethod(body);
   }
 
-  @Get(':userId/topics')
-  topTopics(@Param('userId') userId: string, @Query('limit') limit?: string) {
-    return this.learningService.topTopics(userId, Number(limit) || 10);
+  @Get('topics')
+  topTopics(@Request() req: any, @Query('limit') limit?: string) {
+    return this.learningService.topTopics(req.user.id, Number(limit) || 10);
   }
 
-  @Get(':userId/preferences')
-  topPreferences(
-    @Param('userId') userId: string,
-    @Query('limit') limit?: string
-  ) {
-    return this.learningService.topPreferences(userId, Number(limit) || 10);
+  @Get('preferences')
+  topPreferences(@Request() req: any, @Query('limit') limit?: string) {
+    return this.learningService.topPreferences(req.user.id, Number(limit) || 10);
   }
 
-  @Get(':userId/methods')
-  topMethods(@Param('userId') userId: string, @Query('limit') limit?: string) {
-    return this.learningService.topMethods(userId, Number(limit) || 10);
+  @Get('methods')
+  topMethods(@Request() req: any, @Query('limit') limit?: string) {
+    return this.learningService.topMethods(req.user.id, Number(limit) || 10);
   }
 
-  @Post(':userId/embedding/refresh')
-  refreshEmbedding(@Param('userId') userId: string) {
-    return this.learningService.refreshUserEmbedding(userId);
+  @Post('embedding/refresh')
+  refreshEmbedding(@Request() req: any) {
+    return this.learningService.refreshUserEmbedding(req.user.id);
   }
 }
