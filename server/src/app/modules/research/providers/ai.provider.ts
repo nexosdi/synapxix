@@ -246,6 +246,67 @@ export class AiProvider {
       );
     }
   }
+  /**
+   * Analyzes a teacher's weekly class metrics and generates a formatted
+   * pedagogical report highlighting strengths, weak spots, and concrete
+   * suggestions on where to focus upcoming lessons.
+   *
+   * Used by TeacherInsightsService as part of the weekly cron job that
+   * compiles aggregated metrics per teacher.
+   *
+   * @param systemPrompt   - Instructions that define the AI's role and report format
+   * @param metricsSummary - JSON-serializable object with the class's aggregated weekly metrics
+   * @returns AI-generated pedagogical report as plain text
+   * @throws InternalServerErrorException if the AI returns an empty response
+   *         or if all retry attempts are exhausted
+   */
+  async analyzeTeacherWeeklyMetrics(
+    systemPrompt: string,
+    metricsSummary: Record<string, unknown>,
+  ): Promise<string> {
+    const prompt = `
+      ${systemPrompt}
+
+      WEEKLY CLASS METRICS (JSON):
+      ${JSON.stringify(metricsSummary)}
+
+      TASK: Write a pedagogical report for the teacher based on the metrics above.
+      Structure it with clear sections covering: general summary, strengths,
+      areas needing attention, and concrete recommendations on where to focus
+      next week's lessons. Be specific and reference the actual numbers.
+    `;
+
+    const model = this.model;
+
+    try {
+      const result = await withRetry(
+        () => model.generateContent(prompt),
+        { maxRetries: this.maxRetries, baseDelayMs: this.baseDelayMs },
+        this.logger,
+      );
+
+      const text = result.response.text();
+
+      if (!text) {
+        this.logger.error('AI returned empty response for analyzeTeacherWeeklyMetrics');
+        throw new InternalServerErrorException('AI returned empty response');
+      }
+
+      return text;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
+
+      this.logger.error(
+        `[analyzeTeacherWeeklyMetrics] Failed after retries: ${error.message}`,
+      );
+      throw new InternalServerErrorException(
+        'Failed to generate teacher weekly insight report.',
+      );
+    }
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // Streaming methods — SSE support
