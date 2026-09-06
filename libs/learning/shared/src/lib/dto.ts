@@ -7,7 +7,7 @@ export class CreateUserDto {
 
   @IsString()
   @IsNotEmpty()
-  name!: string; // <-- Agregado el !
+  name!: string;
 
   @IsArray()
   @IsOptional()
@@ -21,11 +21,11 @@ export class CreateTopicDto {
 
   @IsString()
   @IsNotEmpty()
-  topicId!: string; // <-- Agregado el !
+  topicId!: string;
 
   @IsString()
   @IsNotEmpty()
-  topicContent!: string; // <-- Agregado el !
+  topicContent!: string;
 
   @IsArray()
   @IsOptional()
@@ -43,11 +43,11 @@ export class ReinforceTopicDto {
 
   @IsString()
   @IsNotEmpty()
-  topicId!: string; // <-- Agregado el !
+  topicId!: string;
 
   @IsNumber()
   @IsNotEmpty()
-  delta!: number; // <-- Agregado el !
+  delta!: number;
 }
 
 export class SetPreferencesDto {
@@ -58,7 +58,7 @@ export class SetPreferencesDto {
   @IsArray()
   @IsString({ each: true })
   @IsNotEmpty()
-  prefKeys!: string[]; // <-- Agregado el !
+  prefKeys!: string[];
 
   @IsNumber()
   @IsOptional()
@@ -72,7 +72,7 @@ export class InitMethodDto {
 
   @IsString()
   @IsNotEmpty({ message: 'El methodKey es obligatorio' })
-  methodKey!: string; // <-- Agregado el !
+  methodKey!: string;
 
   @IsNumber()
   @IsOptional()
@@ -86,9 +86,9 @@ export class MethodFeedbackDto {
 
   @IsString()
   @IsNotEmpty()
-  methodKey!: string; // <-- Agregado el !
+  methodKey!: string;
 
   @IsNumber()
   @IsNotEmpty()
-  delta!: number; // <-- Agregado el !
+  delta!: number;
 }
