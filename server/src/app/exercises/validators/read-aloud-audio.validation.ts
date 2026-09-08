@@ -1,3 +1,4 @@
+import 'multer';
 import {
   BadRequestException,
   FileValidator,
@@ -6,15 +7,15 @@ import {
   PayloadTooLargeException,
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
-import { UploadedAudioFile } from '../types/uploaded-audio-file';
 
 export const READ_ALOUD_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 const ALLOWED_AUDIO_MIME_REGEX =
   /^(audio\/(webm|ogg|mp4)|video\/(webm|mp4))$/;
 
+
 export class ReadAloudMimeTypeValidator extends FileValidator<Record<string, unknown>> {
-  isValid(file?: UploadedAudioFile): boolean {
+  isValid(file?: Express.Multer.File): boolean {
     if (!file?.mimetype) {
       return false;
     }
