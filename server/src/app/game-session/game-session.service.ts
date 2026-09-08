@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { GameSessionRepository } from './game-session.repository';
 import { StartSessionDto, SubmitAttemptDto } from './dto/game-session.dto';
 
@@ -119,6 +119,9 @@ export class GameSessionService {
     }
     if (session.user_id !== userId) {
       throw new ForbiddenException('No tienes acceso a esta sesión');
+    }
+    if (session.status === 'completed') {
+      throw new ConflictException(`Session ${sessionId} is already completed`);
     }
 
     const completedSession = await this.repository.completeSession(sessionId);
