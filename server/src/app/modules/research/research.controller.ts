@@ -5,6 +5,7 @@ import { AiCacheInterceptor } from "./interceptors/ai-cache.interceptor";
 import { Response, Request } from "express";
 
 import { JwtAuthGuard } from "../../auth/jwt-auth.guard";
+import { AiUserThrottleGuard } from "./guards/ai-user-throttle.guard";
 
 @Controller('research')
 @UseGuards(JwtAuthGuard)
@@ -14,6 +15,7 @@ export class ResearchController {
     ) {}
     
     @Post('process')
+    @UseGuards(AiUserThrottleGuard)
     @UseInterceptors(AiCacheInterceptor)
     async process(@Body() body: ProcessGameActivityDto) {
         return await this.researchService.processActivity(body);
@@ -38,6 +40,7 @@ export class ResearchController {
      * ```
      */
     @Post('process/stream')
+    @UseGuards(AiUserThrottleGuard)
     async processStream(
         @Body() body: ProcessGameActivityDto,
         @Res() res: Response,
