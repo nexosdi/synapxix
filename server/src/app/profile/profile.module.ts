@@ -2,11 +2,13 @@
 import { Module } from '@nestjs/common';
 import { ProfileController } from './profile.controller';
 import { ProfileService } from './profile.service';
-import { PrismaModule } from '../../../../libs/prisma/src/lib/prisma.module'; // Ajusta la ruta a tu lib de prisma
+import { PrismaModule } from '@nexosdi.synapxix/prisma';
+import { ArchetypeController } from './archetype/archetype.controller';
+import { ArchetypeService } from './archetype/archetype.service';
 
 @Module({
   imports: [PrismaModule],
-  controllers: [ProfileController],
-  providers: [ProfileService],
+  controllers: [ProfileController, ArchetypeController],
+  providers: [ProfileService, ArchetypeService],
 })
 export class ProfileModule {}
