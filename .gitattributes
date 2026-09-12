@@ -1,0 +1,3 @@
+# Treat package-lock.json as binary for merge purposes.
+# On conflict, pick ours and regenerate with npm ci / npm install.
+package-lock.json merge=ours
