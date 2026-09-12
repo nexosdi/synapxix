@@ -202,23 +202,38 @@ model Session {
 }
 
 model Dimension {
-  dimension_id String      @id @default(uuid()) @db.Uuid
-  name         String      @db.VarChar(150)
+  dimension_id String                     @id @default(uuid()) @db.Uuid
+  name         String                     @db.VarChar(150)
   description  String?
-  archetypes   Archetype[] @relation("ArchetypeToDimension")
+  archetypes   Archetype[]                @relation("ArchetypeToDimension")
+  weights      ArchetypeDimensionWeight[]
 
   @@map("dimension")
   @@schema("psychometrics")
 }
 
 model Archetype {
-  archetype_id String     @id @default(uuid()) @db.Uuid
-  dimension_id String?    @db.Uuid
-  name         String     @db.VarChar(150)
+  archetype_id String                     @id @default(uuid()) @db.Uuid
+  dimension_id String?                    @db.Uuid
+  name         String                     @db.VarChar(150)
   description  String?
-  dimension    Dimension? @relation("ArchetypeToDimension", fields: [dimension_id], references: [dimension_id])
+  dimension    Dimension?                 @relation("ArchetypeToDimension", fields: [dimension_id], references: [dimension_id])
+  weights      ArchetypeDimensionWeight[]
 
   @@map("archetype")
+  @@schema("psychometrics")
+}
+
+model ArchetypeDimensionWeight {
+  archetype_id String @db.Uuid
+  dimension_id String @db.Uuid
+  weight       Float
+
+  archetype Archetype @relation(fields: [archetype_id], references: [archetype_id])
+  dimension Dimension @relation(fields: [dimension_id], references: [dimension_id])
+
+  @@id([archetype_id, dimension_id])
+  @@map("archetype_dimension_weight")
   @@schema("psychometrics")
 }
 
