@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { AnyGameResult } from '../../models/game-result.model';
 import { BaseGameComponent } from '../../components/base-game.component';
 import { OddOneOutInteractiveContent, toOddOneOutModel, OptionItem } from './intruder-game.model';
+import { DalaInstrumentationService } from '../../services/dala.service';
+import { OnInit, inject } from '@angular/core';
 
 @Component({
   selector: 'lib-odd-one-out',
@@ -62,15 +64,26 @@ import { OddOneOutInteractiveContent, toOddOneOutModel, OptionItem } from './int
     .animate-shake { animation: shake 0.3s ease-in-out; }
   `]
 })
-export class IntruderGameComponent implements BaseGameComponent {
+export class IntruderGameComponent implements BaseGameComponent, OnInit {
   readonly content = input.required<OddOneOutInteractiveContent>();
   readonly disabled = input<boolean>(false);
   readonly viewModel = computed(() => toOddOneOutModel(this.content()));
 
   readonly answerSubmitted = output<AnyGameResult>();
 
+  private readonly dala = inject(DalaInstrumentationService);
+  private readonly dalaAdapter = this.dala.createAdapter('intruder', '1.0.0');
+
   feedbackState = signal<'idle' | 'success' | 'error'>('idle');
   wrongId = signal<string | null>(null);
+
+  ngOnInit() {
+    this.dalaAdapter.mapInteraction({
+      kind: 'task_shown',
+      taskId: 'intruder-task',
+      difficulty: this.viewModel().options.length
+    });
+  }
 
   readonly feedbackConfig = computed(() => ({
     success: { title: '¡LO ENCONTRASTE!', icon: '🎯', class: 'bg-emerald-500 border-emerald-700' },
@@ -78,8 +91,27 @@ export class IntruderGameComponent implements BaseGameComponent {
   }[this.feedbackState() as 'success' | 'error'] || { title: '', icon: '', class: '' }));
 
   selectOption(item: OptionItem) {
+    this.dalaAdapter.mapInteraction({
+      kind: 'item_action',
+      taskId: 'intruder-task',
+      detail: { action: 'select', itemId: item.id }
+    });
+
     if (item.isCorrect) {
       this.feedbackState.set('success');
+      
+      this.dalaAdapter.mapInteraction({
+        kind: 'answer',
+        taskId: 'intruder-task',
+        correct: true,
+        attempt: 1
+      });
+
+      this.dalaAdapter.mapInteraction({
+        kind: 'complete',
+        taskId: 'intruder-task'
+      });
+
       this.answerSubmitted.emit({
         gameType: 'intruder',
         answer: { selectedItemId: item.id },
@@ -90,6 +122,14 @@ export class IntruderGameComponent implements BaseGameComponent {
     } else {
       this.wrongId.set(item.id);
       this.feedbackState.set('error');
+      
+      this.dalaAdapter.mapInteraction({
+        kind: 'answer',
+        taskId: 'intruder-task',
+        correct: false,
+        attempt: 1
+      });
+
       setTimeout(() => {
         this.feedbackState.set('idle');
         this.wrongId.set(null);
