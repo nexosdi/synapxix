@@ -14,17 +14,12 @@ export class DalaHttpTransport implements EmitterTransport {
   async send(events: DalaBehaviorEvent[]): Promise<string[]> {
     if (!events.length) return [];
     
-    try {
-      // Intentamos hacer el POST al backend.
-      // Se asume que el backend devuelve { acceptedIds: string[] }
-      const response = await lastValueFrom(
-        this.http.post<{ acceptedIds: string[] }>(this.endpoint, { events })
-      );
-      
-      return response.acceptedIds || events.map(e => e.eventId);
-    } catch (error) {
-      // Lanzamos error para que el emitter lo atrape y deje los eventos en la cola (offline resilience)
-      throw error;
-    }
+    // Intentamos hacer el POST al backend.
+    // Se asume que el backend devuelve { acceptedIds: string[] }
+    const response = await lastValueFrom(
+      this.http.post<{ acceptedIds: string[] }>(this.endpoint, { events })
+    );
+    
+    return response.acceptedIds || events.map(e => e.eventId);
   }
 }
