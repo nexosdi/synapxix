@@ -126,7 +126,7 @@ describe('GameSessionService', () => {
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
       
       // Create service without starting session
-      const freshService = TestBed.inject(GameSessionService);
+      const freshService = new GameSessionService();
       freshService.submitAttempt('c1', {
         gameType: 'intruder',
         answer: { selectedItemId: 'any' },
