@@ -10,7 +10,8 @@ const NON_REWARDED_GAME_TYPES = new Set<GameType>(['avatar']);
 @Injectable({ providedIn: 'root' })
 export class EconomyBridgeService {
   private readonly dispatcher = inject(ECONOMY_DISPATCHER, { optional: true })
-    ?? new HttpEconomyDispatcher();
+    ?? inject(HttpEconomyDispatcher);
+
   processGameResult(sessionId: string, result: AnyGameResult): void {
     if (NON_REWARDED_GAME_TYPES.has(result.gameType)) return;
 
