@@ -13,7 +13,8 @@ import { ResearchModule } from './modules/research/research.module';
 import { EvaluativeModule } from './evaluative/evaluative.module';
 import { ExercisesModule } from './exercises/exercises.module';
 import { AnalyticsModule } from './analytics/analytics.module';
-
+import { ScheduleModule } from '@nestjs/schedule';
+import { TeacherInsightsModule } from './modules/research/teacher-insights/teacher-insights.module';
 /**
  * Root application module.
  *
@@ -28,6 +29,8 @@ import { AnalyticsModule } from './analytics/analytics.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
+    TeacherInsightsModule,
     ThrottlerModule.forRoot([
       {
         name: 'short',
