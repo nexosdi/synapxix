@@ -3,7 +3,7 @@ import { ReadableStream } from 'stream/web';
 
 Object.assign(globalThis, { TextEncoder, TextDecoder, ReadableStream });
 
-globalThis.ngJest = {
+(globalThis as Record<string, unknown>)['ngJest'] = {
   testEnvironmentOptions: {
     errorOnUnknownElements: true,
     errorOnUnknownProperties: true,
