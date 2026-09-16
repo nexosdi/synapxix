@@ -124,10 +124,13 @@ describe('GameSessionService', () => {
 
     it('should warn and skip if no session is active', () => {
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
-      
-      // Create service without starting session
-      const freshService = TestBed.inject(GameSessionService);
-      freshService.submitAttempt('c1', {
+
+      // Instantiate directly — NOT via TestBed.inject — to get a truly
+      // session-less instance. TestBed.inject returns the root singleton,
+      // which already has a session started by the outer beforeEach.
+      const isolatedService = new GameSessionService();
+
+      isolatedService.submitAttempt('c1', {
         gameType: 'intruder',
         answer: { selectedItemId: 'any' },
         isCorrect: true,
@@ -135,8 +138,10 @@ describe('GameSessionService', () => {
         timeSpentMs: 0,
       });
 
-      // The attempt should not be added (original service has the session)
-      expect(freshService.attempts().length).toBe(0);
+      expect(isolatedService.attempts().length).toBe(0);
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[GameSessionService] Cannot submit attempt: No active session'
+      );
       warnSpy.mockRestore();
     });
   });

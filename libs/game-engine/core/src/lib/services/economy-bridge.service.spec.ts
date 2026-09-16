@@ -114,11 +114,9 @@ describe('EconomyBridgeService', () => {
 
     rewardedTypes.forEach((gameType) => {
       it(`should dispatch for game type: ${gameType}`, async () => {
-        const localDispatcher = new MockEconomyDispatcher();
-        TestBed.overrideProvider(ECONOMY_DISPATCHER, { useValue: localDispatcher });
-        const svc = TestBed.inject(EconomyBridgeService);
-
-        svc.processGameResult(`session-${gameType}`, {
+        // Each parameterized test gets its own isolated dispatcher via a fresh mock.
+        // We use the mockDispatcher from beforeEach — it is already clean per test run.
+        service.processGameResult(`session-${gameType}`, {
           gameType,
           answer: {},
           isCorrect: true,
@@ -127,7 +125,7 @@ describe('EconomyBridgeService', () => {
         } as any);
 
         await Promise.resolve();
-        expect(localDispatcher.dispatched).toHaveLength(1);
+        expect(mockDispatcher.dispatched).toHaveLength(1);
       });
     });
   });
