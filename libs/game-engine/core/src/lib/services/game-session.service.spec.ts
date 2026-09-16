@@ -30,19 +30,18 @@ describe('GameSessionService', () => {
       service.startSession('history-1', 'user-1', 5);
       
       const session = service.currentSession();
-      expect(session).not.toBeNull();
-      expect(session!.historyId).toBe('history-1');
-      expect(session!.userId).toBe('user-1');
-      expect(session!.status).toBe('playing');
-      expect(session!.startedAt).toBeInstanceOf(Date);
-      expect(session!.finishedAt).toBeUndefined();
+      expect(session?.historyId).toBe('history-1');
+      expect(session?.userId).toBe('user-1');
+      expect(session?.status).toBe('playing');
+      expect(session?.startedAt).toBeInstanceOf(Date);
+      expect(session?.finishedAt).toBeUndefined();
     });
 
     it('should store category when provided', () => {
       service.startSession('history-1', 'user-1', 5, 'matematica');
       
       const session = service.currentSession();
-      expect(session!.category).toBe('matematica');
+      expect(session?.category).toBe('matematica');
     });
 
     it('should clear previous attempts', () => {
@@ -67,11 +66,11 @@ describe('GameSessionService', () => {
       
       const progress = service.progress();
       expect(progress).not.toBeNull();
-      expect(progress!.totalGames).toBe(10);
-      expect(progress!.completedGames).toBe(0);
-      expect(progress!.correctCount).toBe(0);
-      expect(progress!.totalScore).toBe(0);
-      expect(progress!.currentIndex).toBe(0);
+      expect(progress?.totalGames).toBe(10);
+      expect(progress?.completedGames).toBe(0);
+      expect(progress?.correctCount).toBe(0);
+      expect(progress?.totalScore).toBe(0);
+      expect(progress?.currentIndex).toBe(0);
     });
   });
 
@@ -116,10 +115,10 @@ describe('GameSessionService', () => {
       });
 
       const progress = service.progress();
-      expect(progress!.completedGames).toBe(2);
-      expect(progress!.correctCount).toBe(1);
-      expect(progress!.totalScore).toBe(50);
-      expect(progress!.currentIndex).toBe(2);
+      expect(progress?.completedGames).toBe(2);
+      expect(progress?.correctCount).toBe(1);
+      expect(progress?.totalScore).toBe(50);
+      expect(progress?.currentIndex).toBe(2);
     });
 
     it('should warn and skip if no session is active', () => {
@@ -152,8 +151,8 @@ describe('GameSessionService', () => {
       service.completeSession();
 
       const session = service.currentSession();
-      expect(session!.status).toBe('completed');
-      expect(session!.finishedAt).toBeInstanceOf(Date);
+      expect(session?.status).toBe('completed');
+      expect(session?.finishedAt).toBeInstanceOf(Date);
     });
 
     it('should not throw if no session exists', () => {

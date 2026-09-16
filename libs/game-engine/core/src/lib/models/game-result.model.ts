@@ -1,6 +1,6 @@
 import { GameType } from './history.model';
 
-export interface GameResult<TGameType extends GameType, TAnswer = any, TFeedback = any> {
+export interface GameResult<TGameType extends GameType, TAnswer = unknown, TFeedback = unknown> {
   gameType: TGameType;
   answer: TAnswer;
   isCorrect: boolean;
@@ -28,7 +28,7 @@ export interface IntruderAnswer {
 export type IntruderResult = GameResult<'intruder', IntruderAnswer>;
 
 // Avatar
-export type AvatarResult = GameResult<'avatar', any>;
+export type AvatarResult = GameResult<'avatar', unknown>;
 
 // Listen & Type
 export type ListenTypeResult = GameResult<'listen-type', { typedText: string }>;
@@ -49,7 +49,7 @@ export type SpotlightResult = GameResult<'spotlight', { selectedAreas: string[] 
 export type NeuralLinkResult = GameResult<'neural-link', { connections: Array<{ fromId: string; toId: string }> }>;
 
 // Balance Master
-export type BalanceMasterResult = GameResult<'balance-master', { balancedItems: Record<string, any> }>;
+export type BalanceMasterResult = GameResult<'balance-master', { balancedItems: Record<string, unknown> }>;
 
 // Sound Match
 export type SoundMatchResult = GameResult<'sound-match', { matchedPairs: Array<{ soundId: string; optionId: string }> }>;

@@ -43,7 +43,7 @@ function createMockProvider(histories: History[] = [FAKE_HISTORY]): HistoryDataP
       if (filter.category) result = result.filter((h) => h.category === filter.category);
       if (filter.difficulty) result = result.filter((h) => h.difficulty === filter.difficulty);
       if (filter.gradeLevel !== undefined) result = result.filter((h) => h.gradeLevel === filter.gradeLevel);
-      if (filter.tags?.length) result = result.filter((h) => filter.tags!.some((t) => h.tags?.includes(t)));
+      if (filter.tags?.length) result = result.filter((h) => filter.tags?.some((t) => h.tags?.includes(t)));
       return result;
     }),
   };
@@ -195,7 +195,7 @@ describe('HistoryService', () => {
         const first = service.beginJourney();
 
         expect(first).not.toBeNull();
-        expect(first!.id).toBe('game-1');
+        expect(first?.id).toBe('game-1');
       });
 
       it('should set currentContent to the first item', async () => {
@@ -237,7 +237,7 @@ describe('HistoryService', () => {
         const second = service.advanceToNext();
 
         expect(second).not.toBeNull();
-        expect(second!.id).toBe('game-2');
+        expect(second?.id).toBe('game-2');
         expect(service.getCurrentContentIndex()).toBe(1);
         expect(service.currentContent()?.id).toBe('game-2');
       });
@@ -397,19 +397,19 @@ describe('HistoryService', () => {
 
         // 2. Begin
         const first = service.beginJourney();
-        expect(first!.id).toBe('game-1');
+        expect(first?.id).toBe('game-1');
         expect(service.isJourneyComplete()).toBe(false);
         expect(service.hasNextContent()).toBe(true);
 
         // 3. Game 2
         const second = service.advanceToNext();
-        expect(second!.id).toBe('game-2');
+        expect(second?.id).toBe('game-2');
         expect(service.getCurrentContentIndex()).toBe(1);
         expect(service.hasNextContent()).toBe(true);
 
         // 4. Game 3 (last)
         const third = service.advanceToNext();
-        expect(third!.id).toBe('game-3');
+        expect(third?.id).toBe('game-3');
         expect(service.getCurrentContentIndex()).toBe(2);
         expect(service.hasNextContent()).toBe(false);
 

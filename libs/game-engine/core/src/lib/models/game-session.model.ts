@@ -12,7 +12,7 @@ export interface GameSession {
   category?: SubjectCategory;  // Track which subject this session belongs to
 }
 
-export interface GameAttempt<TAnswer = any> {
+export interface GameAttempt<TAnswer = unknown> {
   id: string;
   sessionId: string;
   contentId: string;

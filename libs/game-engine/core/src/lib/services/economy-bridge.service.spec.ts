@@ -5,6 +5,7 @@ import {
   ECONOMY_DISPATCHER,
   EconomyClaimPayload,
 } from './economy-dispatcher';
+import { AnyGameResult } from '../models/game-result.model';
 
 class MockEconomyDispatcher implements EconomyDispatcher {
   dispatched: EconomyClaimPayload[] = [];
@@ -122,7 +123,7 @@ describe('EconomyBridgeService', () => {
           isCorrect: true,
           score: 100,
           timeSpentMs: 1000,
-        } as any);
+        } as unknown as AnyGameResult);
 
         await Promise.resolve();
         expect(mockDispatcher.dispatched).toHaveLength(1);

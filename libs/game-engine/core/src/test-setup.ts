@@ -1,4 +1,4 @@
-// @ts-expect-error
+// @ts-expect-error: ngJest is not defined on globalThis in this context
 globalThis.ngJest = {
   testEnvironmentOptions: {
     errorOnUnknownElements: true,

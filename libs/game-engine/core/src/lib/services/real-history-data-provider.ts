@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
-import { HistoryDataProvider, HistoryFilter } from './history-data-provider';
+import { HistoryDataProvider } from './history-data-provider';
 import { History } from '../models/history.model';
 import { HISTORY_MOCK } from '../history-mock';
 
@@ -80,7 +80,7 @@ export class RealHistoryDataProvider implements HistoryDataProvider {
     }
   }
 
-  async getHistories(_filter?: HistoryFilter): Promise<History[]> {
+  async getHistories(): Promise<History[]> {
     // There is no backend endpoint to list all histories/journeys yet.
     // Returning an empty array as a placeholder.
     console.warn('[RealHistoryDataProvider] getHistories is not implemented yet, returning empty array.');

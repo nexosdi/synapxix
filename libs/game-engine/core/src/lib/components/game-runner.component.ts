@@ -233,7 +233,7 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
     if (this.flowService.isLoading() || this.flowService.isAdvancing() || this.flowService.isIdle()) {
       // Prevent double calls for the same content during async loading
       const currentRenderedId = this.currentComponentRef?.instance?.content
-        ? (this.currentComponentRef.instance.content as any).id
+        ? (this.currentComponentRef.instance.content as { id?: string }).id
         : undefined;
         
       if (currentRenderedId !== content.id && this.pendingRenderId !== content.id) {
@@ -435,7 +435,7 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
       },
     };
 
-    const { stream$, abort } = this.sseStream.streamPost(
+    const { stream$ } = this.sseStream.streamPost(
       `${this.researchApiUrl}/process/stream`,
       payload,
     );

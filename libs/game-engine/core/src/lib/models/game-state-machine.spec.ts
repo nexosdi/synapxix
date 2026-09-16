@@ -1,4 +1,4 @@
-import { GameStateMachine, GameState, StateTransitionEvent } from './game-state-machine';
+import { GameStateMachine, StateTransitionEvent } from './game-state-machine';
 
 describe('GameStateMachine', () => {
   let machine: GameStateMachine;
