@@ -1,5 +1,9 @@
-// @ts-expect-error: ngJest is not defined on globalThis in this context
-globalThis.ngJest = {
+import { TextEncoder, TextDecoder } from 'util';
+import { ReadableStream } from 'stream/web';
+
+Object.assign(globalThis, { TextEncoder, TextDecoder, ReadableStream });
+
+(globalThis as Record<string, unknown>)['ngJest'] = {
   testEnvironmentOptions: {
     errorOnUnknownElements: true,
     errorOnUnknownProperties: true,
@@ -16,5 +20,5 @@ import {
 
 getTestBed().initTestEnvironment(
   BrowserDynamicTestingModule,
-  platformBrowserDynamicTesting()
+  platformBrowserDynamicTesting(),
 );

@@ -123,7 +123,6 @@ describe('GameSessionService', () => {
 
     it('should warn and skip if no session is active', () => {
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
-
       // Instantiate directly — NOT via TestBed.inject — to get a truly
       // session-less instance. TestBed.inject returns the root singleton,
       // which already has a session started by the outer beforeEach.

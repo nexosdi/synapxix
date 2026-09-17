@@ -3,6 +3,7 @@ import { EvaluativeController } from '../evaluative.controller';
 import { EvaluativeService } from '../evaluative.service';
 import { AiProvider } from '../../modules/research/providers/ai.provider';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { TeacherAccessGuard } from '../../auth/teacher-access.guard';
 import { Request } from 'express';
 import { KeycloakJwtPayload } from '../../auth/jwt.strategy';
 import {
@@ -45,6 +46,8 @@ describe('EvaluativeController', () => {
       ],
     })
       .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(TeacherAccessGuard)
       .useValue({ canActivate: () => true })
       .compile();
 
@@ -148,10 +151,11 @@ describe('EvaluativeController', () => {
       const mockStudentList = [{ userId: mockUserId, displayName: 'Test Student' }];
       mockEvaluativeService.getStudentList.mockResolvedValue(mockStudentList);
 
-      const result = await controller.getStudentList();
+      const req = { user: mockUserJwtPayload } as unknown as Request & { user: KeycloakJwtPayload };
+      const result = await controller.getStudentList(req);
 
       expect(result).toEqual(mockStudentList);
-      expect(service.getStudentList).toHaveBeenCalled();
+      expect(service.getStudentList).toHaveBeenCalledWith(mockUserJwtPayload);
     });
   });
 

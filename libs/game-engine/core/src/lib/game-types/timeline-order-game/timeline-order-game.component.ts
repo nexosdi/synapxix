@@ -6,6 +6,8 @@ import {
   TimelineOrderInteractiveContent, 
   toTimelineOrderGameModel 
 } from './timeline-order-game.module';
+import { DalaInstrumentationService } from '../../services/dala.service';
+import { OnInit, inject } from '@angular/core';
 
 @Component({
   selector: 'lib-timeline-order-game',
@@ -76,7 +78,7 @@ import {
     }
   `
 })
-export class TimelineOrderGameComponent implements BaseGameComponent {
+export class TimelineOrderGameComponent implements BaseGameComponent, OnInit {
   readonly answerSubmitted = output<AnyGameResult>();
   
   readonly content = input.required<TimelineOrderInteractiveContent>();
@@ -89,6 +91,17 @@ export class TimelineOrderGameComponent implements BaseGameComponent {
   readonly shuffledEvents = computed(() => {
     return [...this.viewModel().events].sort(() => Math.random() - 0.5);
   });
+
+  private readonly dala = inject(DalaInstrumentationService);
+  private readonly dalaAdapter = this.dala.createAdapter('timeline-order', '1.0.0');
+
+  ngOnInit() {
+    this.dalaAdapter.mapInteraction({
+      kind: 'task_shown',
+      taskId: 'timeline-task',
+      difficulty: this.viewModel().events.length
+    });
+  }
 
   // Configuración dinámica del Pop-up
   readonly feedbackConfig = computed(() => {
@@ -112,6 +125,12 @@ export class TimelineOrderGameComponent implements BaseGameComponent {
     if (this.disabled()) return;
     if (!this.isEventSelected(event)) {
       this.userOrder.update(list => [...list, event]);
+      
+      this.dalaAdapter.mapInteraction({
+        kind: 'item_action',
+        taskId: 'timeline-task',
+        detail: { action: 'select', eventId: event.id }
+      });
     }
   }
 
@@ -122,13 +141,32 @@ export class TimelineOrderGameComponent implements BaseGameComponent {
   reset() {
     this.userOrder.set([]);
     this.feedbackState.set('idle');
+    
+    this.dalaAdapter.mapInteraction({
+      kind: 'retry',
+      taskId: 'timeline-task',
+      attempt: 1
+    });
   }
 
   checkAnswer() {
     const isCorrect = this.userOrder().every((event, index) => event.order === index + 1);
     
+    this.dalaAdapter.mapInteraction({
+      kind: 'answer',
+      taskId: 'timeline-task',
+      correct: isCorrect,
+      attempt: 1
+    });
+
     if (isCorrect) {
       this.feedbackState.set('success');
+      
+      this.dalaAdapter.mapInteraction({
+        kind: 'complete',
+        taskId: 'timeline-task'
+      });
+
       this.answerSubmitted.emit({
         gameType: 'timeline-order',
         answer: { orderedItemIds: this.userOrder().map(e => e.id) },

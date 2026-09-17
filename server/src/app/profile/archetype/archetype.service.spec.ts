@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ArchetypeService } from './archetype.service';
 import { PrismaService } from '@nexosdi.synapxix/prisma';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 describe('ArchetypeService', () => {
   let service: ArchetypeService;
@@ -11,6 +12,10 @@ describe('ArchetypeService', () => {
       providers: [
         ArchetypeService,
         {
+          provide: NotificationsService,
+          useValue: { create: jest.fn().mockResolvedValue(true) },
+        },
+        {
           provide: PrismaService,
           useValue: {
             cognitiveMetric: {
@@ -18,6 +23,9 @@ describe('ArchetypeService', () => {
             },
             archetype: {
               findMany: jest.fn(),
+            },
+            notification: {
+              findFirst: jest.fn().mockResolvedValue(null),
             },
           },
         },

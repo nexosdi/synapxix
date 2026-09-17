@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { EconomyBridgeService } from './economy-bridge.service';
+import { EconomyBridgeService } from './lib/services/economy-bridge.service';
 import {
   EconomyDispatcher,
   ECONOMY_DISPATCHER,

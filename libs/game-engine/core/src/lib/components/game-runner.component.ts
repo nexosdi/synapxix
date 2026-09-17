@@ -189,6 +189,8 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
   private pendingRenderId: string | null = null;
   /** Subscription to the active SSE stream for cleanup */
   private streamSubscription: Subscription | null = null;
+  /** Abort callback for the active SSE fetch — called on cleanup to cancel the HTTP request */
+  private streamAbort: (() => void) | null = null;
 
   private readonly sseStream = inject(SseStreamService);
   private readonly destroyRef = inject(DestroyRef);
@@ -232,9 +234,7 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
     // Only render when we expect fresh loads (not during feedback or answering)
     if (this.flowService.isLoading() || this.flowService.isAdvancing() || this.flowService.isIdle()) {
       // Prevent double calls for the same content during async loading
-      const currentRenderedId = this.currentComponentRef?.instance?.content
-        ? (this.currentComponentRef.instance.content as { id?: string }).id
-        : undefined;
+      const currentRenderedId = (this.currentComponentRef?.instance?.content as InteractiveContent | undefined)?.id;
         
       if (currentRenderedId !== content.id && this.pendingRenderId !== content.id) {
         this.pendingRenderId = content.id;
@@ -439,6 +439,7 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
       `${this.researchApiUrl}/process/stream`,
       payload,
     );
+    this.streamAbort = abort;
 
     // Transition ANSWERING → FEEDBACK once (the timer-based transition
     // in GameFlowService is bypassed because we drive it manually)
@@ -475,6 +476,10 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
    * Prevents memory leaks when the user navigates away mid-stream.
    */
   private cleanupStream(): void {
+    if (this.streamAbort) {
+      this.streamAbort();
+      this.streamAbort = null;
+    }
     if (this.streamSubscription) {
       this.streamSubscription.unsubscribe();
       this.streamSubscription = null;
