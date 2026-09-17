@@ -435,7 +435,7 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
       },
     };
 
-    const { stream$ } = this.sseStream.streamPost(
+    const { stream$, abort } = this.sseStream.streamPost(
       `${this.researchApiUrl}/process/stream`,
       payload,
     );
