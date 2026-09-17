@@ -15,6 +15,7 @@ import { ExercisesModule } from './exercises/exercises.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TeacherInsightsModule } from './modules/research/teacher-insights/teacher-insights.module';
+import { AdminModule } from './admin/admin.module';
 /**
  * Root application module.
  *
@@ -57,6 +58,7 @@ import { TeacherInsightsModule } from './modules/research/teacher-insights/teach
     EvaluativeModule,
     ExercisesModule,
     AnalyticsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [
