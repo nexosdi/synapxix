@@ -1,10 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { EconomyBridgeService } from './economy-bridge.service';
+import { EconomyBridgeService } from './lib/services/economy-bridge.service';
 import {
   EconomyDispatcher,
   ECONOMY_DISPATCHER,
   EconomyClaimPayload,
-} from './economy-dispatcher';
+} from './lib/services/economy-dispatcher';
+import { AnyGameResult } from './lib/models/game-result.model';
 
 class MockEconomyDispatcher implements EconomyDispatcher {
   dispatched: EconomyClaimPayload[] = [];
@@ -114,8 +115,14 @@ describe('EconomyBridgeService', () => {
 
     rewardedTypes.forEach((gameType) => {
       it(`should dispatch for game type: ${gameType}`, async () => {
+        TestBed.resetTestingModule();
         const localDispatcher = new MockEconomyDispatcher();
-        TestBed.overrideProvider(ECONOMY_DISPATCHER, { useValue: localDispatcher });
+        TestBed.configureTestingModule({
+          providers: [
+            EconomyBridgeService,
+            { provide: ECONOMY_DISPATCHER, useValue: localDispatcher },
+          ],
+        });
         const svc = TestBed.inject(EconomyBridgeService);
 
         svc.processGameResult(`session-${gameType}`, {
@@ -124,7 +131,7 @@ describe('EconomyBridgeService', () => {
           isCorrect: true,
           score: 100,
           timeSpentMs: 1000,
-        } as any);
+        } as AnyGameResult);
 
         await Promise.resolve();
         expect(localDispatcher.dispatched).toHaveLength(1);
