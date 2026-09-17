@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotificationsService } from '../../notifications/notifications.service';
 import {
   BadRequestException,
   ConflictException,
@@ -49,6 +50,10 @@ describe('EconomyService — edge cases', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EconomyService,
+        {
+          provide: NotificationsService,
+          useValue: { create: jest.fn().mockResolvedValue(true) },
+        },
         { provide: EconomyRepository, useValue: mockRepository },
       ],
     }).compile();
