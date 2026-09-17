@@ -3,13 +3,15 @@ import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { EvaluativeService } from './evaluative.service';
 import { EvaluateSessionDto, EvaluateAiInputDto } from './dto/evaluate-session.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { TeacherAccessGuard } from '../auth/teacher-access.guard';
+import { KeycloakJwtPayload } from '../auth/jwt.strategy';
 import { AiProvider } from '../modules/research/providers/ai.provider';
 import { Response, Request } from 'express';
 
 import { GetUser } from '../decorators/get-user.decorator';
 
 @Controller('evaluative')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, TeacherAccessGuard)
 export class EvaluativeController {
   constructor(
     private readonly evaluativeService: EvaluativeService,
@@ -78,8 +80,8 @@ export class EvaluativeController {
 
 
   @Get('students')
-  async getStudentList() {
-    return this.evaluativeService.getStudentList();
+  async getStudentList(@Req() req: Request & { user: KeycloakJwtPayload }) {
+    return this.evaluativeService.getStudentList(req.user);
   }
 
   @Get('students/:id/metrics')
