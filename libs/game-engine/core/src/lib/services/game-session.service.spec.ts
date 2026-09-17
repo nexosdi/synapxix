@@ -30,19 +30,18 @@ describe('GameSessionService', () => {
       service.startSession('history-1', 'user-1', 5);
       
       const session = service.currentSession();
-      expect(session).not.toBeNull();
-      expect(session!.historyId).toBe('history-1');
-      expect(session!.userId).toBe('user-1');
-      expect(session!.status).toBe('playing');
-      expect(session!.startedAt).toBeInstanceOf(Date);
-      expect(session!.finishedAt).toBeUndefined();
+      expect(session?.historyId).toBe('history-1');
+      expect(session?.userId).toBe('user-1');
+      expect(session?.status).toBe('playing');
+      expect(session?.startedAt).toBeInstanceOf(Date);
+      expect(session?.finishedAt).toBeUndefined();
     });
 
     it('should store category when provided', () => {
       service.startSession('history-1', 'user-1', 5, 'matematica');
       
       const session = service.currentSession();
-      expect(session!.category).toBe('matematica');
+      expect(session?.category).toBe('matematica');
     });
 
     it('should clear previous attempts', () => {
@@ -67,11 +66,11 @@ describe('GameSessionService', () => {
       
       const progress = service.progress();
       expect(progress).not.toBeNull();
-      expect(progress!.totalGames).toBe(10);
-      expect(progress!.completedGames).toBe(0);
-      expect(progress!.correctCount).toBe(0);
-      expect(progress!.totalScore).toBe(0);
-      expect(progress!.currentIndex).toBe(0);
+      expect(progress?.totalGames).toBe(10);
+      expect(progress?.completedGames).toBe(0);
+      expect(progress?.correctCount).toBe(0);
+      expect(progress?.totalScore).toBe(0);
+      expect(progress?.currentIndex).toBe(0);
     });
   });
 
@@ -116,18 +115,20 @@ describe('GameSessionService', () => {
       });
 
       const progress = service.progress();
-      expect(progress!.completedGames).toBe(2);
-      expect(progress!.correctCount).toBe(1);
-      expect(progress!.totalScore).toBe(50);
-      expect(progress!.currentIndex).toBe(2);
+      expect(progress?.completedGames).toBe(2);
+      expect(progress?.correctCount).toBe(1);
+      expect(progress?.totalScore).toBe(50);
+      expect(progress?.currentIndex).toBe(2);
     });
 
     it('should warn and skip if no session is active', () => {
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
-      
-      // Create service without starting session
-      const freshService = new GameSessionService();
-      freshService.submitAttempt('c1', {
+      // Instantiate directly — NOT via TestBed.inject — to get a truly
+      // session-less instance. TestBed.inject returns the root singleton,
+      // which already has a session started by the outer beforeEach.
+      const isolatedService = new GameSessionService();
+
+      isolatedService.submitAttempt('c1', {
         gameType: 'intruder',
         answer: { selectedItemId: 'any' },
         isCorrect: true,
@@ -135,8 +136,10 @@ describe('GameSessionService', () => {
         timeSpentMs: 0,
       });
 
-      // The attempt should not be added (original service has the session)
-      expect(freshService.attempts().length).toBe(0);
+      expect(isolatedService.attempts().length).toBe(0);
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[GameSessionService] Cannot submit attempt: No active session'
+      );
       warnSpy.mockRestore();
     });
   });
@@ -147,8 +150,8 @@ describe('GameSessionService', () => {
       service.completeSession();
 
       const session = service.currentSession();
-      expect(session!.status).toBe('completed');
-      expect(session!.finishedAt).toBeInstanceOf(Date);
+      expect(session?.status).toBe('completed');
+      expect(session?.finishedAt).toBeInstanceOf(Date);
     });
 
     it('should not throw if no session exists', () => {

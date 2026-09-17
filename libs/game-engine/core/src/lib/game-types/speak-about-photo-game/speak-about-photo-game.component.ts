@@ -134,10 +134,10 @@ export class SpeakAboutPhotoGameComponent implements OnDestroy, BaseGameComponen
   cancelRecording(): void {
     this.stopTimer();
 
-    if (this.mediaRecorder?.state !== 'inactive') {
-      this.mediaRecorder!.ondataavailable = null;
-      this.mediaRecorder!.onstop          = null;
-      this.mediaRecorder!.stop();
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.ondataavailable = null;
+      this.mediaRecorder.onstop          = null;
+      this.mediaRecorder.stop();
     }
 
     this.stopMediaStream();

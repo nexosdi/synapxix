@@ -85,7 +85,7 @@ export class TimelineOrderGameComponent implements BaseGameComponent, OnInit {
   readonly disabled = input<boolean>(false);
   readonly viewModel = computed(() => toTimelineOrderGameModel(this.content()));
 
-  userOrder = signal<any[]>([]);
+  userOrder = signal<{id: string, text: string, order: number}[]>([]);
   feedbackState = signal<'idle' | 'success' | 'error'>('idle');
 
   readonly shuffledEvents = computed(() => {
@@ -121,7 +121,7 @@ export class TimelineOrderGameComponent implements BaseGameComponent, OnInit {
     };
   });
 
-  selectEvent(event: any) {
+  selectEvent(event: {id: string, text: string, order: number}) {
     if (this.disabled()) return;
     if (!this.isEventSelected(event)) {
       this.userOrder.update(list => [...list, event]);
@@ -134,7 +134,7 @@ export class TimelineOrderGameComponent implements BaseGameComponent, OnInit {
     }
   }
 
-  isEventSelected(event: any) {
+  isEventSelected(event: {id: string, text?: string, order?: number}) {
     return this.userOrder().some(e => e.id === event.id);
   }
 
@@ -169,7 +169,7 @@ export class TimelineOrderGameComponent implements BaseGameComponent, OnInit {
 
       this.answerSubmitted.emit({
         gameType: 'timeline-order',
-        answer: { orderedItemIds: this.userOrder().map((e: any) => e.id) },
+        answer: { orderedItemIds: this.userOrder().map(e => e.id) },
         isCorrect: true,
         score: 100,
         timeSpentMs: 0
