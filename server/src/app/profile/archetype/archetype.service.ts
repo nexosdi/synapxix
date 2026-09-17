@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@nexosdi.synapxix/prisma';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 @Injectable()
 export class ArchetypeService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async calculateArchetype(userId: string) {
     // 1. Fetch user cognitive metrics
@@ -110,6 +114,23 @@ export class ArchetypeService {
       if (score > maxScore) {
         maxScore = score;
         dominantArchetype = archetype;
+      }
+    }
+
+    if (sessionCount === 3 && dominantArchetype) {
+      const existing = await this.prisma.notification.findFirst({
+        where: { user_id: userId, title: '¡Arquetipo descubierto!' },
+      });
+      if (!existing) {
+        await this.notificationsService.create(
+          {
+            userId,
+            title: '¡Arquetipo descubierto!',
+            message: `Has completado tus primeras 3 sesiones. Tu arquetipo dominante es: ${dominantArchetype.name}.`,
+          },
+          undefined,
+          true
+        ).catch(e => console.error('Error enviando notificación de arquetipo', e));
       }
     }
 

@@ -13,6 +13,7 @@ import { ResearchModule } from './modules/research/research.module';
 import { EvaluativeModule } from './evaluative/evaluative.module';
 import { ExercisesModule } from './exercises/exercises.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TeacherInsightsModule } from './modules/research/teacher-insights/teacher-insights.module';
 import { AdminModule } from './admin/admin.module';
@@ -59,6 +60,7 @@ import { AdminModule } from './admin/admin.module';
     ExercisesModule,
     AnalyticsModule,
     AdminModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

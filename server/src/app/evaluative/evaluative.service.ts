@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@nexosdi.synapxix/prisma';
 import { EvaluateSessionDto, GameAttemptRecordDto } from './dto/evaluate-session.dto';
+import { KeycloakJwtPayload } from '../auth/jwt.strategy';
+import { linkType } from '@prisma/client';
 
 @Injectable()
 export class EvaluativeService {
@@ -124,12 +126,36 @@ export class EvaluativeService {
   /**
    * Retrieves summaries of performance metrics for all students.
    */
-  async getStudentList() {
+  async getStudentList(userPayload?: KeycloakJwtPayload) {
+    let studentIds: string[] | undefined = undefined;
+
+    // If the user is a teacher (and not an admin), we restrict the list to their students
+    const roles = userPayload?.realm_access?.roles || [];
+    const isTeacher = roles.includes('teacher');
+    const isAdmin = roles.includes('admin') || roles.includes('neops_admin');
+
+    if (isTeacher && !isAdmin && userPayload?.sub) {
+      const links = await this.prisma.userLink.findMany({
+        where: {
+          id_user_from: userPayload.sub,
+          link_type: linkType.TEACHER,
+          id_user_to: { not: null },
+        },
+        select: { id_user_to: true },
+      });
+      studentIds = links.map((l) => l.id_user_to as string);
+    }
+
+    const whereClause: any = {
+      role: { in: ['user', 'student'] },
+    };
+    if (studentIds !== undefined) {
+      whereClause.user_id = { in: studentIds };
+    }
+
     // 1. Fetch only student user attributes (no metrics)
     const students = await this.prisma.app_user.findMany({
-      where: {
-        role: { in: ['user', 'student'] },
-      },
+      where: whereClause,
       select: {
         user_id: true,
         firstname: true,

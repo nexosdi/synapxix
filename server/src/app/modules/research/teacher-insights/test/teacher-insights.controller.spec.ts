@@ -3,6 +3,8 @@ import { UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '@nexosdi.synapxix/prisma';
 import { TeacherInsightsController } from '../teacher-insights.controller';
 import { TeacherInsightsService } from '../teacher-insights.service';
+import { JwtAuthGuard } from '../../../../auth/jwt-auth.guard';
+import { TeacherAccessGuard } from '../../../../auth/teacher-access.guard';
 
 describe('TeacherInsightsController', () => {
   let controller: TeacherInsightsController;
@@ -45,7 +47,12 @@ describe('TeacherInsightsController', () => {
         { provide: TeacherInsightsService, useValue: mockService },
         { provide: PrismaService, useValue: mockPrisma },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(TeacherAccessGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<TeacherInsightsController>(TeacherInsightsController);
     service = module.get(TeacherInsightsService);
@@ -96,31 +103,6 @@ describe('TeacherInsightsController', () => {
       expect(result).toHaveLength(1);
     });
 
-    it('should throw UnauthorizedException when a teacher tries to access another teacher reports', async () => {
-      (prisma.app_user.findUnique as jest.Mock).mockResolvedValue({
-        user_id: mockOtherId,
-        role: 'teacher',
-      });
-
-      const req: any = { user: { sub: mockOtherId } };
-
-      await expect(
-        controller.getReports(mockTeacherId, req, DEFAULT_LIMIT),
-      ).rejects.toThrow(UnauthorizedException);
-    });
-
-    it('should throw UnauthorizedException when a student tries to access teacher reports', async () => {
-      (prisma.app_user.findUnique as jest.Mock).mockResolvedValue({
-        user_id: mockOtherId,
-        role: 'student',
-      });
-
-      const req: any = { user: { sub: mockOtherId } };
-
-      await expect(
-        controller.getReports(mockTeacherId, req, DEFAULT_LIMIT),
-      ).rejects.toThrow(UnauthorizedException);
-    });
   });
 
   describe('generateNow', () => {
@@ -140,19 +122,6 @@ describe('TeacherInsightsController', () => {
         expect.any(Date),
       );
       expect(result.reportId).toBe(mockReport.report_id);
-    });
-
-    it('should throw UnauthorizedException when a teacher tries to generate report for another teacher', async () => {
-      (prisma.app_user.findUnique as jest.Mock).mockResolvedValue({
-        user_id: mockOtherId,
-        role: 'teacher',
-      });
-
-      const req: any = { user: { sub: mockOtherId } };
-
-      await expect(controller.generateNow(mockTeacherId, req)).rejects.toThrow(
-        UnauthorizedException,
-      );
     });
 
     it('should allow admin to trigger report for any teacher', async () => {

@@ -14,13 +14,14 @@ import { ApiTags, ApiQuery } from '@nestjs/swagger';
 import { Request } from 'express';
 import { PrismaService } from '@nexosdi.synapxix/prisma';
 import { JwtAuthGuard } from '../../../auth/jwt-auth.guard';
+import { TeacherAccessGuard } from '../../../auth/teacher-access.guard';
 import { KeycloakJwtPayload } from '../../../auth/jwt.strategy';
 import { TeacherInsightsService } from './teacher-insights.service';
 import { TeacherInsightReportResponseDto } from './dto/teacher-insights-report-response.dto';
 
 @ApiTags('Teacher Insights')
 @Controller('teacher-insights')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, TeacherAccessGuard)
 export class TeacherInsightsController {
   constructor(
     private readonly teacherInsightsService: TeacherInsightsService,
@@ -35,7 +36,6 @@ export class TeacherInsightsController {
     
     @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
   ): Promise<TeacherInsightReportResponseDto[]> {
-    await this.assertCanAccess(teacherId, req);
 
     const reports = await this.teacherInsightsService.getReportsForTeacher(teacherId, limit);
 
@@ -57,7 +57,6 @@ export class TeacherInsightsController {
     @Param('teacherId') teacherId: string,
     @Req() req: Request & { user: KeycloakJwtPayload },
   ): Promise<TeacherInsightReportResponseDto> {
-    await this.assertCanAccess(teacherId, req, true);
 
     const now = new Date();
     const periodEnd = new Date(now);
@@ -84,24 +83,5 @@ export class TeacherInsightsController {
     };
   }
 
-  private async assertCanAccess(
-    teacherId: string,
-    req: Request & { user: KeycloakJwtPayload },
-    requireStaff = false,
-  ): Promise<void> {
-    const requestingUser = req.user;
-    const isOwnData = requestingUser.sub === teacherId;
 
-    const user = await this.prisma.app_user.findUnique({
-      where: { user_id: requestingUser.sub },
-    });
-    const isAdmin = !!user && user.role === 'admin';
-    const isTeacher = !!user && user.role === 'teacher';
-
-    const allowed = isAdmin || (isOwnData && (isTeacher || !requireStaff));
-
-    if (!allowed) {
-      throw new UnauthorizedException('You are not authorized to access this resource.');
-    }
-  }
 }
