@@ -3,6 +3,7 @@ import { AnalyticsController } from '../analytics.controller';
 import { AnalyticsService } from '../analytics.service';
 import { PrismaService } from '@nexosdi.synapxix/prisma';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { TeacherAccessGuard } from '../../auth/teacher-access.guard';
 import { UnauthorizedException } from '@nestjs/common';
 import {
   mockUserId,
@@ -49,6 +50,8 @@ describe('AnalyticsController', () => {
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
+      .overrideGuard(TeacherAccessGuard)
+      .useValue({ canActivate: () => true })
       .compile();
 
     controller = module.get<AnalyticsController>(AnalyticsController);
@@ -94,7 +97,6 @@ describe('AnalyticsController', () => {
 
       const result = await controller.getIndividualCognitiveAverage(
         mockUserId,
-        req,
       );
 
       expect(result).toEqual(mockIndividualCognitiveAverageResponse);
@@ -104,55 +106,6 @@ describe('AnalyticsController', () => {
       );
     });
 
-    it('should allow a teacher or admin to access another user cognitive average', async () => {
-      mockAnalyticsService.getIndividualCognitiveAverage.mockResolvedValue(
-        mockIndividualCognitiveAverageResponse,
-      );
-      mockPrismaService.app_user.findUnique.mockResolvedValue({
-        user_id: mockUserId,
-        role: 'teacher',
-      });
-
-      const req = { user: mockTeacherJwtPayload } as Request & {
-        user: KeycloakJwtPayload;
-      };
-
-      const result = await controller.getIndividualCognitiveAverage(
-        mockTargetUserId,
-        req,
-      );
-
-      expect(result).toEqual(mockIndividualCognitiveAverageResponse);
-      expect(mockPrismaService.app_user.findUnique).toHaveBeenCalledWith({
-        where: { user_id: mockUserId },
-      });
-      expect(service.getIndividualCognitiveAverage).toHaveBeenCalledWith(
-        mockTargetUserId,
-      );
-    });
-
-    it('should throw UnauthorizedException when a regular user accesses another user cognitive average', async () => {
-      mockPrismaService.app_user.findUnique.mockResolvedValue({
-        user_id: mockUserId,
-        role: 'user',
-      });
-
-      const req = { user: mockUserJwtPayload } as Request & {
-        user: KeycloakJwtPayload;
-      };
-
-      await expect(
-        controller.getIndividualCognitiveAverage(mockTargetUserId, req),
-      ).rejects.toThrow(UnauthorizedException);
-    });
-
-    it('should throw UnauthorizedException when req.user is missing or invalid', async () => {
-      const req = {} as Request & { user: KeycloakJwtPayload };
-
-      await expect(
-        controller.getIndividualCognitiveAverage(mockUserId, req),
-      ).rejects.toThrow(UnauthorizedException);
-    });
   });
 
   describe('GET /analytics/class-progress/:classId', () => {
@@ -178,59 +131,13 @@ describe('AnalyticsController', () => {
         user: KeycloakJwtPayload;
       };
 
-      const result = await controller.getStudentProgress(mockUserId, req);
+      const result = await controller.getStudentProgress(mockUserId);
 
       expect(result).toEqual(mockStudentProgressResponse);
       expect(mockPrismaService.app_user.findUnique).not.toHaveBeenCalled();
       expect(service.getStudentProgress).toHaveBeenCalledWith(mockUserId);
     });
 
-    it('should allow a teacher or admin to access student progress', async () => {
-      mockAnalyticsService.getStudentProgress.mockResolvedValue(
-        mockStudentProgressResponse,
-      );
-      mockPrismaService.app_user.findUnique.mockResolvedValue({
-        user_id: mockUserId,
-        role: 'admin',
-      });
-
-      const req = { user: mockTeacherJwtPayload } as Request & {
-        user: KeycloakJwtPayload;
-      };
-
-      const result = await controller.getStudentProgress(
-        mockTargetUserId,
-        req,
-      );
-
-      expect(result).toEqual(mockStudentProgressResponse);
-      expect(service.getStudentProgress).toHaveBeenCalledWith(
-        mockTargetUserId,
-      );
-    });
-
-    it('should throw UnauthorizedException when a non-teacher/admin requests another student progress', async () => {
-      mockPrismaService.app_user.findUnique.mockResolvedValue({
-        user_id: mockUserId,
-        role: 'user',
-      });
-
-      const req = { user: mockUserJwtPayload } as Request & {
-        user: KeycloakJwtPayload;
-      };
-
-      await expect(
-        controller.getStudentProgress(mockTargetUserId, req),
-      ).rejects.toThrow(UnauthorizedException);
-    });
-
-    it('should throw UnauthorizedException when token user is missing', async () => {
-      const req = {} as Request & { user: KeycloakJwtPayload };
-
-      await expect(
-        controller.getStudentProgress(mockUserId, req),
-      ).rejects.toThrow(UnauthorizedException);
-    });
   });
 
   describe('GET /analytics/global-motor-average', () => {
