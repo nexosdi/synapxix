@@ -75,7 +75,7 @@ describe('EconomyService.processPurchase', () => {
     createRewardTransaction: jest.fn(),
   };
 
-  const service = new EconomyService(mockRepository as any);
+  const service = new EconomyService(mockRepository as any, { create: jest.fn().mockResolvedValue(true) } as any);
 
   const userId = 'user-uuid-1234';
   const itemId = 'item-uuid-5678';

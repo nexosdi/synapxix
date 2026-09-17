@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotificationsService } from '../../notifications/notifications.service';
 import { ConflictException, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { EconomyService } from '../economy.service';
@@ -34,6 +35,10 @@ describe('EconomyService — Purchase Stress & Concurrency', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EconomyService,
+        {
+          provide: NotificationsService,
+          useValue: { create: jest.fn().mockResolvedValue(true) },
+        },
         { provide: EconomyRepository, useValue: mockRepository },
       ],
     }).compile();
