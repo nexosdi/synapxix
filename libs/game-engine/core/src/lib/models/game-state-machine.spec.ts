@@ -1,4 +1,9 @@
-import { GameStateMachine, StateTransitionEvent } from './game-state-machine';
+import {
+  GameStateMachine,
+  GameState,
+  StateTransitionEvent,
+  InvalidStateTransitionError,
+} from './game-state-machine';
 
 describe('GameStateMachine', () => {
   let machine: GameStateMachine;
@@ -20,6 +25,7 @@ describe('GameStateMachine', () => {
       expect(machine.isLoading()).toBe(false);
       expect(machine.isReady()).toBe(false);
       expect(machine.isPlaying()).toBe(false);
+      expect(machine.isPaused()).toBe(false);
       expect(machine.isAnswering()).toBe(false);
       expect(machine.isFeedback()).toBe(false);
       expect(machine.isAdvancing()).toBe(false);
@@ -42,12 +48,27 @@ describe('GameStateMachine', () => {
       expect(machine.currentState()).toBe('READY');
     });
 
+    it('LOADING → IDLE (abort/cancel loading)', () => {
+      machine.transitionTo('LOADING');
+      const result = machine.transitionTo('IDLE');
+      expect(result).toBe(true);
+      expect(machine.currentState()).toBe('IDLE');
+    });
+
     it('READY → PLAYING', () => {
       machine.transitionTo('LOADING');
       machine.transitionTo('READY');
       const result = machine.transitionTo('PLAYING');
       expect(result).toBe(true);
       expect(machine.isPlaying()).toBe(true);
+    });
+
+    it('READY → IDLE (cancel session before play)', () => {
+      machine.transitionTo('LOADING');
+      machine.transitionTo('READY');
+      const result = machine.transitionTo('IDLE');
+      expect(result).toBe(true);
+      expect(machine.currentState()).toBe('IDLE');
     });
 
     it('PLAYING → ANSWERING', () => {
@@ -57,6 +78,71 @@ describe('GameStateMachine', () => {
       const result = machine.transitionTo('ANSWERING');
       expect(result).toBe(true);
       expect(machine.isAnswering()).toBe(true);
+    });
+
+    it('PLAYING → PAUSED and PAUSED → PLAYING (pause / resume)', () => {
+      machine.transitionTo('LOADING');
+      machine.transitionTo('READY');
+      machine.transitionTo('PLAYING');
+
+      const pauseResult = machine.transitionTo('PAUSED');
+      expect(pauseResult).toBe(true);
+      expect(machine.currentState()).toBe('PAUSED');
+      expect(machine.isPaused()).toBe(true);
+
+      const resumeResult = machine.transitionTo('PLAYING');
+      expect(resumeResult).toBe(true);
+      expect(machine.currentState()).toBe('PLAYING');
+      expect(machine.isPlaying()).toBe(true);
+    });
+
+    it('PAUSED → COMPLETED (quit from paused)', () => {
+      machine.transitionTo('LOADING');
+      machine.transitionTo('READY');
+      machine.transitionTo('PLAYING');
+      machine.transitionTo('PAUSED');
+
+      const result = machine.transitionTo('COMPLETED');
+      expect(result).toBe(true);
+      expect(machine.currentState()).toBe('COMPLETED');
+    });
+
+    it('PAUSED → IDLE (abort from paused)', () => {
+      machine.transitionTo('LOADING');
+      machine.transitionTo('READY');
+      machine.transitionTo('PLAYING');
+      machine.transitionTo('PAUSED');
+
+      const result = machine.transitionTo('IDLE');
+      expect(result).toBe(true);
+      expect(machine.currentState()).toBe('IDLE');
+    });
+
+    it('PLAYING → ADVANCING (skip game)', () => {
+      machine.transitionTo('LOADING');
+      machine.transitionTo('READY');
+      machine.transitionTo('PLAYING');
+      const result = machine.transitionTo('ADVANCING');
+      expect(result).toBe(true);
+      expect(machine.isAdvancing()).toBe(true);
+    });
+
+    it('PLAYING → COMPLETED (quit during play)', () => {
+      machine.transitionTo('LOADING');
+      machine.transitionTo('READY');
+      machine.transitionTo('PLAYING');
+      const result = machine.transitionTo('COMPLETED');
+      expect(result).toBe(true);
+      expect(machine.isCompleted()).toBe(true);
+    });
+
+    it('PLAYING → IDLE (abort during play)', () => {
+      machine.transitionTo('LOADING');
+      machine.transitionTo('READY');
+      machine.transitionTo('PLAYING');
+      const result = machine.transitionTo('IDLE');
+      expect(result).toBe(true);
+      expect(machine.isIdle()).toBe(true);
     });
 
     it('ANSWERING → FEEDBACK', () => {
@@ -80,6 +166,17 @@ describe('GameStateMachine', () => {
       expect(machine.isAdvancing()).toBe(true);
     });
 
+    it('FEEDBACK → IDLE (quit on feedback)', () => {
+      machine.transitionTo('LOADING');
+      machine.transitionTo('READY');
+      machine.transitionTo('PLAYING');
+      machine.transitionTo('ANSWERING');
+      machine.transitionTo('FEEDBACK');
+      const result = machine.transitionTo('IDLE');
+      expect(result).toBe(true);
+      expect(machine.isIdle()).toBe(true);
+    });
+
     it('ADVANCING → READY (loop for next game)', () => {
       machine.transitionTo('LOADING');
       machine.transitionTo('READY');
@@ -92,6 +189,18 @@ describe('GameStateMachine', () => {
       expect(machine.isReady()).toBe(true);
     });
 
+    it('ADVANCING → LOADING (load dynamic content for next game)', () => {
+      machine.transitionTo('LOADING');
+      machine.transitionTo('READY');
+      machine.transitionTo('PLAYING');
+      machine.transitionTo('ANSWERING');
+      machine.transitionTo('FEEDBACK');
+      machine.transitionTo('ADVANCING');
+      const result = machine.transitionTo('LOADING');
+      expect(result).toBe(true);
+      expect(machine.isLoading()).toBe(true);
+    });
+
     it('ADVANCING → COMPLETED (end of journey)', () => {
       machine.transitionTo('LOADING');
       machine.transitionTo('READY');
@@ -102,6 +211,18 @@ describe('GameStateMachine', () => {
       const result = machine.transitionTo('COMPLETED');
       expect(result).toBe(true);
       expect(machine.isCompleted()).toBe(true);
+    });
+
+    it('ADVANCING → IDLE (cancel on advancing)', () => {
+      machine.transitionTo('LOADING');
+      machine.transitionTo('READY');
+      machine.transitionTo('PLAYING');
+      machine.transitionTo('ANSWERING');
+      machine.transitionTo('FEEDBACK');
+      machine.transitionTo('ADVANCING');
+      const result = machine.transitionTo('IDLE');
+      expect(result).toBe(true);
+      expect(machine.isIdle()).toBe(true);
     });
 
     it('LOADING → COMPLETED (empty content edge case)', () => {
@@ -127,33 +248,88 @@ describe('GameStateMachine', () => {
       const result = machine.transitionTo('LOADING');
       expect(result).toBe(true);
     });
+
+    it('COMPLETED → IDLE (finish and reset)', () => {
+      machine.transitionTo('LOADING');
+      machine.transitionTo('COMPLETED');
+      const result = machine.transitionTo('IDLE');
+      expect(result).toBe(true);
+      expect(machine.isIdle()).toBe(true);
+    });
   });
 
   describe('invalid transitions', () => {
-    it('IDLE → PLAYING should fail', () => {
-      const result = machine.transitionTo('PLAYING');
-      expect(result).toBe(false);
+    it('IDLE → PLAYING should throw InvalidStateTransitionError and retain state', () => {
+      expect(() => machine.transitionTo('PLAYING')).toThrow(InvalidStateTransitionError);
       expect(machine.currentState()).toBe('IDLE');
     });
 
-    it('IDLE → FEEDBACK should fail', () => {
-      const result = machine.transitionTo('FEEDBACK');
-      expect(result).toBe(false);
+    it('IDLE → FEEDBACK should throw InvalidStateTransitionError', () => {
+      expect(() => machine.transitionTo('FEEDBACK')).toThrow(InvalidStateTransitionError);
     });
 
-    it('LOADING → PLAYING should fail (must go through READY)', () => {
+    it('LOADING → PLAYING should throw InvalidStateTransitionError (must go through READY)', () => {
       machine.transitionTo('LOADING');
-      const result = machine.transitionTo('PLAYING');
-      expect(result).toBe(false);
+      expect(() => machine.transitionTo('PLAYING')).toThrow(InvalidStateTransitionError);
       expect(machine.currentState()).toBe('LOADING');
     });
 
-    it('PLAYING → FEEDBACK should fail (must go through ANSWERING)', () => {
+    it('PLAYING → FEEDBACK should throw InvalidStateTransitionError (must go through ANSWERING)', () => {
       machine.transitionTo('LOADING');
       machine.transitionTo('READY');
       machine.transitionTo('PLAYING');
-      const result = machine.transitionTo('FEEDBACK');
-      expect(result).toBe(false);
+      expect(() => machine.transitionTo('FEEDBACK')).toThrow(InvalidStateTransitionError);
+      expect(machine.currentState()).toBe('PLAYING');
+    });
+
+    it('ANSWERING → READY should throw InvalidStateTransitionError', () => {
+      machine.transitionTo('LOADING');
+      machine.transitionTo('READY');
+      machine.transitionTo('PLAYING');
+      machine.transitionTo('ANSWERING');
+      expect(() => machine.transitionTo('READY')).toThrow(InvalidStateTransitionError);
+      expect(machine.currentState()).toBe('ANSWERING');
+    });
+
+    it('COMPLETED → PLAYING should throw InvalidStateTransitionError', () => {
+      machine.transitionTo('LOADING');
+      machine.transitionTo('COMPLETED');
+      expect(() => machine.transitionTo('PLAYING')).toThrow(InvalidStateTransitionError);
+      expect(machine.currentState()).toBe('COMPLETED');
+    });
+  });
+
+  describe('transition query methods', () => {
+    it('canTransitionTo should return true for valid transitions and false for invalid without throwing', () => {
+      expect(machine.canTransitionTo('LOADING')).toBe(true);
+      expect(machine.canTransitionTo('PLAYING')).toBe(false);
+      expect(machine.canTransitionTo('FEEDBACK')).toBe(false);
+
+      machine.transitionTo('LOADING');
+      expect(machine.canTransitionTo('READY')).toBe(true);
+      expect(machine.canTransitionTo('COMPLETED')).toBe(true);
+      expect(machine.canTransitionTo('IDLE')).toBe(true);
+      expect(machine.canTransitionTo('PLAYING')).toBe(false);
+    });
+
+    it('getAllowedTransitions should return expected next states for current or given state', () => {
+      expect(machine.getAllowedTransitions()).toEqual(['LOADING']);
+      expect(machine.getAllowedTransitions('PLAYING')).toEqual([
+        'ANSWERING',
+        'ADVANCING',
+        'PAUSED',
+        'COMPLETED',
+        'IDLE',
+      ]);
+      expect(machine.getAllowedTransitions('PAUSED')).toEqual([
+        'PLAYING',
+        'COMPLETED',
+        'IDLE',
+      ]);
+      expect(machine.getAllowedTransitions('COMPLETED')).toEqual([
+        'IDLE',
+        'LOADING',
+      ]);
     });
   });
 
@@ -167,6 +343,18 @@ describe('GameStateMachine', () => {
       machine.startLoading();
       machine.setReady();
       expect(machine.currentState()).toBe('READY');
+    });
+
+    it('pause() and resume() should work when in PLAYING state', () => {
+      machine.startLoading();
+      machine.setReady();
+      machine.startPlaying();
+
+      machine.pause();
+      expect(machine.isPaused()).toBe(true);
+
+      machine.resume();
+      expect(machine.isPlaying()).toBe(true);
     });
 
     it('complete() should transition from FEEDBACK to COMPLETED', () => {
@@ -275,7 +463,7 @@ describe('GameStateMachine', () => {
       const listener = jest.fn();
       machine.onTransition(listener);
 
-      machine.transitionTo('PLAYING'); // Invalid from IDLE
+      expect(() => machine.transitionTo('PLAYING')).toThrow(InvalidStateTransitionError);
 
       expect(listener).not.toHaveBeenCalled();
     });
@@ -315,21 +503,81 @@ describe('GameStateMachine', () => {
       expect(machine.transitionTo('LOADING')).toBe(true);
       expect(machine.transitionTo('READY')).toBe(true);
       expect(machine.transitionTo('PLAYING')).toBe(true);
-      
+
       // First game answer
       expect(machine.transitionTo('ANSWERING')).toBe(true);
       expect(machine.transitionTo('FEEDBACK')).toBe(true);
       expect(machine.transitionTo('ADVANCING')).toBe(true);
-      
+
       // Second game
       expect(machine.transitionTo('READY')).toBe(true);
       expect(machine.transitionTo('PLAYING')).toBe(true);
       expect(machine.transitionTo('ANSWERING')).toBe(true);
       expect(machine.transitionTo('FEEDBACK')).toBe(true);
-      
+
       // Journey complete
       expect(machine.transitionTo('COMPLETED')).toBe(true);
       expect(machine.isCompleted()).toBe(true);
     });
   });
+
+  describe('exhaustive transition matrix (all from x to combinations)', () => {
+    const ALL_STATES: GameState[] = [
+      'IDLE',
+      'LOADING',
+      'READY',
+      'PLAYING',
+      'PAUSED',
+      'ANSWERING',
+      'FEEDBACK',
+      'ADVANCING',
+      'COMPLETED',
+    ];
+
+    it('should allow exactly valid transitions and throw InvalidStateTransitionError for all other combinations', () => {
+      for (const fromState of ALL_STATES) {
+        const allowedTargets = machine.getAllowedTransitions(fromState);
+
+        for (const toState of ALL_STATES) {
+          // Setup state machine to fromState using reset & valid path or helper
+          const sm = new GameStateMachine();
+          reachState(sm, fromState);
+          expect(sm.currentState()).toBe(fromState);
+
+          if (allowedTargets.includes(toState)) {
+            expect(() => sm.transitionTo(toState)).not.toThrow();
+            expect(sm.currentState()).toBe(toState);
+          } else {
+            expect(() => sm.transitionTo(toState)).toThrow(InvalidStateTransitionError);
+            expect(sm.currentState()).toBe(fromState);
+          }
+        }
+      }
+    });
+
+    function reachState(sm: GameStateMachine, target: GameState): void {
+      if (target === 'IDLE') return;
+      sm.transitionTo('LOADING');
+      if (target === 'LOADING') return;
+      if (target === 'COMPLETED') {
+        sm.transitionTo('COMPLETED');
+        return;
+      }
+      sm.transitionTo('READY');
+      if (target === 'READY') return;
+      sm.transitionTo('PLAYING');
+      if (target === 'PLAYING') return;
+      if (target === 'PAUSED') {
+        sm.transitionTo('PAUSED');
+        return;
+      }
+      sm.transitionTo('ANSWERING');
+      if (target === 'ANSWERING') return;
+      sm.transitionTo('FEEDBACK');
+      if (target === 'FEEDBACK') return;
+      sm.transitionTo('ADVANCING');
+      if (target === 'ADVANCING') return;
+    }
+  });
 });
+

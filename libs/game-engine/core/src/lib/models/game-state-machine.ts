@@ -5,10 +5,21 @@ export type GameState =
   | 'LOADING'
   | 'READY'
   | 'PLAYING'
+  | 'PAUSED'
   | 'ANSWERING'
   | 'FEEDBACK'
   | 'ADVANCING'
   | 'COMPLETED';
+
+/**
+ * Error thrown when an invalid state transition is attempted in GameStateMachine.
+ */
+export class InvalidStateTransitionError extends Error {
+  constructor(public readonly from: GameState, public readonly to: GameState) {
+    super(`[GameStateMachine] Invalid transition attempt from ${from} to ${to}`);
+    this.name = 'InvalidStateTransitionError';
+  }
+}
 
 /**
  * Metadata emitted with every state transition.
@@ -46,6 +57,7 @@ export class GameStateMachine {
   public readonly isLoading = computed(() => this._currentState() === 'LOADING');
   public readonly isReady = computed(() => this._currentState() === 'READY');
   public readonly isPlaying = computed(() => this._currentState() === 'PLAYING');
+  public readonly isPaused = computed(() => this._currentState() === 'PAUSED');
   public readonly isAnswering = computed(() => this._currentState() === 'ANSWERING');
   public readonly isFeedback = computed(() => this._currentState() === 'FEEDBACK');
   public readonly isAdvancing = computed(() => this._currentState() === 'ADVANCING');
@@ -54,12 +66,13 @@ export class GameStateMachine {
   // Valid state transitions
   private readonly transitions: Record<GameState, GameState[]> = {
     IDLE: ['LOADING'],
-    LOADING: ['READY', 'COMPLETED'], // COMPLETED in case there's no content to load
-    READY: ['PLAYING'],
-    PLAYING: ['ANSWERING', 'ADVANCING'], // ADVANCING could happen if we skip
+    LOADING: ['READY', 'COMPLETED', 'IDLE'], // COMPLETED on empty content, IDLE on abort/cancel
+    READY: ['PLAYING', 'IDLE'], // IDLE on cancel
+    PLAYING: ['ANSWERING', 'ADVANCING', 'PAUSED', 'COMPLETED', 'IDLE'], // PAUSED, ADVANCING (skip), COMPLETED/IDLE (quit/abort)
+    PAUSED: ['PLAYING', 'COMPLETED', 'IDLE'], // PLAYING (resume), COMPLETED/IDLE (quit)
     ANSWERING: ['FEEDBACK'],
-    FEEDBACK: ['ADVANCING', 'COMPLETED'],
-    ADVANCING: ['READY', 'LOADING', 'COMPLETED'],
+    FEEDBACK: ['ADVANCING', 'COMPLETED', 'IDLE'],
+    ADVANCING: ['READY', 'LOADING', 'COMPLETED', 'IDLE'],
     COMPLETED: ['IDLE', 'LOADING'], // Allow to restart
   };
 
@@ -94,20 +107,39 @@ export class GameStateMachine {
     };
   }
 
+  // ── Transition checks & queries ─────────────────────────
+
+  /**
+   * Check if a transition to the specified state is valid from the current state.
+   */
+  public canTransitionTo(newState: GameState): boolean {
+    const current = this._currentState();
+    const allowed = this.transitions[current];
+    return allowed?.includes(newState) ?? false;
+  }
+
+  /**
+   * Get all allowed next states from the specified state (or current state if not specified).
+   */
+  public getAllowedTransitions(fromState?: GameState): GameState[] {
+    const current = fromState ?? this._currentState();
+    return [...(this.transitions[current] ?? [])];
+  }
+
   // ── Transition ───────────────────────────────────────────
 
   /**
    * Intentional state transition with validation.
    * Executes onExit hook of the current state and onEnter hook of the new state.
-   * Returns false if the transition is invalid.
+   * Throws InvalidStateTransitionError if the transition is invalid.
    */
   public transitionTo(newState: GameState, context?: unknown): boolean {
     const current = this._currentState() as GameState;
     const allowedTransitions = this.transitions[current];
 
-    if (!allowedTransitions.includes(newState)) {
+    if (!allowedTransitions || !allowedTransitions.includes(newState)) {
       console.warn(`[GameStateMachine] Invalid transition attempt from ${current} to ${newState}`);
-      return false;
+      throw new InvalidStateTransitionError(current, newState);
     }
 
     const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -174,6 +206,8 @@ export class GameStateMachine {
   public startLoading(): void { this.transitionTo('LOADING'); }
   public setReady(): void { this.transitionTo('READY'); }
   public startPlaying(): void { this.transitionTo('PLAYING'); }
+  public pause(): void { this.transitionTo('PAUSED'); }
+  public resume(): void { this.transitionTo('PLAYING'); }
   public submitAnswer(): void { this.transitionTo('ANSWERING'); }
   public showFeedback(): void { this.transitionTo('FEEDBACK'); }
   public advance(): void { this.transitionTo('ADVANCING'); }
