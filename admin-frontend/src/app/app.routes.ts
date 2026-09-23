@@ -37,6 +37,20 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'admin/users',
+    loadComponent: () =>
+      import('./dashboard/users-list/users-list.component').then(
+        (m) => m.UsersListComponent
+      ),
+  },
+  {
+    path: 'admin/users/:id',
+    loadComponent: () =>
+      import('./dashboard/user-detail/user-detail.component').then(
+        (m) => m.UserDetailComponent
+      ),
+  },
+  {
     path: '**',
     redirectTo: 'login',
   },

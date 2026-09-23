@@ -1,0 +1,50 @@
+<div class="user-detail-container">
+  <header class="detail-header">
+    <a routerLink="/admin/users" class="btn-back">
+      &larr; Volver
+    </a>
+    <h1>Detalle del Alumno</h1>
+  </header>
+
+  <div class="content-grid" *ngIf="metrics$ | async as metrics; else loading">
+    
+    <div class="card summary-card">
+      <h2>Métricas Generales</h2>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <span class="stat-label">Sesiones Jugadas</span>
+          <span class="stat-value">{{ metrics.totalSessions }}</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Tiempo Total (min)</span>
+          <span class="stat-value">{{ metrics.totalTimeSpentMinutes }}</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">Puntaje Promedio</span>
+          <span class="stat-value">{{ metrics.averageScore | number:'1.0-1' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <h2>Juegos Favoritos</h2>
+      <div class="chart-container" *ngIf="pieChartData">
+        <canvas baseChart
+          [data]="pieChartData"
+          [options]="pieChartOptions"
+          [type]="'pie'">
+        </canvas>
+      </div>
+      <div class="no-data" *ngIf="!pieChartData">
+        No hay datos de juegos para mostrar.
+      </div>
+    </div>
+
+  </div>
+
+  <ng-template #loading>
+    <div class="loading-state">
+      <p>Cargando métricas...</p>
+    </div>
+  </ng-template>
+</div>
