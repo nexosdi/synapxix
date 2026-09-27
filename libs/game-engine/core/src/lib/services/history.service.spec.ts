@@ -384,6 +384,13 @@ describe('HistoryService', () => {
         expect(service.isJourneyComplete()).toBe(false);
         expect(service.hasNextContent()).toBe(false);
       });
+
+      it('should not allow advancing to next after cleanup', async () => {
+        await service.loadHistory('test-history');
+        service.beginJourney();
+        service.cleanup();
+        expect(service.advanceToNext()).toBeNull();
+      });
     });
 
     // ── Full journey flow ──────────────────────────────────────────────────────
