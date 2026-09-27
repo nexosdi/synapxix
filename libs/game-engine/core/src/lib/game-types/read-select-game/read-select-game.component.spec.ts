@@ -46,7 +46,8 @@ describe('ReadSelectGameComponent', () => {
   });
 
   it('should add to foundWords when correct option clicked', () => {
-    const correctOption = component.options().find(o => o.isReal)!;
+    const correctOption = component.options().find(o => o.isReal);
+    if (!correctOption) throw new Error('Option not found');
     component.onOptionClick(correctOption);
     
     expect(component.foundWords().has(correctOption.text)).toBe(true);
@@ -54,7 +55,8 @@ describe('ReadSelectGameComponent', () => {
   });
 
   it('should add to wrongWords when incorrect option clicked', () => {
-    const incorrectOption = component.options().find(o => !o.isReal)!;
+    const incorrectOption = component.options().find(o => !o.isReal);
+    if (!incorrectOption) throw new Error('Option not found');
     component.onOptionClick(incorrectOption);
     
     expect(component.wrongWords().has(incorrectOption.text)).toBe(true);
@@ -66,7 +68,8 @@ describe('ReadSelectGameComponent', () => {
     componentRef.setInput('disabled', true);
     fixture.detectChanges();
 
-    const correctOption = component.options().find(o => o.isReal)!;
+    const correctOption = component.options().find(o => o.isReal);
+    if (!correctOption) throw new Error('Option not found');
     component.onOptionClick(correctOption);
     
     expect(component.foundWords().has(correctOption.text)).toBe(false);

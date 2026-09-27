@@ -10,7 +10,7 @@ export class DalaInstrumentationService implements OnDestroy {
   private readonly transport = inject(DalaHttpTransport);
   private emitter: DalaEmitter;
   private readonly storageKey = 'dala_offline_queue';
-  private flushInterval: any;
+  private flushInterval: ReturnType<typeof setInterval> | undefined;
 
   constructor() {
     this.emitter = new DalaEmitter({
@@ -52,7 +52,7 @@ export class DalaInstrumentationService implements OnDestroy {
     // Hack: acceder a la queue privada para persistirla si no se limpio todo
     // Ya que DalaEmitter no expone la cola directamente, debemos inferirla o interceptarla, 
     // pero como somos los dueños, podemos usar una asercion de tipo 'any'.
-    const queue = (this.emitter as any).queue as DalaBehaviorEvent[];
+    const queue = (this.emitter as unknown as { queue: DalaBehaviorEvent[] }).queue;
     if (queue && queue.length > 0) {
       localStorage.setItem(this.storageKey, JSON.stringify(queue));
     } else {
@@ -66,7 +66,7 @@ export class DalaInstrumentationService implements OnDestroy {
       try {
         const events = JSON.parse(stored) as DalaBehaviorEvent[];
         if (Array.isArray(events) && events.length > 0) {
-          (this.emitter as any).queue = events;
+          (this.emitter as unknown as { queue: DalaBehaviorEvent[] }).queue = events;
         }
       } catch (e) {
         console.error('Error restoring DALA queue', e);
