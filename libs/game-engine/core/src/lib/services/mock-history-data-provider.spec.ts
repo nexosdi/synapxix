@@ -39,7 +39,8 @@ describe('MockHistoryDataProvider', () => {
       const results = await provider.getHistories({ category: HISTORY_MOCK.category });
       expect(results).toContain(HISTORY_MOCK);
       
-      const noResults = await provider.getHistories({ category: 'non-existent-category' as any });
+      // @ts-expect-error Testing invalid category filtering
+      const noResults = await provider.getHistories({ category: 'non-existent-category' });
       expect(noResults.length).toBe(0);
     });
 

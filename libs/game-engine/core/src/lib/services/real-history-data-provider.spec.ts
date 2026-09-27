@@ -93,7 +93,7 @@ describe('RealHistoryDataProvider', () => {
 
   describe('getHistories()', () => {
     it('should return an empty array and log a warning', async () => {
-      jest.spyOn(console, 'warn').mockImplementation(() => {});
+      jest.spyOn(console, 'warn').mockImplementation(() => undefined);
       const result = await provider.getHistories();
       expect(result).toEqual([]);
       expect(console.warn).toHaveBeenCalled();
