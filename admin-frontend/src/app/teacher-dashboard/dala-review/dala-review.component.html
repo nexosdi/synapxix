@@ -1,0 +1,106 @@
+<div class="teacher-dash">
+  <nav class="navbar" role="navigation">
+    <a class="navbar__brand" href="#">
+      <img class="navbar__logo" src="/logo.png" alt="Synapxix logo" />
+      <span class="navbar__name">Synapxix</span>
+    </a>
+    <div class="navbar__center">
+      <span class="navbar__role-badge">D.A.L.A. Review Panel</span>
+    </div>
+    <div class="navbar__actions">
+      <button class="btn-logout" (click)="backToDashboard()">Back to Dashboard</button>
+    </div>
+  </nav>
+
+  <main class="main">
+    <section class="hero">
+      <div>
+        <h1 class="hero__title">Pending Decisions</h1>
+        <p class="hero__subtitle">Review and approve Shadow Mode recommendations.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="table-card">
+        @if (loading()) {
+          <div class="table-skeleton">
+            @for (_ of [1,2,3]; track $index) {
+              <div class="table-skeleton__row">
+                <div class="skeleton skeleton--cell-lg"></div>
+                <div class="skeleton skeleton--cell-sm"></div>
+              </div>
+            }
+          </div>
+        } @else if (error()) {
+          <div class="error-banner">
+            <span>{{ error() }}</span>
+            <button class="btn-retry" (click)="loadDecisions()">Retry</button>
+          </div>
+        } @else if (decisions().length === 0) {
+          <div style="padding: 2.5rem; text-align: center; color: var(--sx-text-muted);">
+            No pending decisions to review right now.
+          </div>
+        } @else {
+          <div class="grid-cards">
+            @for (decision of decisions(); track decision.decision_id) {
+              <div class="decision-card" (click)="openDecision(decision)">
+                <div class="decision-card__header">
+                  <span class="pill pill--amber">Confidence: {{ decision.confidence | percent }}</span>
+                  <span class="decision-date">{{ decision.created_at | date:'short' }}</span>
+                </div>
+                <h3 class="decision-card__title">{{ decision.objective }}</h3>
+                <p class="decision-card__action">Action: <strong>{{ decision.selected_action }}</strong></p>
+                <button class="btn-logout btn-full">Review Decision</button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </section>
+  </main>
+
+  <!-- Drawer -->
+  <div class="drawer-overlay" [class.drawer-overlay--open]="drawerOpen()" (click)="closeDrawer()"></div>
+  <aside class="drawer" [class.drawer--open]="drawerOpen()">
+    @if (loadingTrace()) {
+      <div class="drawer__body"><div class="chart-skeleton"></div></div>
+    } @else if (traceError()) {
+      <div class="drawer__body">
+        <div class="error-banner">{{ traceError() }}</div>
+      </div>
+    } @else if (selectedTrace()) {
+      <div class="drawer__header">
+        <div>
+          <h3 class="drawer__student-name">Review Action</h3>
+          <p class="drawer__student-meta">Action: {{ selectedTrace()!.decision.selected_action }}</p>
+        </div>
+        <button class="drawer__close" (click)="closeDrawer()">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="drawer__body">
+        <div class="trace-section">
+          <h4>Objective</h4>
+          <p>{{ selectedTrace()!.decision.objective }}</p>
+        </div>
+        
+        <div class="trace-section">
+          <h4>Evidence Basis</h4>
+          <p>{{ selectedTrace()!.evidence.length }} observations evaluated.</p>
+        </div>
+
+        <div class="review-form">
+          <label>Reason for approval/rejection (Required)</label>
+          <textarea [(ngModel)]="reviewReason" rows="3" placeholder="Explain your verdict..." class="form-control"></textarea>
+          
+          <div class="form-actions">
+            <button class="btn-reject" [disabled]="!reviewReason().trim() || submitting()" (click)="submitReview('rejected')">Reject</button>
+            <button class="btn-approve" [disabled]="!reviewReason().trim() || submitting()" (click)="submitReview('approved')">Approve</button>
+          </div>
+        </div>
+      </div>
+    }
+  </aside>
+</div>

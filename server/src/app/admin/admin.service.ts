@@ -151,4 +151,29 @@ export class AdminService {
       },
     };
   }
+
+  async exportStudentsCsv(institutionId?: string): Promise<string> {
+    const where: Prisma.app_userWhereInput = { role: 'student' };
+    if (institutionId) {
+      where.userStructures = { some: { structure: { institution_id: institutionId } } };
+    }
+
+    const students = await this.prisma.app_user.findMany({
+      where,
+      select: {
+        user_id: true,
+        firstname: true,
+        lastname: true,
+        email: true,
+        created_at: true,
+      },
+    });
+
+    const header = 'ID,Nombre,Apellido,Email,Fecha Registro\n';
+    const rows = students.map(s => 
+      `${s.user_id},"${s.firstname}","${s.lastname}",${s.email},${s.created_at.toISOString()}`
+    ).join('\n');
+
+    return header + rows;
+  }
 }

@@ -257,6 +257,37 @@ export class DalaRepository {
     return this.prisma.dalaDecisionRecord.findUnique({ where: { decision_id: decisionId } });
   }
 
+  async listDecisions(status?: 'pending' | 'reviewed', page: number = 1, limit: number = 20) {
+    const where: any = {};
+    if (status === 'pending') {
+      where.human_verdict = null;
+    } else if (status === 'reviewed') {
+      where.human_verdict = { not: null };
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.dalaDecisionRecord.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.dalaDecisionRecord.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   /** Registra el veredicto humano SIN sobrescribir la decisión original. */
   async reviewDecision(decisionId: string, verdict: string, reason?: string) {
     return this.prisma.dalaDecisionRecord.update({
