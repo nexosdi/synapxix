@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@nexosdi.synapxix/prisma';
+import { Prisma } from '@prisma/client';
 import type { DalaBehaviorEvent } from '@nexosdi.synapxix/dala/contracts';
 
 /**
@@ -257,8 +258,8 @@ export class DalaRepository {
     return this.prisma.dalaDecisionRecord.findUnique({ where: { decision_id: decisionId } });
   }
 
-  async listDecisions(status?: 'pending' | 'reviewed', page: number = 1, limit: number = 20) {
-    const where: any = {};
+  async listDecisions(status?: 'pending' | 'reviewed', page = 1, limit = 20) {
+    const where: Prisma.DalaDecisionRecordWhereInput = {};
     if (status === 'pending') {
       where.human_verdict = null;
     } else if (status === 'reviewed') {

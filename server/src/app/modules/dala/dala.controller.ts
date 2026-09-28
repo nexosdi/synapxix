@@ -47,7 +47,7 @@ export class DalaController {
   /** Seudónimo del usuario autenticado: lo que el web-game usa para emitir. */
   @Post('subjects/resolve')
   resolveSubject(@Req() req: Request & { user: KeycloakJwtPayload }) {
-    return this.facade.resolveSubject(req.user.sub!);
+    return this.facade.resolveSubject(req.user.sub as string);
   }
 
   /** Fase 4 — genera una recomendación en shadow mode (nunca auto-aplica). */

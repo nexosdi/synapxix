@@ -7,6 +7,7 @@ import { GetUsersDto } from './dto/get-users.dto';
 export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getUsers(dto: GetUsersDto, reqUser: Record<string, any>) {
     const { page = 1, limit = 20, institutionId, search } = dto;
     const skip = (page - 1) * limit;
