@@ -7,6 +7,7 @@ import { GetUsersDto } from './dto/get-users.dto';
 export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getUsers(dto: GetUsersDto, reqUser: Record<string, any>) {
     const { page = 1, limit = 20, institutionId, search } = dto;
     const skip = (page - 1) * limit;
@@ -150,5 +151,30 @@ export class AdminService {
         reactionTime: metrics._avg.reaction_time || 0,
       },
     };
+  }
+
+  async exportStudentsCsv(institutionId?: string): Promise<string> {
+    const where: Prisma.app_userWhereInput = { role: 'student' };
+    if (institutionId) {
+      where.userStructures = { some: { structure: { institution_id: institutionId } } };
+    }
+
+    const students = await this.prisma.app_user.findMany({
+      where,
+      select: {
+        user_id: true,
+        firstname: true,
+        lastname: true,
+        email: true,
+        created_at: true,
+      },
+    });
+
+    const header = 'ID,Nombre,Apellido,Email,Fecha Registro\n';
+    const rows = students.map(s => 
+      `${s.user_id},"${s.firstname}","${s.lastname}",${s.email},${s.created_at.toISOString()}`
+    ).join('\n');
+
+    return header + rows;
   }
 }

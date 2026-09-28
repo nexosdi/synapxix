@@ -94,11 +94,7 @@ export class DalaFacade {
     return this.repository.resolveSubject(userId).then((subjectId) => ({ subjectId }));
   }
 
-  /**
-   * Fase 4 — Decisión en shadow mode: congela un snapshot del estado, aplica
-   * la política determinista y persiste el DecisionRecord con sus razones.
-   * Nada cambia para el estudiante hasta que un humano apruebe.
-   */
+  /** Fase 4 — genera una recomendación en shadow mode (nunca auto-aplica). */
   async decide(subjectId: string) {
     const estimates = await this.repository.estimatesFor(subjectId);
     const constructs = Object.fromEntries(
@@ -132,6 +128,11 @@ export class DalaFacade {
       expectedOutcome: policy.expectedOutcome,
     });
     return record;
+  }
+
+  /** Lista decisiones, útil para el panel docente en shadow mode. */
+  async listDecisions(status?: 'pending' | 'reviewed', page?: number, limit?: number) {
+    return this.repository.listDecisions(status, page, limit);
   }
 
   /** Veredicto docente sobre una recomendación (aprueba/rechaza/edita). */

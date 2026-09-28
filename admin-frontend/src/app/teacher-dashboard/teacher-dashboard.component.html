@@ -17,6 +17,12 @@
     </div>
 
     <div class="navbar__actions">
+      <a routerLink="/teacher/dala-review" style="margin-right: 1.5rem; text-decoration: none; color: var(--sx-blue-deep); font-weight: var(--sx-weight-bold); display: flex; align-items: center; gap: 0.5rem;">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        DALA Review
+      </a>
       <div class="navbar__avatar" role="button" aria-label="User profile">
         {{ getUserInitial() }}
       </div>
@@ -143,6 +149,14 @@
         <div>
           <h2 class="section-header__title">Students</h2>
           <p class="section-header__subtitle">Click a row to view individual metrics</p>
+        </div>
+        <div style="margin-left: auto;">
+          <button class="btn-logout" (click)="downloadCsv()" style="background-color: var(--sx-white); border: 1px solid var(--sx-border); color: var(--sx-blue-deep); display: flex; align-items: center; gap: 0.5rem;">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+            Export CSV
+          </button>
         </div>
       </div>
 

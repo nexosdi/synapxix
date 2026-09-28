@@ -1,4 +1,5 @@
-import { Controller, Get, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards, Request, Res, BadRequestException } from '@nestjs/common';
+import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -24,5 +25,21 @@ export class AdminController {
   @Get('institutions/:id/stats')
   async getInstitutionStats(@Param('id') id: string) {
     return this.adminService.getInstitutionStats(id);
+  }
+
+  @Get('reports/students')
+  async getStudentReport(
+    @Query('format') format: string,
+    @Query('institutionId') institutionId: string,
+    @Res() res: Response
+  ) {
+    if (format === 'csv') {
+      const csvData = await this.adminService.exportStudentsCsv(institutionId);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=students.csv');
+      res.send(csvData);
+    } else {
+      throw new BadRequestException('Formato no soportado');
+    }
   }
 }

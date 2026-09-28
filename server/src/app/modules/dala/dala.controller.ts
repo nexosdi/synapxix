@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Req, UseGuards, Query } from '@nestjs/common';
 import { Request } from 'express';
 import { KeycloakJwtPayload } from '../../auth/jwt.strategy';
 import { Throttle } from '@nestjs/throttler';
@@ -47,13 +47,24 @@ export class DalaController {
   /** Seudónimo del usuario autenticado: lo que el web-game usa para emitir. */
   @Post('subjects/resolve')
   resolveSubject(@Req() req: Request & { user: KeycloakJwtPayload }) {
-    return this.facade.resolveSubject(req.user.sub!);
+    return this.facade.resolveSubject(req.user.sub as string);
   }
 
   /** Fase 4 — genera una recomendación en shadow mode (nunca auto-aplica). */
   @Post('decisions')
   decide(@Body() body: { subjectId: string }) {
     return this.facade.decide(body.subjectId);
+  }
+
+  @Get('decisions')
+  listDecisions(
+    @Query('status') status?: 'pending' | 'reviewed',
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 20;
+    return this.facade.listDecisions(status, pageNum, limitNum);
   }
 
   @Get('decisions/:decisionId')

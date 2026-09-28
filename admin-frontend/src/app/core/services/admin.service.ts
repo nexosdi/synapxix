@@ -25,4 +25,12 @@ export class AdminService {
   getUserMetrics(userId: string): Observable<UserMetrics> {
     return this.http.get<UserMetrics>(`${this.apiUrl}/users/${userId}/metrics`);
   }
+
+  downloadStudentsCsv(institutionId?: string): void {
+    let url = `${this.apiUrl}/reports/students?format=csv`;
+    if (institutionId) {
+      url += `&institutionId=${institutionId}`;
+    }
+    window.open(url, '_blank');
+  }
 }
