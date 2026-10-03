@@ -60,6 +60,7 @@ import { DalaInstrumentationService } from '../../services/dala.service';
       <div class="grid grid-cols-2 gap-10">
         @for (cat of view.categories; track cat.id) {
           <div 
+            [attr.id]="cat.id"
             (dragover)="onDragOver($event)"
             (dragleave)="onDragLeave()"
             (drop)="onDrop($event, cat.id)"
@@ -132,8 +133,6 @@ export class CategorizationGameComponent implements OnInit, BaseGameComponent {
     error: { title: '¡CASI!', icon: '🧐', class: 'bg-brand-500 border-brand-700' }
   }[this.feedbackState() as 'success' | 'error'] || { title: '', icon: '', class: '' }));
 
-  // --- LÓGICA DE DRAG & DROP VANILLA ---
-
   onDragStart(event: DragEvent, item: SortableItem) {
     if (this.disabled()) return;
     
@@ -150,10 +149,11 @@ export class CategorizationGameComponent implements OnInit, BaseGameComponent {
   }
 
   onDragOver(event: DragEvent) {
-    event.preventDefault(); // Necesario para permitir el Drop
-    // Aquí detectamos sobre qué categoría estamos
+    event.preventDefault();
+    if (this.disabled()) return;
+
     const target = event.currentTarget as HTMLElement;
-    this.isHovering.set(target.id || 'hovering'); 
+    this.isHovering.set(target.id || null);
   }
 
   onDragLeave() {
@@ -163,7 +163,8 @@ export class CategorizationGameComponent implements OnInit, BaseGameComponent {
   onDrop(event: DragEvent, categoryId: string) {
     event.preventDefault();
     this.isHovering.set(null);
-    
+    if (this.disabled()) return;
+
     const correctCatId = event.dataTransfer?.getData('text/plain');
 
     if (correctCatId === categoryId) {
