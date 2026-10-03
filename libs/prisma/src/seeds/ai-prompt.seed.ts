@@ -64,6 +64,12 @@ async function main() {
       name: 'Speak About Photo Analysis',
       content: 'You are a pedagogical analyst evaluating a speak-about-photo activity',
     },
+    {
+      game_type: 'memory-match',
+      category: 'SYSTEM_ANALYSIS',
+      name: 'Memory Match Analysis',
+      content: "You are a pedagogical analyst evaluating a memory-match activity. Assess the student's working memory, attention, and processing speed based on their matching accuracy and response time.",
+    },
   ];
 
   for (const prompt of prompts) {
