@@ -12,6 +12,7 @@ export type GameType =
   | 'balance-master'
   | 'sound-match'
   | 'memory-match'
+  | 'word-association'
   | 'speak-about-photo';
 
 export interface InteractiveContentBase<

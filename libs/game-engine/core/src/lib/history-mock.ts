@@ -287,7 +287,23 @@ export const contentMap: InteractiveContent[] = [
       }
     ]
   }
-}
+  },
+  {
+    "id": "wa-01",
+    "gameType": "word-association",
+    "gameInput": {
+      "prompt": "Select words related to",
+      "baseWord": "OCEAN",
+      "locale": "en",
+      "options": [
+        { "id": "1", "word": "Water", "isRelated": true },
+        { "id": "2", "word": "Fish", "isRelated": true },
+        { "id": "3", "word": "Car", "isRelated": false },
+        { "id": "4", "word": "Boat", "isRelated": true },
+        { "id": "5", "word": "Fire", "isRelated": false }
+      ]
+    }
+  }
 ];
 
 export const HISTORY_MOCK: History = {

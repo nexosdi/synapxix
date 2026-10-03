@@ -97,6 +97,12 @@ export class ExercisesController {
     return this.exercisesService.evaluateGeneric(body);
   }
 
+  @Post('word-association')
+  @UseGuards(JwtAuthGuard)
+  evaluateWordAssociation(@Body() body: unknown) {
+    return this.exercisesService.evaluateGeneric(body);
+  }
+
   @Post('read-select')
   @UseGuards(JwtAuthGuard)
   evaluateReadSelectGame(@Body() body: unknown) {

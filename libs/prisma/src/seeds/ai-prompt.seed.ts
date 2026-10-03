@@ -70,6 +70,12 @@ async function main() {
       name: 'Memory Match Analysis',
       content: "You are a pedagogical analyst evaluating a memory-match activity. Assess the student's working memory, attention, and processing speed based on their matching accuracy and response time.",
     },
+    {
+      game_type: 'word-association',
+      category: 'SYSTEM_ANALYSIS',
+      name: 'Word Association Analysis',
+      content: "You are a pedagogical analyst evaluating a word-association activity. Assess the student's semantic mapping, vocabulary depth, and creative logic based on their chosen associated words and precision score.",
+    },
   ];
 
   for (const prompt of prompts) {
