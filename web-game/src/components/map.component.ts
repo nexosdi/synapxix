@@ -76,6 +76,7 @@ export class MapComponent {
     'neural-link': 'memory neural link',
     'balance-master': 'balance master',
     'sound-match': 'sound match',
+    'memory-match': 'memory match',
   };
 
   readonly activeHistory = this.historyService.activeHistory;

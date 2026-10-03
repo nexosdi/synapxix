@@ -3,6 +3,25 @@ import { History, InteractiveContent } from './models/history.model';
 // Remarks: this file contains a example history, this must come from a server, only for development purposes.
 export const contentMap: InteractiveContent[] = [
   {
+    id: 'memory-match-animals-1',
+    gameType: 'memory-match',
+    gameInput: {
+      prompt: 'Encuentra todos los pares de animales',
+      columns: 4,
+      locale: 'es-AR',
+      cards: [
+        { id: 'c1a', pairId: 'p1', label: '🐶' },
+        { id: 'c1b', pairId: 'p1', label: '🐶' },
+        { id: 'c2a', pairId: 'p2', label: '🐱' },
+        { id: 'c2b', pairId: 'p2', label: '🐱' },
+        { id: 'c3a', pairId: 'p3', label: '🐸' },
+        { id: 'c3b', pairId: 'p3', label: '🐸' },
+        { id: 'c4a', pairId: 'p4', label: '🦁' },
+        { id: 'c4b', pairId: 'p4', label: '🦁' },
+      ],
+    },
+  },
+  {
     "id": "odd-01",
     "gameType": "intruder",
     "gameInput": {

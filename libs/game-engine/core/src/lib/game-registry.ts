@@ -56,6 +56,10 @@ export const gameComponentRegistry: Record<GameType, GameComponentLoader> = {
     import(
       './game-types/sound-match/sound-match.component' // <-- Corregido aquí
     ).then((m) => m.SoundMatchGameComponent),
+  'memory-match': () =>
+    import(
+      './game-types/memory-match/memory-match.component'
+    ).then((m) => m.MemoryMatchGameComponent),
 };
 
 export function resolveGameLoader(

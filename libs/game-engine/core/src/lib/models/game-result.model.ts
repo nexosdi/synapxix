@@ -57,6 +57,14 @@ export type SoundMatchResult = GameResult<'sound-match', { matchedPairs: Array<{
 // Speak About Photo
 export type SpeakAboutPhotoResult = GameResult<'speak-about-photo', { audioUrl?: string; recognizedText: string }>;
 
+// Memory Match
+export interface MemoryMatchAnswer {
+  matchedPairIds: string[];   // pair IDs matched successfully
+  totalAttempts: number;      // total flip-pair attempts
+  totalPairs: number;         // total pairs in the game
+}
+export type MemoryMatchResult = GameResult<'memory-match', MemoryMatchAnswer>;
+
 export type AnyGameResult =
   | ReadSelectResult
   | FillBlanksResult
@@ -70,6 +78,7 @@ export type AnyGameResult =
   | NeuralLinkResult
   | BalanceMasterResult
   | SoundMatchResult
+  | MemoryMatchResult
   | SpeakAboutPhotoResult;
 
 // ── Factories ────────────────────────────────────────────
@@ -234,3 +243,13 @@ export function createSpeakAboutPhotoResult(overrides?: Partial<SpeakAboutPhotoR
   };
 }
 
+export function createMemoryMatchResult(overrides?: Partial<MemoryMatchResult>): MemoryMatchResult {
+  return {
+    gameType: 'memory-match',
+    answer: { matchedPairIds: ['pair-1', 'pair-2'], totalAttempts: 6, totalPairs: 4 },
+    isCorrect: true,
+    score: 100,
+    timeSpentMs: 15000,
+    ...overrides,
+  };
+}

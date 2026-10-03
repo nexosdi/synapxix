@@ -1,0 +1,603 @@
+diff --git a/libs/game-engine/core/src/lib/game-types/categorization-game/categorization-game.component.spec.ts b/libs/game-engine/core/src/lib/game-types/categorization-game/categorization-game.component.spec.ts
+new file mode 100644
+index 0000000..bf176a1
+--- /dev/null
++++ b/libs/game-engine/core/src/lib/game-types/categorization-game/categorization-game.component.spec.ts
+@@ -0,0 +1,284 @@
++import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
++
++import { CategorizationGameComponent } from './categorization-game.component';
++import { CategorizationInteractiveContent, SortableItem } from './categorization-game.model';
++import { DalaInstrumentationService } from '../../services/dala.service';
++import { AnyGameResult } from '../../models/game-result.model';
++
++const CONTENT: CategorizationInteractiveContent = {
++  id: 'cat-test-1',
++  gameType: 'categorization',
++  gameInput: {
++    prompt: 'Clasifica los animales',
++    locale: 'es',
++    categories: [
++      { id: 'cat1', label: 'Mamíferos', icon: '🐾' },
++      { id: 'cat2', label: 'Aves', icon: '🦅' },
++    ],
++    items: [
++      { id: 'item1', text: 'Perro', categoryId: 'cat1' },
++      { id: 'item2', text: 'Águila', categoryId: 'cat2' },
++    ],
++  },
++};
++
++const SINGLE_ITEM_CONTENT: CategorizationInteractiveContent = {
++  id: 'cat-test-single',
++  gameType: 'categorization',
++  gameInput: {
++    prompt: 'Clasifica',
++    locale: 'es',
++    categories: [
++      { id: 'cat1', label: 'Mamíferos', icon: '🐾' },
++      { id: 'cat2', label: 'Aves', icon: '🦅' },
++    ],
++    items: [{ id: 'item1', text: 'Perro', categoryId: 'cat1' }],
++  },
++};
++
++function makeDragEvent(
++  dataMap: Record<string, string> = {},
++  currentTarget?: HTMLElement,
++): DragEvent {
++  return {
++    preventDefault: jest.fn(),
++    dataTransfer: {
++      getData: (key: string) => dataMap[key] ?? '',
++      setData: jest.fn(),
++      effectAllowed: 'move' as DataTransfer['effectAllowed'],
++    },
++    currentTarget: currentTarget ?? document.createElement('div'),
++  } as unknown as DragEvent;
++}
++
++describe('CategorizationGameComponent', () => {
++  let fixture: ComponentFixture<CategorizationGameComponent>;
++  let component: CategorizationGameComponent;
++  let mockAdapter: { mapInteraction: jest.Mock };
++
++  function createFixture(
++    content: CategorizationInteractiveContent,
++  ): ComponentFixture<CategorizationGameComponent> {
++    const f = TestBed.createComponent(CategorizationGameComponent);
++    f.componentRef.setInput('content', content);
++    f.componentRef.setInput('disabled', false);
++    f.detectChanges();
++    return f;
++  }
++
++  beforeEach(async () => {
++    mockAdapter = { mapInteraction: jest.fn() };
++    const dalaStub = { createAdapter: jest.fn().mockReturnValue(mockAdapter) };
++
++    await TestBed.configureTestingModule({
++      imports: [CategorizationGameComponent],
++      providers: [{ provide: DalaInstrumentationService, useValue: dalaStub }],
++    }).compileComponents();
++
++    fixture = createFixture(CONTENT);
++    component = fixture.componentInstance;
++  });
++
++  afterEach(() => {
++    jest.restoreAllMocks();
++  });
++
++  describe('rendering', () => {
++    it('should create and show the prompt from content', () => {
++      expect(component).toBeTruthy();
++      expect(fixture.nativeElement.textContent).toContain('Clasifica los animales');
++    });
++
++    it('should render the current pending item', () => {
++      const item = component.currentItem() as SortableItem;
++      expect(item).toBeTruthy();
++      expect(fixture.nativeElement.textContent).toContain(item.text);
++    });
++
++    it('should render all categories', () => {
++      const el: HTMLElement = fixture.nativeElement;
++      expect(el.textContent).toContain('Mamíferos');
++      expect(el.textContent).toContain('Aves');
++    });
++
++    it('should start with feedbackState idle', () => {
++      expect(component.feedbackState()).toBe('idle');
++    });
++
++    it('should start progress at 0%', () => {
++      expect(component.progress()).toBe(0);
++    });
++
++    it('should expose a valid item as currentItem regardless of shuffle order', () => {
++      const validIds = CONTENT.gameInput.items.map((i) => i.id);
++      expect(validIds).toContain(component.currentItem()?.id);
++    });
++  });
++
++  describe('correct drop', () => {
++    it('should remove the item from remainingItems', () => {
++      const before = component.remainingItems().length;
++      const item = component.currentItem() as SortableItem;
++
++      component.onDrop(makeDragEvent({ 'text/plain': item.categoryId }), item.categoryId);
++
++      expect(component.remainingItems().length).toBe(before - 1);
++    });
++
++    it('should advance the progress bar', () => {
++      const item = component.currentItem() as SortableItem;
++
++      component.onDrop(makeDragEvent({ 'text/plain': item.categoryId }), item.categoryId);
++
++      expect(component.progress()).toBeGreaterThan(0);
++    });
++
++    it('should emit answerSubmitted with isCorrect=true and score=100 on the last item', () => {
++      const singleFixture = createFixture(SINGLE_ITEM_CONTENT);
++      const singleComponent = singleFixture.componentInstance;
++
++      const emitted: AnyGameResult[] = [];
++      singleComponent.answerSubmitted.subscribe((r) => emitted.push(r));
++
++      const item = singleComponent.currentItem() as SortableItem;
++      singleComponent.onDrop(makeDragEvent({ 'text/plain': item.categoryId }), item.categoryId);
++
++      expect(emitted).toHaveLength(1);
++      expect(emitted[0].isCorrect).toBe(true);
++      expect(emitted[0].score).toBe(100);
++      expect(emitted[0].gameType).toBe('categorization');
++    });
++
++    it('should set feedbackState to success when all items are classified', () => {
++      const singleFixture = createFixture(SINGLE_ITEM_CONTENT);
++      const singleComponent = singleFixture.componentInstance;
++
++      const item = singleComponent.currentItem() as SortableItem;
++      singleComponent.onDrop(makeDragEvent({ 'text/plain': item.categoryId }), item.categoryId);
++
++      expect(singleComponent.feedbackState()).toBe('success');
++    });
++
++    it('should not emit answerSubmitted while items remain', () => {
++      const emitted: AnyGameResult[] = [];
++      component.answerSubmitted.subscribe((r) => emitted.push(r));
++
++      const item = component.currentItem() as SortableItem;
++      component.onDrop(makeDragEvent({ 'text/plain': item.categoryId }), item.categoryId);
++
++      expect(emitted).toHaveLength(0);
++    });
++  });
++
++  describe('incorrect drop', () => {
++    function wrongCategoryId(correctId: string): string {
++      return correctId === 'cat1' ? 'cat2' : 'cat1';
++    }
++
++    it('should not emit answerSubmitted', () => {
++      const emitted: AnyGameResult[] = [];
++      component.answerSubmitted.subscribe((r) => emitted.push(r));
++
++      const item = component.currentItem() as SortableItem;
++      component.onDrop(
++        makeDragEvent({ 'text/plain': item.categoryId }),
++        wrongCategoryId(item.categoryId),
++      );
++
++      expect(emitted).toHaveLength(0);
++    });
++
++    it('should set feedbackState to error', () => {
++      const item = component.currentItem() as SortableItem;
++      component.onDrop(
++        makeDragEvent({ 'text/plain': item.categoryId }),
++        wrongCategoryId(item.categoryId),
++      );
++
++      expect(component.feedbackState()).toBe('error');
++    });
++
++    it('should reset feedbackState to idle after 1500ms', fakeAsync(() => {
++      const item = component.currentItem() as SortableItem;
++      component.onDrop(
++        makeDragEvent({ 'text/plain': item.categoryId }),
++        wrongCategoryId(item.categoryId),
++      );
++
++      expect(component.feedbackState()).toBe('error');
++
++      tick(1500);
++
++      expect(component.feedbackState()).toBe('idle');
++    }));
++
++    it('should not remove the item from remainingItems', () => {
++      const before = component.remainingItems().length;
++      const item = component.currentItem() as SortableItem;
++      component.onDrop(
++        makeDragEvent({ 'text/plain': item.categoryId }),
++        wrongCategoryId(item.categoryId),
++      );
++
++      expect(component.remainingItems().length).toBe(before);
++    });
++  });
++
++  describe('drag over', () => {
++    it('should set isHovering to the category id from the drop target', () => {
++      const zone = document.createElement('div');
++      zone.id = 'cat1';
++
++      component.onDragOver(makeDragEvent({}, zone));
++
++      expect(component.isHovering()).toBe('cat1');
++    });
++  });
++
++  describe('disabled', () => {
++    it('should not call mapInteraction on drag start when disabled', () => {
++      fixture.componentRef.setInput('disabled', true);
++      fixture.detectChanges();
++      const callsBefore = mockAdapter.mapInteraction.mock.calls.length;
++
++      component.onDragStart(makeDragEvent(), component.currentItem() as SortableItem);
++
++      expect(mockAdapter.mapInteraction.mock.calls.length).toBe(callsBefore);
++    });
++
++    it('should not update remainingItems on drop when disabled', () => {
++      fixture.componentRef.setInput('disabled', true);
++      fixture.detectChanges();
++
++      const before = component.remainingItems().length;
++      const item = component.currentItem() as SortableItem;
++      component.onDrop(makeDragEvent({ 'text/plain': item.categoryId }), item.categoryId);
++
++      expect(component.remainingItems().length).toBe(before);
++    });
++
++    it('should not emit answerSubmitted on drop when disabled', () => {
++      fixture.componentRef.setInput('disabled', true);
++      fixture.detectChanges();
++
++      const emitted: AnyGameResult[] = [];
++      component.answerSubmitted.subscribe((r) => emitted.push(r));
++
++      const item = component.currentItem() as SortableItem;
++      component.onDrop(makeDragEvent({ 'text/plain': item.categoryId }), item.categoryId);
++
++      expect(emitted).toHaveLength(0);
++    });
++
++    it('should not set isHovering on drag over when disabled', () => {
++      fixture.componentRef.setInput('disabled', true);
++      fixture.detectChanges();
++
++      const zone = document.createElement('div');
++      zone.id = 'cat2';
++      component.onDragOver(makeDragEvent({}, zone));
++
++      expect(component.isHovering()).toBeNull();
++    });
++  });
++});
+diff --git a/libs/game-engine/core/src/lib/game-types/categorization-game/categorization-game.component.ts b/libs/game-engine/core/src/lib/game-types/categorization-game/categorization-game.component.ts
+index c428301..fc263b0 100644
+--- a/libs/game-engine/core/src/lib/game-types/categorization-game/categorization-game.component.ts
++++ b/libs/game-engine/core/src/lib/game-types/categorization-game/categorization-game.component.ts
+@@ -60,6 +60,7 @@ import { DalaInstrumentationService } from '../../services/dala.service';
+       <div class="grid grid-cols-2 gap-10">
+         @for (cat of view.categories; track cat.id) {
+           <div 
++            [attr.id]="cat.id"
+             (dragover)="onDragOver($event)"
+             (dragleave)="onDragLeave()"
+             (drop)="onDrop($event, cat.id)"
+@@ -132,8 +133,6 @@ export class CategorizationGameComponent implements OnInit, BaseGameComponent {
+     error: { title: '¡CASI!', icon: '🧐', class: 'bg-brand-500 border-brand-700' }
+   }[this.feedbackState() as 'success' | 'error'] || { title: '', icon: '', class: '' }));
+ 
+-  // --- LÓGICA DE DRAG & DROP VANILLA ---
+-
+   onDragStart(event: DragEvent, item: SortableItem) {
+     if (this.disabled()) return;
+     
+@@ -150,10 +149,11 @@ export class CategorizationGameComponent implements OnInit, BaseGameComponent {
+   }
+ 
+   onDragOver(event: DragEvent) {
+-    event.preventDefault(); // Necesario para permitir el Drop
+-    // Aquí detectamos sobre qué categoría estamos
++    event.preventDefault();
++    if (this.disabled()) return;
++
+     const target = event.currentTarget as HTMLElement;
+-    this.isHovering.set(target.id || 'hovering'); 
++    this.isHovering.set(target.id || null);
+   }
+ 
+   onDragLeave() {
+@@ -163,7 +163,8 @@ export class CategorizationGameComponent implements OnInit, BaseGameComponent {
+   onDrop(event: DragEvent, categoryId: string) {
+     event.preventDefault();
+     this.isHovering.set(null);
+-    
++    if (this.disabled()) return;
++
+     const correctCatId = event.dataTransfer?.getData('text/plain');
+ 
+     if (correctCatId === categoryId) {
+diff --git a/libs/game-engine/core/src/lib/game-types/categorization-game/categorization-game.model.ts b/libs/game-engine/core/src/lib/game-types/categorization-game/categorization-game.model.ts
+index 6fde007..62abd3c 100644
+--- a/libs/game-engine/core/src/lib/game-types/categorization-game/categorization-game.model.ts
++++ b/libs/game-engine/core/src/lib/game-types/categorization-game/categorization-game.model.ts
+@@ -1,5 +1,3 @@
+-// libs/game-engine/core/src/lib/game-types/categorization-game/categorization-game.model.ts
+-
+ import { InteractiveContentBase } from '../../models/history.model';
+ 
+ export type CategorizationGameType = 'categorization';
+@@ -8,14 +6,14 @@ export interface Category {
+   id: string;
+   label: string;
+   icon?: string;
+-  colorClass?: string; // Para personalizar el color de la caja
++  colorClass?: string;
+ }
+ 
+ export interface SortableItem {
+   id: string;
+   text: string;
+   imageUrl?: string;
+-  categoryId: string; // El ID de la categoría a la que pertenece
++  categoryId: string;
+ }
+ 
+ export interface CategorizationGameData {
+diff --git a/libs/game-engine/core/src/lib/game-types/fill-in-the-blanks-game/fill-in-the-blanks-game.component.spec.ts b/libs/game-engine/core/src/lib/game-types/fill-in-the-blanks-game/fill-in-the-blanks-game.component.spec.ts
+new file mode 100644
+index 0000000..03170f8
+--- /dev/null
++++ b/libs/game-engine/core/src/lib/game-types/fill-in-the-blanks-game/fill-in-the-blanks-game.component.spec.ts
+@@ -0,0 +1,234 @@
++import { ComponentFixture, TestBed } from '@angular/core/testing';
++
++import { FillInTheBlanksGameComponent } from './fill-in-the-blanks-game.component';
++import { FillInTheBlanksInteractiveContent } from './fill-in-the-blanks-game.model';
++import { AnyGameResult } from '../../models/game-result.model';
++
++const ONE_BLANK_CONTENT: FillInTheBlanksInteractiveContent = {
++  id: 'fitb-test-1',
++  gameType: 'fill-in-the-blanks',
++  gameInput: {
++    sentence: 'El cielo es ___',
++    locale: 'es',
++    shuffleChoices: false,
++    blanks: [
++      {
++        index: 0,
++        choices: [
++          { label: 'azul', isCorrect: true },
++          { label: 'verde', isCorrect: false },
++        ],
++      },
++    ],
++  },
++};
++
++const TWO_BLANK_CONTENT: FillInTheBlanksInteractiveContent = {
++  id: 'fitb-test-2',
++  gameType: 'fill-in-the-blanks',
++  gameInput: {
++    sentence: 'El ___ es ___',
++    locale: 'es',
++    shuffleChoices: false,
++    blanks: [
++      {
++        index: 0,
++        choices: [
++          { label: 'cielo', isCorrect: true },
++          { label: 'mar', isCorrect: false },
++        ],
++      },
++      {
++        index: 1,
++        choices: [
++          { label: 'azul', isCorrect: true },
++          { label: 'rojo', isCorrect: false },
++        ],
++      },
++    ],
++  },
++};
++
++describe('FillInTheBlanksGameComponent', () => {
++  let fixture: ComponentFixture<FillInTheBlanksGameComponent>;
++  let component: FillInTheBlanksGameComponent;
++
++  function createFixture(
++    content: FillInTheBlanksInteractiveContent,
++  ): ComponentFixture<FillInTheBlanksGameComponent> {
++    const f = TestBed.createComponent(FillInTheBlanksGameComponent);
++    f.componentRef.setInput('content', content);
++    f.componentRef.setInput('disabled', false);
++    f.detectChanges();
++    return f;
++  }
++
++  beforeEach(async () => {
++    await TestBed.configureTestingModule({
++      imports: [FillInTheBlanksGameComponent],
++    }).compileComponents();
++
++    fixture = createFixture(ONE_BLANK_CONTENT);
++    component = fixture.componentInstance;
++  });
++
++  afterEach(() => {
++    jest.restoreAllMocks();
++  });
++
++  describe('rendering', () => {
++    it('should create and show the sentence from content', () => {
++      expect(component).toBeTruthy();
++      expect(fixture.nativeElement.textContent).toContain('El cielo es ___');
++    });
++
++    it('should render one button per choice for each blank', () => {
++      const buttons = fixture.nativeElement.querySelectorAll('button');
++      expect(buttons.length).toBe(2);
++    });
++
++    it('should render choice labels', () => {
++      const el: HTMLElement = fixture.nativeElement;
++      expect(el.textContent).toContain('azul');
++      expect(el.textContent).toContain('verde');
++    });
++
++    it('should start with no selections', () => {
++      expect(component.getSelectedChoice(0)).toBeUndefined();
++    });
++
++    it('should start with the game not finished', () => {
++      expect(component.isFinished()).toBe(false);
++    });
++  });
++
++  describe('correct selection', () => {
++    it('should record the selection in getSelectedChoice', () => {
++      component.onChoiceClick(0, { label: 'azul', isCorrect: true });
++      expect(component.getSelectedChoice(0)).toBe('azul');
++    });
++
++    it('should return true from isCorrect when the blank is answered correctly', () => {
++      component.onChoiceClick(0, { label: 'azul', isCorrect: true });
++      expect(component.isCorrect(0)).toBe(true);
++    });
++
++    it('should emit answerSubmitted with isCorrect=true and score=100 when all blanks are correct', () => {
++      const emitted: AnyGameResult[] = [];
++      component.answerSubmitted.subscribe((r) => emitted.push(r));
++
++      component.onChoiceClick(0, { label: 'azul', isCorrect: true });
++
++      expect(emitted).toHaveLength(1);
++      expect(emitted[0].isCorrect).toBe(true);
++      expect(emitted[0].score).toBe(100);
++      expect(emitted[0].gameType).toBe('fill-in-the-blanks');
++    });
++
++    it('should set isFinished to true when all blanks are correct', () => {
++      component.onChoiceClick(0, { label: 'azul', isCorrect: true });
++      expect(component.isFinished()).toBe(true);
++    });
++
++    it('should lock a correct blank so a second click does not change the selection', () => {
++      component.onChoiceClick(0, { label: 'azul', isCorrect: true });
++      component.onChoiceClick(0, { label: 'verde', isCorrect: false });
++
++      expect(component.getSelectedChoice(0)).toBe('azul');
++    });
++
++    it('should not emit answerSubmitted while blanks remain unanswered correctly', () => {
++      const twoBlankFixture = createFixture(TWO_BLANK_CONTENT);
++      const twoBlankComponent = twoBlankFixture.componentInstance;
++
++      const emitted: AnyGameResult[] = [];
++      twoBlankComponent.answerSubmitted.subscribe((r) => emitted.push(r));
++
++      twoBlankComponent.onChoiceClick(0, { label: 'cielo', isCorrect: true });
++
++      expect(emitted).toHaveLength(0);
++    });
++
++    it('should emit answerSubmitted only when every blank is correct', () => {
++      const twoBlankFixture = createFixture(TWO_BLANK_CONTENT);
++      const twoBlankComponent = twoBlankFixture.componentInstance;
++
++      const emitted: AnyGameResult[] = [];
++      twoBlankComponent.answerSubmitted.subscribe((r) => emitted.push(r));
++
++      twoBlankComponent.onChoiceClick(0, { label: 'cielo', isCorrect: true });
++      twoBlankComponent.onChoiceClick(1, { label: 'azul', isCorrect: true });
++
++      expect(emitted).toHaveLength(1);
++      expect(emitted[0].isCorrect).toBe(true);
++    });
++  });
++
++  describe('incorrect selection', () => {
++    it('should record an incorrect selection in getSelectedChoice', () => {
++      component.onChoiceClick(0, { label: 'verde', isCorrect: false });
++      expect(component.getSelectedChoice(0)).toBe('verde');
++    });
++
++    it('should return false from isCorrect for an incorrect selection', () => {
++      component.onChoiceClick(0, { label: 'verde', isCorrect: false });
++      expect(component.isCorrect(0)).toBe(false);
++    });
++
++    it('should not emit answerSubmitted on an incorrect selection', () => {
++      const emitted: AnyGameResult[] = [];
++      component.answerSubmitted.subscribe((r) => emitted.push(r));
++
++      component.onChoiceClick(0, { label: 'verde', isCorrect: false });
++
++      expect(emitted).toHaveLength(0);
++    });
++
++    it('should not mark the game as finished on an incorrect selection', () => {
++      component.onChoiceClick(0, { label: 'verde', isCorrect: false });
++      expect(component.isFinished()).toBe(false);
++    });
++
++    it('should allow changing an incorrect answer to another option', () => {
++      component.onChoiceClick(0, { label: 'verde', isCorrect: false });
++      component.onChoiceClick(0, { label: 'azul', isCorrect: true });
++
++      expect(component.getSelectedChoice(0)).toBe('azul');
++      expect(component.isCorrect(0)).toBe(true);
++    });
++
++    it('should emit answerSubmitted after correcting to the right answer', () => {
++      const emitted: AnyGameResult[] = [];
++      component.answerSubmitted.subscribe((r) => emitted.push(r));
++
++      component.onChoiceClick(0, { label: 'verde', isCorrect: false });
++      component.onChoiceClick(0, { label: 'azul', isCorrect: true });
++
++      expect(emitted).toHaveLength(1);
++      expect(emitted[0].isCorrect).toBe(true);
++    });
++  });
++
++  describe('disabled', () => {
++    it('should not update selections when disabled', () => {
++      fixture.componentRef.setInput('disabled', true);
++      fixture.detectChanges();
++
++      component.onChoiceClick(0, { label: 'azul', isCorrect: true });
++
++      expect(component.getSelectedChoice(0)).toBeUndefined();
++    });
++
++    it('should not emit answerSubmitted when disabled', () => {
++      fixture.componentRef.setInput('disabled', true);
++      fixture.detectChanges();
++
++      const emitted: AnyGameResult[] = [];
++      component.answerSubmitted.subscribe((r) => emitted.push(r));
++
++      component.onChoiceClick(0, { label: 'azul', isCorrect: true });
++
++      expect(emitted).toHaveLength(0);
++    });
++  });
++});
