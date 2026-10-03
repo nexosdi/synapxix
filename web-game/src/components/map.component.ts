@@ -77,6 +77,7 @@ export class MapComponent {
     'balance-master': 'balance master',
     'sound-match': 'sound match',
     'memory-match': 'memory match',
+    'word-association': 'word association',
   };
 
   readonly activeHistory = this.historyService.activeHistory;

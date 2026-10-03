@@ -65,6 +65,12 @@ export interface MemoryMatchAnswer {
 }
 export type MemoryMatchResult = GameResult<'memory-match', MemoryMatchAnswer>;
 
+// Word Association
+export interface WordAssociationAnswer {
+  selectedOptionIds: string[];
+}
+export type WordAssociationResult = GameResult<'word-association', WordAssociationAnswer>;
+
 export type AnyGameResult =
   | ReadSelectResult
   | FillBlanksResult
@@ -79,6 +85,7 @@ export type AnyGameResult =
   | BalanceMasterResult
   | SoundMatchResult
   | MemoryMatchResult
+  | WordAssociationResult
   | SpeakAboutPhotoResult;
 
 // ── Factories ────────────────────────────────────────────
@@ -250,6 +257,17 @@ export function createMemoryMatchResult(overrides?: Partial<MemoryMatchResult>):
     isCorrect: true,
     score: 100,
     timeSpentMs: 15000,
+    ...overrides,
+  };
+}
+
+export function createWordAssociationResult(overrides?: Partial<WordAssociationResult>): WordAssociationResult {
+  return {
+    gameType: 'word-association',
+    answer: { selectedOptionIds: ['opt-1', 'opt-2'] },
+    isCorrect: true,
+    score: 100,
+    timeSpentMs: 5000,
     ...overrides,
   };
 }

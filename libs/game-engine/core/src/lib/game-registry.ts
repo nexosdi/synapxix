@@ -60,6 +60,10 @@ export const gameComponentRegistry: Record<GameType, GameComponentLoader> = {
     import(
       './game-types/memory-match/memory-match.component'
     ).then((m) => m.MemoryMatchGameComponent),
+  'word-association': () =>
+    import(
+      './game-types/word-association/word-association.component'
+    ).then((m) => m.WordAssociationGameComponent),
 };
 
 export function resolveGameLoader(
