@@ -1,10 +1,11 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, input, output, signal, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AnyGameResult } from '../../models/game-result.model';
 import { BaseGameComponent } from '../../components/base-game.component';
 import {
   ListenTypeInteractiveContent,
   toListenTypeGameModel,
+  evaluateListenTypeAnswer,
 } from './listen-type-game.model';
 
 @Component({
@@ -36,8 +37,9 @@ import {
 
       <div class="flex justify-center p-6 bg-slate-50 rounded-[2rem] border-4 border-dashed border-slate-200">
         <button 
-          (click)="audioPlayer.play()"
-          class="flex items-center gap-3 px-8 py-4 bg-white border-b-4 border-slate-200 rounded-full text-[#1e90ff] font-black hover:bg-slate-100 active:translate-y-1 active:border-b-0 transition-all"
+          (click)="playAudio()"
+          [disabled]="disabled() || isCorrect()"
+          class="flex items-center gap-3 px-8 py-4 bg-white border-b-4 border-slate-200 rounded-full text-[#1e90ff] font-black hover:bg-slate-100 active:translate-y-1 active:border-b-0 transition-all disabled:opacity-50"
         >
           <span class="text-2xl">🔊</span>
           PLAY AUDIO
@@ -48,9 +50,11 @@ import {
       <div class="space-y-4">
         <input
           type="text"
-          [(ngModel)]="userInput"
+          [value]="userInput"
+          (input)="userInput = $any($event.target).value"
+          [disabled]="disabled() || isCorrect()"
           placeholder="Type what you hear..."
-          class="w-full px-8 py-6 bg-slate-100 border-b-4 border-slate-200 text-[#1e90ff] font-black text-2xl rounded-full focus:bg-white focus:border-[#1e90ff] outline-none transition-all text-center placeholder:text-slate-300"
+          class="w-full px-8 py-6 bg-slate-100 border-b-4 border-slate-200 text-[#1e90ff] font-black text-2xl rounded-full focus:bg-white focus:border-[#1e90ff] outline-none transition-all text-center placeholder:text-slate-300 disabled:opacity-50"
           (keyup.enter)="checkAnswer(view.answer)"
         />
 
@@ -62,7 +66,8 @@ import {
 
         <button
           (click)="checkAnswer(view.answer)"
-          class="w-full py-6 bg-[#1e90ff] text-white font-black text-2xl rounded-full border-b-8 border-[#0a4fbf] hover:bg-[#1e90ff]/90 active:translate-y-2 active:border-b-0 transition-all shadow-xl shadow-[#1e90ff]/30"
+          [disabled]="disabled() || isCorrect()"
+          class="w-full py-6 bg-[#1e90ff] text-white font-black text-2xl rounded-full border-b-8 border-[#0a4fbf] hover:bg-[#1e90ff]/90 active:translate-y-2 active:border-b-0 transition-all shadow-xl shadow-[#1e90ff]/30 disabled:opacity-50"
         >
           CHECK ANSWER
         </button>
@@ -77,37 +82,74 @@ import {
     }
   `,
 })
-export class ListenTypeGameComponent implements BaseGameComponent {
+export class ListenTypeGameComponent implements BaseGameComponent, OnInit, OnDestroy {
   readonly answerSubmitted = output<AnyGameResult>();
   
   readonly content = input.required<ListenTypeInteractiveContent>();
   readonly disabled = input<boolean>(false);
   readonly viewModel = computed(() => toListenTypeGameModel(this.content()));
 
+  @ViewChild('audioPlayer') audioPlayerRef?: ElementRef<HTMLAudioElement>;
+
   userInput = '';
   isCorrect = signal(false);
   showError = signal(false);
 
-  checkAnswer(correctAnswer: string) {
-    if (this.disabled()) return;
-    const cleanInput = this.userInput.trim().toLowerCase();
-    const cleanAnswer = correctAnswer.trim().toLowerCase();
+  private startTime = Date.now();
+  private errorTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    if (cleanInput === cleanAnswer) {
+  ngOnInit() {
+    this.startTime = Date.now();
+  }
+
+  ngOnDestroy() {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
+  }
+
+  playAudio(): void {
+    if (this.disabled()) return;
+    try {
+      this.audioPlayerRef?.nativeElement.play();
+    } catch {
+      // Audio element play fallback for testing/headless env
+    }
+  }
+
+  checkAnswer(correctAnswer: string) {
+    if (this.disabled() || this.isCorrect()) return;
+
+    const tolerance = this.viewModel().tolerance;
+    const isMatch = evaluateListenTypeAnswer(this.userInput, correctAnswer, tolerance);
+
+    if (isMatch) {
       this.isCorrect.set(true);
       this.showError.set(false);
+      if (this.errorTimeout) {
+        clearTimeout(this.errorTimeout);
+        this.errorTimeout = null;
+      }
       
+      const timeSpentMs = Math.max(0, Date.now() - this.startTime);
+
       this.answerSubmitted.emit({
         gameType: 'listen-type',
         answer: { typedText: this.userInput },
         isCorrect: true,
         score: 100,
-        timeSpentMs: 0
+        timeSpentMs
       });
     } else {
       this.showError.set(true);
-      // Ocultar el mensaje de error después de 2 segundos
-      setTimeout(() => this.showError.set(false), 2000);
+      if (this.errorTimeout) {
+        clearTimeout(this.errorTimeout);
+      }
+      this.errorTimeout = setTimeout(() => {
+        this.showError.set(false);
+        this.errorTimeout = null;
+      }, 2000);
     }
   }
-}
+}
