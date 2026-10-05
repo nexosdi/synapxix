@@ -93,7 +93,7 @@ export function evaluateListenTypeAnswer(
   let cleanTarget = target?.trim() ?? '';
 
   if (opts.punctuationIgnored) {
-    const punctRegex = /[.,\/#!$%\^&\*;:{}=\-_`~()?"'¡¿]/g;
+    const punctRegex = /[.,/#!$%^&*;:{}=_`~()?"'¡¿-]/g;
     cleanInput = cleanInput.replace(punctRegex, '').replace(/\s+/g, ' ').trim();
     cleanTarget = cleanTarget.replace(punctRegex, '').replace(/\s+/g, ' ').trim();
   }
