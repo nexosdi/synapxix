@@ -57,6 +57,7 @@ describe('HistoryService', () => {
     let provider: HistoryDataProvider;
 
     beforeEach(() => {
+      jest.spyOn(console, 'warn').mockImplementation(() => {});
       provider = createMockProvider([FAKE_HISTORY, ANOTHER_HISTORY]);
       TestBed.configureTestingModule({
         providers: [
@@ -65,6 +66,10 @@ describe('HistoryService', () => {
         ],
       });
       service = TestBed.inject(HistoryService);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
     });
 
     // ── Initial state ──────────────────────────────────────────────────────────
@@ -435,6 +440,7 @@ describe('HistoryService', () => {
     let service: HistoryService;
 
     beforeEach(() => {
+      jest.spyOn(console, 'warn').mockImplementation(() => {});
       TestBed.configureTestingModule({
         providers: [
           HistoryService,
@@ -442,6 +448,10 @@ describe('HistoryService', () => {
         ],
       });
       service = TestBed.inject(HistoryService);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
     });
 
     it('should load HISTORY_MOCK when the ID matches', async () => {
