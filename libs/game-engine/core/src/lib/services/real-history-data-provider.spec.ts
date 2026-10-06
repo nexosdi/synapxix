@@ -8,6 +8,7 @@ describe('RealHistoryDataProvider', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(jest.fn());
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
       providers: [RealHistoryDataProvider]
@@ -18,6 +19,7 @@ describe('RealHistoryDataProvider', () => {
 
   afterEach(() => {
     httpMock.verify();
+    jest.restoreAllMocks();
   });
 
   it('should be created', () => {

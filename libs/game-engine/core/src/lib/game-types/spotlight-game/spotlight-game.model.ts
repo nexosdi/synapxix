@@ -25,5 +25,8 @@ export type SpotlightInteractiveContent = InteractiveContentBase<
 export function toSpotlightGameModel(
   content: SpotlightInteractiveContent
 ): SpotlightGameData {
+  if (!content || !content.gameInput) {
+    throw new Error('SpotlightInteractiveContent: gameInput is missing');
+  }
   return content.gameInput;
 }
