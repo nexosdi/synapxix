@@ -1,10 +1,9 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, input, output, signal, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AnyGameResult } from '../../models/game-result.model';
 import { BaseGameComponent } from '../../components/base-game.component';
 import { OddOneOutInteractiveContent, toOddOneOutModel, OptionItem } from './intruder-game.model';
 import { DalaInstrumentationService } from '../../services/dala.service';
-import { OnInit, inject } from '@angular/core';
 
 @Component({
   selector: 'lib-odd-one-out',
@@ -64,7 +63,7 @@ import { OnInit, inject } from '@angular/core';
     .animate-shake { animation: shake 0.3s ease-in-out; }
   `]
 })
-export class IntruderGameComponent implements BaseGameComponent, OnInit {
+export class IntruderGameComponent implements BaseGameComponent, OnInit, OnDestroy {
   readonly content = input.required<OddOneOutInteractiveContent>();
   readonly disabled = input<boolean>(false);
   readonly viewModel = computed(() => toOddOneOutModel(this.content()));
@@ -77,12 +76,24 @@ export class IntruderGameComponent implements BaseGameComponent, OnInit {
   feedbackState = signal<'idle' | 'success' | 'error'>('idle');
   wrongId = signal<string | null>(null);
 
+  private attempts = 0;
+  private startTime = Date.now();
+  private errorTimeout: ReturnType<typeof setTimeout> | null = null;
+
   ngOnInit() {
+    this.startTime = Date.now();
     this.dalaAdapter.mapInteraction({
       kind: 'task_shown',
       taskId: 'intruder-task',
       difficulty: this.viewModel().options.length
     });
+  }
+
+  ngOnDestroy() {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
   }
 
   readonly feedbackConfig = computed(() => ({
@@ -91,6 +102,12 @@ export class IntruderGameComponent implements BaseGameComponent, OnInit {
   }[this.feedbackState() as 'success' | 'error'] || { title: '', icon: '', class: '' }));
 
   selectOption(item: OptionItem) {
+    if (this.disabled() || this.feedbackState() === 'success') {
+      return;
+    }
+
+    this.attempts++;
+
     this.dalaAdapter.mapInteraction({
       kind: 'item_action',
       taskId: 'intruder-task',
@@ -99,12 +116,17 @@ export class IntruderGameComponent implements BaseGameComponent, OnInit {
 
     if (item.isCorrect) {
       this.feedbackState.set('success');
+
+      if (this.errorTimeout) {
+        clearTimeout(this.errorTimeout);
+        this.errorTimeout = null;
+      }
       
       this.dalaAdapter.mapInteraction({
         kind: 'answer',
         taskId: 'intruder-task',
         correct: true,
-        attempt: 1
+        attempt: this.attempts
       });
 
       this.dalaAdapter.mapInteraction({
@@ -112,12 +134,14 @@ export class IntruderGameComponent implements BaseGameComponent, OnInit {
         taskId: 'intruder-task'
       });
 
+      const timeSpentMs = Math.max(0, Date.now() - this.startTime);
+
       this.answerSubmitted.emit({
         gameType: 'intruder',
         answer: { selectedItemId: item.id },
         isCorrect: true,
         score: 100,
-        timeSpentMs: 0
+        timeSpentMs
       });
     } else {
       this.wrongId.set(item.id);
@@ -127,13 +151,18 @@ export class IntruderGameComponent implements BaseGameComponent, OnInit {
         kind: 'answer',
         taskId: 'intruder-task',
         correct: false,
-        attempt: 1
+        attempt: this.attempts
       });
 
-      setTimeout(() => {
+      if (this.errorTimeout) {
+        clearTimeout(this.errorTimeout);
+      }
+
+      this.errorTimeout = setTimeout(() => {
         this.feedbackState.set('idle');
         this.wrongId.set(null);
+        this.errorTimeout = null;
       }, 1200);
     }
   }
-}
+}
