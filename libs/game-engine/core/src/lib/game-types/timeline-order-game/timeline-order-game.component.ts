@@ -5,7 +5,7 @@ import { BaseGameComponent } from '../../components/base-game.component';
 import { 
   TimelineOrderInteractiveContent, 
   toTimelineOrderGameModel 
-} from './timeline-order-game.module';
+} from './timeline-order-game.model';
 import { DalaInstrumentationService } from '../../services/dala.service';
 import { OnInit, inject } from '@angular/core';
 
@@ -148,10 +148,17 @@ export class TimelineOrderGameComponent implements BaseGameComponent, OnInit {
       attempt: 1
     });
   }
+  private isOrderCorrect(): boolean {
+    const events = this.viewModel().events;
+    const userOrder = this.userOrder();
+    if (userOrder.length !== events.length) return false;
 
+    const expected = [...events].sort((a, b) => a.order - b.order);
+    return userOrder.every((event, index) => event.id === expected[index].id);
+  }
   checkAnswer() {
-    const isCorrect = this.userOrder().every((event, index) => event.order === index + 1);
-    
+    if (this.disabled()) return;
+    const isCorrect = this.isOrderCorrect();    
     this.dalaAdapter.mapInteraction({
       kind: 'answer',
       taskId: 'timeline-task',

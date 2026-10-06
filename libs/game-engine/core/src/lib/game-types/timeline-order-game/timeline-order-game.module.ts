@@ -1,27 +1,9 @@
-import { InteractiveContentBase } from '../../models/history.model';
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { TimelineOrderGameComponent } from './timeline-order-game.component';
 
-export type TimelineOrderGameType = 'timeline-order';
-
-export interface TimelineEvent {
-  id: string;
-  text: string;
-  order: number;
-}
-
-export interface TimelineOrderGameData {
-  prompt: string;
-  events: TimelineEvent[];
-  media?: string;
-  locale: string;
-}
-
-export type TimelineOrderInteractiveContent = InteractiveContentBase<
-  TimelineOrderGameType,
-  TimelineOrderGameData
->;
-
-export function toTimelineOrderGameModel(
-  content: TimelineOrderInteractiveContent
-): TimelineOrderGameData {
-  return content.gameInput;
-}
+@NgModule({
+  imports: [CommonModule, TimelineOrderGameComponent],
+  exports: [TimelineOrderGameComponent],
+})
+export class TimelineOrderGameModule {}

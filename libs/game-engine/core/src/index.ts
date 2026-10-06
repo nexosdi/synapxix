@@ -33,3 +33,4 @@ export * from './lib/game-types/memory-match/memory-match.model';
 export * from './lib/game-types/word-association/word-association.model';
 export * from './lib/game-types/speak-about-photo-game/speak-about-photo-game.model';
 export * from './lib/game-types/spotlight-game/spotlight-game.model';
+export * from './lib/game-types/timeline-order-game/timeline-order-game.model';
