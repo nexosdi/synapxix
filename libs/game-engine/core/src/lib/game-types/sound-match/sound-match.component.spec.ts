@@ -140,7 +140,7 @@ describe('SoundMatchGameComponent', () => {
 
     it('should not play audio if already playing', () => {
       component.playSound('test.mp3');
-      audioMock.onplay(); // Simulate audio start
+      (audioMock as HTMLAudioElement).onplay?.(new Event('play')); // Simulate audio start
       expect(component.isPlaying()).toBe(true);
       
       component.playSound('test.mp3');
@@ -151,7 +151,7 @@ describe('SoundMatchGameComponent', () => {
   describe('lifecycle', () => {
     it('should call stopAudio on destroy', () => {
       component.playSound('test.mp3');
-      audioMock.onplay();
+      (audioMock as HTMLAudioElement).onplay?.(new Event('play'));
       expect(component.isPlaying()).toBe(true);
       
       component.ngOnDestroy();

@@ -57,7 +57,7 @@ describe('HistoryService', () => {
     let provider: HistoryDataProvider;
 
     beforeEach(() => {
-      jest.spyOn(console, 'warn').mockImplementation(() => {});
+      jest.spyOn(console, 'warn').mockImplementation(jest.fn());
       provider = createMockProvider([FAKE_HISTORY, ANOTHER_HISTORY]);
       TestBed.configureTestingModule({
         providers: [
@@ -440,7 +440,7 @@ describe('HistoryService', () => {
     let service: HistoryService;
 
     beforeEach(() => {
-      jest.spyOn(console, 'warn').mockImplementation(() => {});
+      jest.spyOn(console, 'warn').mockImplementation(jest.fn());
       TestBed.configureTestingModule({
         providers: [
           HistoryService,
