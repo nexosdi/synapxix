@@ -1,61 +1,146 @@
-import type { DalaBehaviorEvent } from '@nexosdi.synapxix/dala/contracts';
-import { deriveEvidence } from './evidence-rules';
+import { deriveEvidence, EVIDENCE_RULES_V01 } from './evidence-rules';
+import type { DalaBehaviorEvent, EvidenceContext } from '@nexosdi.synapxix/dala/contracts';
 
-const ev = (partial: Partial<DalaBehaviorEvent>): DalaBehaviorEvent => ({
-  schemaVersion: 'dala.behavior-event.v1',
-  eventId: partial.eventId ?? `e-${Math.random()}`,
-  subjectId: 's-1',
-  sessionId: 'ses-1',
-  occurredAt: '2026-08-03T10:00:00Z',
-  sequence: 1,
-  eventType: 'answer_submitted',
-  source: { applicationId: 'test', instrumentId: 'categorization', instrumentVersion: '1.0.0' },
-  context: { taskId: 't-1' },
-  payload: {},
-  consent: { scopeId: 'cp-1', researchAllowed: true },
-  ...partial,
-});
+describe('D.A.L.A. Core - Evidence Rules v0.1 (evidence-rules.spec.ts)', () => {
+  const baseContext: EvidenceContext = {
+    sessionEvents: [],
+  };
 
-describe('new tests for evidence rules v0.1', () => {
-  it('asking for help AFTER attempting should contribute to help_seeking construct', () => {
-    const attempt = ev({ eventType: 'answer_submitted', sequence: 1 });
-    const hint = ev({ eventType: 'hint_requested', sequence: 2 });
-    const out = deriveEvidence(hint, { sessionEvents: [attempt] });
-    expect(out).toHaveLength(1);
-    expect(out[0].constructId).toBe('help_seeking');
-    expect(out[0].weight).toBe(1);
+  // Combinamos la flexibilidad de tu helper (HEAD) con los requerimientos estrictos de reward (main)
+  const ev = (
+    partial: Partial<DalaBehaviorEvent>,
+    rewardCondition: 'none' | 'xp' | 'credits' = 'none'
+  ): DalaBehaviorEvent => ({
+    eventId: partial.eventId ?? `e-${Math.random()}`,
+    schemaVersion: 'dala.behavior-event.v1',
+    subjectId: 's-1',
+    sessionId: 'ses-1',
+    occurredAt: new Date().toISOString(),
+    sequence: 1,
+    eventType: 'answer_submitted', 
+    source: { applicationId: 'engine', instrumentId: 'engine', instrumentVersion: '1.0.0' },
+    context: { taskId: 't-1', difficulty: 1, skillIds: ['s1'], rewardCondition },
+    payload: {},
+    consent: { scopeId: 'cp-1', researchAllowed: true },
+    ...partial,
   });
 
-  it('strategy change after failure (without immediate hint) should evidence flexibility', () => {
-    const fail = ev({ payload: { correct: false }, sequence: 1 });
-    const strategy = ev({ eventType: 'strategy_changed', sequence: 2 });
-    const out = deriveEvidence(strategy, { sessionEvents: [fail] });
-    expect(out).toHaveLength(1);
-    expect(out[0].constructId).toBe('strategy_flexibility');
-    expect(out[0].weight).toBe(1);
+  describe('masteryFromAnswer', () => {
+    it('debería emitir evidencia positiva para respuesta correcta sin pistas', () => {
+      const event = ev({ eventType: 'answer_submitted', payload: { correct: true } });
+      const evidence = deriveEvidence(event, baseContext, EVIDENCE_RULES_V01);
+      
+      const mastery = evidence.find((e) => e.ruleId === 'mastery-from-answer');
+      expect(mastery).toBeDefined();
+      expect(mastery?.weight).toBe(1);
+    });
+
+    it('debería emitir evidencia negativa para respuesta incorrecta', () => {
+      const event = ev({ eventType: 'answer_submitted', payload: { correct: false } });
+      const evidence = deriveEvidence(event, baseContext, EVIDENCE_RULES_V01);
+      
+      const mastery = evidence.find((e) => e.ruleId === 'mastery-from-answer');
+      expect(mastery?.weight).toBe(-0.5);
+    });
+
+    it('debería ignorar respuesta correcta si se usó pista previa', () => {
+      const event = ev({ eventType: 'answer_submitted', payload: { correct: true }, sequence: 3 });
+      const context = {
+        sessionEvents: [ev({ eventType: 'hint_requested', sequence: 1 })],
+      };
+      
+      const evidence = deriveEvidence(event, context, EVIDENCE_RULES_V01);
+      expect(evidence.find((e) => e.ruleId === 'mastery-from-answer')).toBeUndefined();
+    });
   });
 
-  it('strategy change induced by hint should NOT evidence flexibility', () => {
-    const fail = ev({ payload: { correct: false }, sequence: 1 });
-    const hint = ev({ eventType: 'hint_requested', sequence: 2 });
-    const strategy = ev({ eventType: 'strategy_changed', sequence: 3 });
-    const out = deriveEvidence(strategy, { sessionEvents: [fail, hint] });
-    expect(out).toHaveLength(0);
+  describe('persistenceFromRetry', () => {
+    it('debería emitir evidencia de persistencia si hay fallo previo', () => {
+      const event = ev({ eventType: 'attempt_repeated', payload: { attempt: 2 }, sequence: 2 });
+      const context = {
+        sessionEvents: [ev({ eventType: 'answer_submitted', payload: { correct: false }, sequence: 1 })],
+      };
+
+      const evidence = deriveEvidence(event, context, EVIDENCE_RULES_V01);
+      const persistence = evidence.find((e) => e.ruleId === 'persistence-from-retry');
+      expect(persistence?.weight).toBe(1);
+    });
+
+    it('debería emitir persistencia negativa si los intentos > 5', () => {
+      const event = ev({ eventType: 'attempt_repeated', payload: { attempt: 6 }, sequence: 2 });
+      const context = {
+        sessionEvents: [ev({ eventType: 'answer_submitted', payload: { correct: false }, sequence: 1 })],
+      };
+
+      const evidence = deriveEvidence(event, context, EVIDENCE_RULES_V01);
+      const persistence = evidence.find((e) => e.ruleId === 'persistence-from-retry');
+      expect(persistence?.weight).toBe(-0.3);
+    });
+
+    it('debería ignorar el reintento si rewardCondition está activo', () => {
+      const event = ev({ eventType: 'attempt_repeated', payload: { attempt: 2 }, sequence: 2 }, 'xp');
+      const context = {
+        sessionEvents: [ev({ eventType: 'answer_submitted', payload: { correct: false }, sequence: 1 })],
+      };
+
+      const evidence = deriveEvidence(event, context, EVIDENCE_RULES_V01);
+      expect(evidence.find((e) => e.ruleId === 'persistence-from-retry')).toBeUndefined();
+    });
   });
 
-  it('task completion should contribute to engagement', () => {
-    const complete = ev({ eventType: 'task_completed', sequence: 1 });
-    const out = deriveEvidence(complete, { sessionEvents: [] });
-    expect(out).toHaveLength(1);
-    expect(out[0].constructId).toBe('task_engagement');
-    expect(out[0].weight).toBe(1);
+  describe('helpSeekingFromHint', () => {
+    it('debería emitir evidencia de búsqueda de ayuda si se intentó primero', () => {
+      const event = ev({ eventType: 'hint_requested', sequence: 3 });
+      const context = {
+        sessionEvents: [ev({ eventType: 'answer_submitted', payload: { correct: false }, sequence: 1 })],
+      };
+
+      const evidence = deriveEvidence(event, context, EVIDENCE_RULES_V01);
+      expect(evidence.find((e) => e.ruleId === 'help-seeking-from-hint')).toBeDefined();
+    });
+
+    it('debería ignorar si no hubo intento previo', () => {
+      const event = ev({ eventType: 'hint_requested', sequence: 1 });
+      const evidence = deriveEvidence(event, baseContext, EVIDENCE_RULES_V01);
+      expect(evidence.find((e) => e.ruleId === 'help-seeking-from-hint')).toBeUndefined();
+    });
   });
 
-  it('task abandonment should subtract from engagement', () => {
-    const abandoned = ev({ eventType: 'task_abandoned', sequence: 1 });
-    const out = deriveEvidence(abandoned, { sessionEvents: [] });
-    expect(out).toHaveLength(1);
-    expect(out[0].constructId).toBe('task_engagement');
-    expect(out[0].weight).toBe(-0.6);
+  describe('flexibilityFromStrategyChange', () => {
+    it('debería emitir evidencia de flexibilidad por cambio de estrategia', () => {
+      const event = ev({ eventType: 'strategy_changed', sequence: 2 });
+      const evidence = deriveEvidence(event, baseContext, EVIDENCE_RULES_V01);
+      expect(evidence.find((e) => e.ruleId === 'flexibility-from-strategy-change')).toBeDefined();
+    });
+
+    it('debería ignorar si el cambio fue inducido por pista recientemente', () => {
+      const event = ev({ eventType: 'strategy_changed', sequence: 3 });
+      const context = {
+        sessionEvents: [ev({ eventType: 'hint_requested', sequence: 2 })],
+      };
+
+      const evidence = deriveEvidence(event, context, EVIDENCE_RULES_V01);
+      expect(evidence.find((e) => e.ruleId === 'flexibility-from-strategy-change')).toBeUndefined();
+    });
+  });
+
+  describe('engagementFromCompletion', () => {
+    it('debería emitir engagement positivo al completar', () => {
+      const event = ev({ eventType: 'task_completed', sequence: 1 });
+      const evidence = deriveEvidence(event, baseContext, EVIDENCE_RULES_V01);
+      expect(evidence.find((e) => e.ruleId === 'engagement-from-completion')?.weight).toBe(1);
+    });
+
+    it('debería emitir engagement negativo al abandonar', () => {
+      const event = ev({ eventType: 'task_abandoned', sequence: 1 });
+      const evidence = deriveEvidence(event, baseContext, EVIDENCE_RULES_V01);
+      expect(evidence.find((e) => e.ruleId === 'engagement-from-completion')?.weight).toBe(-0.6);
+    });
+
+    it('debería ignorar si rewardCondition está activo', () => {
+      const event = ev({ eventType: 'task_completed', sequence: 1 }, 'credits');
+      const evidence = deriveEvidence(event, baseContext, EVIDENCE_RULES_V01);
+      expect(evidence.find((e) => e.ruleId === 'engagement-from-completion')).toBeUndefined();
+    });
   });
 });

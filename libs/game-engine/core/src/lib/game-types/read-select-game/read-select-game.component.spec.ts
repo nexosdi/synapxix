@@ -1,13 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentRef } from '@angular/core';
 import { ReadSelectGameComponent } from './read-select-game.component';
 import { ReadSelectInteractiveContent } from './read-select-game.model';
 
 describe('ReadSelectGameComponent', () => {
   let component: ReadSelectGameComponent;
   let fixture: ComponentFixture<ReadSelectGameComponent>;
+  let componentRef: ComponentRef<ReadSelectGameComponent>;
 
   const mockContent: ReadSelectInteractiveContent = {
-    contentType: 'read-select',
+    id: 'test-2',
+    gameType: 'read-select',
     gameInput: {
       prompt: 'Select the correct options',
       locale: 'en',
@@ -29,33 +32,38 @@ describe('ReadSelectGameComponent', () => {
 
     fixture = TestBed.createComponent(ReadSelectGameComponent);
     component = fixture.componentInstance;
-    fixture.componentRef.setInput('content', mockContent);
+    componentRef = fixture.componentRef;
+
+    componentRef.setInput('content', mockContent);
+    componentRef.setInput('disabled', false);
     fixture.detectChanges();
   });
 
-  it('should be created correctly', () => {
+  it('should create and initialize options correctly', () => {
     expect(component).toBeTruthy();
     expect(component.options().length).toBe(4);
+    expect(component.foundWords().size).toBe(0);
+    expect(component.wrongWords().size).toBe(0);
   });
 
   it('should register a correct word in foundWords', () => {
     const correctOption = component.options().find(o => o.isReal)!;
     component.onOptionClick(correctOption);
 
-    expect(component.foundWords().has(correctOption.text)).toBeTrue();
-    expect(component.wrongWords().has(correctOption.text)).toBeFalse();
+    expect(component.foundWords().has(correctOption.text)).toBe(true);
+    expect(component.wrongWords().has(correctOption.text)).toBe(false);
   });
 
   it('should register an incorrect word in wrongWords', () => {
     const wrongOption = component.options().find(o => !o.isReal)!;
     component.onOptionClick(wrongOption);
 
-    expect(component.wrongWords().has(wrongOption.text)).toBeTrue();
-    expect(component.foundWords().has(wrongOption.text)).toBeFalse();
+    expect(component.wrongWords().has(wrongOption.text)).toBe(true);
+    expect(component.foundWords().has(wrongOption.text)).toBe(false);
   });
 
   it('should not register words if disabled', () => {
-    fixture.componentRef.setInput('disabled', true);
+    componentRef.setInput('disabled', true);
     fixture.detectChanges();
 
     const correctOption = component.options().find(o => o.isReal)!;
@@ -65,23 +73,26 @@ describe('ReadSelectGameComponent', () => {
   });
 
   it('should emit answerSubmitted when the minimum of correct options is reached', () => {
-    spyOn(component.answerSubmitted, 'emit');
+    jest.spyOn(component.answerSubmitted, 'emit');
 
     const correctOptions = component.options().filter(o => o.isReal);
     
-    // Select the first one
+    // Seleccionamos la primera
     component.onOptionClick(correctOptions[0]);
     expect(component.answerSubmitted.emit).not.toHaveBeenCalled();
-    expect(component.isFinished()).toBeFalse();
+    expect(component.isFinished()).toBe(false);
 
-    // Select the second one (reaches minCorrectToPass = 2)
+    // Seleccionamos la segunda (alcanza minCorrectToPass = 2)
     component.onOptionClick(correctOptions[1]);
     
-    expect(component.isFinished()).toBeTrue();
-    expect(component.answerSubmitted.emit).toHaveBeenCalledWith(jasmine.objectContaining({
-      isCorrect: true,
-      gameType: 'read-select',
-      answer: { selectedOptionId: 'Correct 1,Correct 2' }
-    }));
+    expect(component.isFinished()).toBe(true);
+    expect(component.answerSubmitted.emit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        isCorrect: true,
+        gameType: 'read-select',
+        score: 100,
+        answer: { selectedOptionId: 'Correct 1,Correct 2' }
+      })
+    );
   });
 });

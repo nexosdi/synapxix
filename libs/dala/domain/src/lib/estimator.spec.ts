@@ -78,5 +78,6 @@ describe('Beta-Binomial Estimator v0.1 (estimator.spec.ts)', () => {
     });
     expect(est.stability).toBeLessThan(0.5);
     expect(est.evidenceCount).toBe(8);
+    expect(est.status).toBe('contradicted');
   });
 });
