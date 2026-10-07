@@ -9,8 +9,8 @@ describe('NeuralLinkGameComponent', () => {
   const mockContent: MemoryInteractiveContent = {
     contentType: 'neural-link',
     gameInput: {
-      prompt: 'Encuentra las parejas',
-      locale: 'es',
+      prompt: 'Find the pairs',
+      locale: 'en',
       cards: [
         { id: '1', matchId: 'A' },
         { id: '2', matchId: 'A' },
@@ -31,14 +31,14 @@ describe('NeuralLinkGameComponent', () => {
     fixture.detectChanges();
   });
 
-  it('debería crearse correctamente e inicializar las cartas', () => {
+  it('should initialize correctly and set up cards', () => {
     expect(component).toBeTruthy();
     expect(component.cards().length).toBe(4);
-    // Verificar que todas inician sin voltear y sin emparejar
+    // Verify all cards start unflipped and unmatched
     expect(component.cards().every(c => !c.isFlipped && !c.isMatched)).toBeTrue();
   });
 
-  it('debería voltear una carta si es clickeada', () => {
+  it('should flip a card when clicked', () => {
     const card = component.cards()[0];
     component.flipCard(card);
     
@@ -46,7 +46,7 @@ describe('NeuralLinkGameComponent', () => {
     expect(component.flippedCards()[0].id).toBe(card.id);
   });
 
-  it('no debería voltear una carta si el juego está deshabilitado', () => {
+  it('should not flip a card if the game is disabled', () => {
     fixture.componentRef.setInput('disabled', true);
     fixture.detectChanges();
 
@@ -56,24 +56,24 @@ describe('NeuralLinkGameComponent', () => {
     expect(component.flippedCards().length).toBe(0);
   });
 
-  it('debería emparejar cartas exitosamente y emitir evento si todas coinciden', fakeAsync(() => {
+  it('should successfully match cards and emit event when all matched', fakeAsync(() => {
     spyOn(component.answerSubmitted, 'emit');
     
-    // Agrupar cartas por pareja
+    // Group cards by matchId
     const groupA = component.cards().filter(c => c.matchId === 'A');
     const groupB = component.cards().filter(c => c.matchId === 'B');
 
-    // Voltear pareja A
+    // Flip pair A
     component.flipCard(groupA[0]);
     component.flipCard(groupA[1]);
-    tick(500); // Esperar timeout de éxito
+    tick(500); // Wait for success timeout
 
     expect(component.cards().filter(c => c.isMatched).length).toBe(2);
 
-    // Voltear pareja B
+    // Flip pair B
     component.flipCard(groupB[0]);
     component.flipCard(groupB[1]);
-    tick(500); // Esperar timeout de éxito
+    tick(500); // Wait for success timeout
 
     expect(component.cards().filter(c => c.isMatched).length).toBe(4);
     expect(component.feedbackState()).toBe('success');
@@ -83,18 +83,18 @@ describe('NeuralLinkGameComponent', () => {
     }));
   }));
 
-  it('debería regresar las cartas a su estado original si no coinciden', fakeAsync(() => {
+  it('should revert cards to unflipped state if they do not match', fakeAsync(() => {
     const groupA = component.cards().filter(c => c.matchId === 'A');
     const groupB = component.cards().filter(c => c.matchId === 'B');
 
-    // Voltear una carta de A y una de B
+    // Flip one card from A and one from B
     component.flipCard(groupA[0]);
     component.flipCard(groupB[0]);
     
-    // Inmediatamente después de voltear, ambas deberían figurar como "isFlipped = true" en el arreglo global
+    // Immediately after flipping, both should be tracked as flipped
     expect(component.flippedCards().length).toBe(2);
 
-    tick(1000); // Esperar timeout de fallo
+    tick(1000); // Wait for failure timeout
 
     expect(component.flippedCards().length).toBe(0);
     expect(component.cards().some(c => c.isMatched)).toBeFalse();

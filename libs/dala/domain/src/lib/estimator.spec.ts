@@ -2,8 +2,7 @@ import type { EvidenceObservation } from '@nexosdi.synapxix/dala/contracts';
 import { estimateConstruct } from './estimator';
 import { CONSTRUCT_REGISTRY } from './construct-registry';
 
-describe('Estimador Beta-Binomial v0.1 (estimator.spec.ts)', () => {
-  // Función auxiliar para generar observaciones de prueba
+describe('Beta-Binomial Estimator v0.1 (estimator.spec.ts)', () => {
   const obs = (n: number, weight = 1): EvidenceObservation[] =>
     Array.from({ length: n }, (_, i) => ({
       observationId: `o-${i}`,
@@ -20,7 +19,7 @@ describe('Estimador Beta-Binomial v0.1 (estimator.spec.ts)', () => {
       createdAt: '2026-08-01T10:00:00Z',
     }));
 
-  it('debe devolver "insufficient_evidence" cuando no hay observaciones suficientes', () => {
+  it('should return "insufficient_evidence" when minimum observations are not met', () => {
     const est = estimateConstruct({
       subjectId: 's-1',
       definition: CONSTRUCT_REGISTRY['persistence'],
@@ -32,7 +31,7 @@ describe('Estimador Beta-Binomial v0.1 (estimator.spec.ts)', () => {
     expect(est.status).toBe('insufficient_evidence');
   });
 
-  it('no debe otorgar alta confianza por una interacción aislada', () => {
+  it('should not grant high confidence for an isolated interaction', () => {
     const est = estimateConstruct({
       subjectId: 's-1',
       definition: CONSTRUCT_REGISTRY['persistence'],
@@ -44,7 +43,7 @@ describe('Estimador Beta-Binomial v0.1 (estimator.spec.ts)', () => {
     expect(est.confidence).toBeLessThan(0.3);
   });
 
-  it('debe devolver estado "supported" con evidencia suficiente y 2+ sesiones', () => {
+  it('should return "supported" status with sufficient evidence and 2+ sessions', () => {
     const est = estimateConstruct({
       subjectId: 's-1',
       definition: CONSTRUCT_REGISTRY['persistence'],
@@ -60,7 +59,7 @@ describe('Estimador Beta-Binomial v0.1 (estimator.spec.ts)', () => {
     expect(est.uncertainty.method).toBe('beta_posterior');
   });
 
-  it('debe bajar la estabilidad (y pasar a contradicted) si la evidencia es contradictoria', () => {
+  it('should lower stability (and switch to contradicted) if evidence is contradictory', () => {
     const mixed = [
       ...obs(4, 1),
       ...obs(4, -1).map((o, i) => ({

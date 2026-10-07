@@ -16,8 +16,8 @@ const ev = (partial: Partial<DalaBehaviorEvent>): DalaBehaviorEvent => ({
   ...partial,
 });
 
-describe('nuevas pruebas para reglas de evidencia v0.1', () => {
-  it('pedir ayuda DESPUÉS de intentar aporta al constructo help_seeking', () => {
+describe('new tests for evidence rules v0.1', () => {
+  it('asking for help AFTER attempting should contribute to help_seeking construct', () => {
     const attempt = ev({ eventType: 'answer_submitted', sequence: 1 });
     const hint = ev({ eventType: 'hint_requested', sequence: 2 });
     const out = deriveEvidence(hint, { sessionEvents: [attempt] });
@@ -26,7 +26,7 @@ describe('nuevas pruebas para reglas de evidencia v0.1', () => {
     expect(out[0].weight).toBe(1);
   });
 
-  it('cambio de estrategia tras fallo (sin pista inmediata) evidencia flexibilidad', () => {
+  it('strategy change after failure (without immediate hint) should evidence flexibility', () => {
     const fail = ev({ payload: { correct: false }, sequence: 1 });
     const strategy = ev({ eventType: 'strategy_changed', sequence: 2 });
     const out = deriveEvidence(strategy, { sessionEvents: [fail] });
@@ -35,7 +35,7 @@ describe('nuevas pruebas para reglas de evidencia v0.1', () => {
     expect(out[0].weight).toBe(1);
   });
 
-  it('cambio de estrategia inducido por pista NO evidencia flexibilidad', () => {
+  it('strategy change induced by hint should NOT evidence flexibility', () => {
     const fail = ev({ payload: { correct: false }, sequence: 1 });
     const hint = ev({ eventType: 'hint_requested', sequence: 2 });
     const strategy = ev({ eventType: 'strategy_changed', sequence: 3 });
@@ -43,7 +43,7 @@ describe('nuevas pruebas para reglas de evidencia v0.1', () => {
     expect(out).toHaveLength(0);
   });
 
-  it('completar tarea aporta a engagement', () => {
+  it('task completion should contribute to engagement', () => {
     const complete = ev({ eventType: 'task_completed', sequence: 1 });
     const out = deriveEvidence(complete, { sessionEvents: [] });
     expect(out).toHaveLength(1);
@@ -51,7 +51,7 @@ describe('nuevas pruebas para reglas de evidencia v0.1', () => {
     expect(out[0].weight).toBe(1);
   });
 
-  it('abandonar tarea resta engagement', () => {
+  it('task abandonment should subtract from engagement', () => {
     const abandoned = ev({ eventType: 'task_abandoned', sequence: 1 });
     const out = deriveEvidence(abandoned, { sessionEvents: [] });
     expect(out).toHaveLength(1);

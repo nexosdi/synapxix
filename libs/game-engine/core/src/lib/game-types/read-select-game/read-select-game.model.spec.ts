@@ -1,12 +1,12 @@
 import { toReadSelectGameModel, ReadSelectInteractiveContent } from './read-select-game.model';
 
 describe('read-select-game.model', () => {
-  it('debe mapear el contenido interactivo a los datos del juego', () => {
+  it('should map interactive content to game data correctly', () => {
     const mockContent: ReadSelectInteractiveContent = {
       contentType: 'read-select',
       gameInput: {
-        prompt: 'Selecciona las reales',
-        locale: 'es',
+        prompt: 'Select the real ones',
+        locale: 'en',
         minCorrectToPass: 2,
         timeLimitSec: 60,
         options: []
