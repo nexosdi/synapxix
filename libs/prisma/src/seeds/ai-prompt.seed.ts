@@ -76,6 +76,12 @@ async function main() {
       name: 'Word Association Analysis',
       content: "You are a pedagogical analyst evaluating a word-association activity. Assess the student's semantic mapping, vocabulary depth, and creative logic based on their chosen associated words and precision score.",
     },
+    {
+      game_type: 'pattern-recognition',
+      category: 'SYSTEM_ANALYSIS',
+      name: 'Pattern Recognition Analysis',
+      content: "You are a pedagogical analyst evaluating a pattern-recognition activity. Assess the student's abstract reasoning, logical thinking, and sequential processing speed based on their selected pattern answer and response time.",
+    },
   ];
 
   for (const prompt of prompts) {

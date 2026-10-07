@@ -71,6 +71,12 @@ export interface WordAssociationAnswer {
 }
 export type WordAssociationResult = GameResult<'word-association', WordAssociationAnswer>;
 
+// Pattern Recognition
+export interface PatternRecognitionAnswer {
+  selectedOptionId: string;
+}
+export type PatternRecognitionResult = GameResult<'pattern-recognition', PatternRecognitionAnswer>;
+
 export type AnyGameResult =
   | ReadSelectResult
   | FillBlanksResult
@@ -86,6 +92,7 @@ export type AnyGameResult =
   | SoundMatchResult
   | MemoryMatchResult
   | WordAssociationResult
+  | PatternRecognitionResult
   | SpeakAboutPhotoResult;
 
 // ── Factories ────────────────────────────────────────────
@@ -268,6 +275,17 @@ export function createWordAssociationResult(overrides?: Partial<WordAssociationR
     isCorrect: true,
     score: 100,
     timeSpentMs: 5000,
+    ...overrides,
+  };
+}
+
+export function createPatternRecognitionResult(overrides?: Partial<PatternRecognitionResult>): PatternRecognitionResult {
+  return {
+    gameType: 'pattern-recognition',
+    answer: { selectedOptionId: 'opt-1' },
+    isCorrect: true,
+    score: 100,
+    timeSpentMs: 4000,
     ...overrides,
   };
 }

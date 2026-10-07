@@ -303,7 +303,21 @@ export const contentMap: InteractiveContent[] = [
         { "id": "5", "word": "Fire", "isRelated": false }
       ]
     }
-  }
+  },
+  {
+    id: 'pr-01',
+    gameType: 'pattern-recognition',
+    gameInput: {
+      prompt: '¿Qué elemento sigue en el patrón?',
+      locale: 'es-AR',
+      sequence: ['🔵', '🟢', '🔵', '🟢', '?'],
+      options: [
+        { id: 'opt-1', content: '🔵', isCorrect: true },
+        { id: 'opt-2', content: '🟢', isCorrect: false },
+        { id: 'opt-3', content: '🔴', isCorrect: false },
+      ],
+    },
+  },
 ];
 
 export const HISTORY_MOCK: History = {
