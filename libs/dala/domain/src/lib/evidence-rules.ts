@@ -107,6 +107,14 @@ export const flexibilityFromStrategyChange: EvidenceRule = {
   version: '0.1.0',
   accepts: (e) => e.eventType === 'strategy_changed',
   evaluate: (e, ctx) => {
+    const priorFail = ctx.sessionEvents.some(
+      (prev) =>
+        prev.eventType === 'answer_submitted' &&
+        prev.payload['correct'] === false &&
+        prev.context.taskId === e.context.taskId,
+    );
+    if (!priorFail) return [];
+
     const inducedByHint = ctx.sessionEvents.some(
       (prev) =>
         prev.eventType === 'hint_requested' &&
