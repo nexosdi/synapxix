@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { GameSessionRepository } from './game-session.repository';
 import { StartSessionDto, SubmitAttemptDto } from './dto/game-session.dto';
+import { computeDifficulty } from './difficulty.logic';
 
 @Injectable()
 export class GameSessionService {
@@ -127,6 +128,20 @@ export class GameSessionService {
     const completedSession = await this.repository.completeSession(sessionId);
     return {
       sessionId: completedSession.session_id
+    };
+  }
+
+  async getDifficultyForUser(userId: string) {
+    const sessions = await this.repository.getLastNCompletedSessions(userId, 5);
+    const difficulty = computeDifficulty(sessions);
+    const attempts = sessions.flatMap(s => s.attempts);
+    const correctCount = attempts.filter((a) => a.is_correct).length;
+    const accuracy = attempts.length > 0 ? correctCount / attempts.length : 0;
+
+    return {
+      difficulty,
+      accuracy,
+      sessionsAnalyzed: sessions.length
     };
   }
 }
