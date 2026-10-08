@@ -59,7 +59,7 @@
     "keycloak-connect": "^26.1.1",
     "keycloak-js": "^26.2.1",
     "keyv": "^4.5.4",
-    "neo4j-driver": "^5.28.2",
+    "neo4j-driver": "^5.28.3",
     "ng2-charts": "^9.0.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",

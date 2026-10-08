@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Post, Query, UseGuards, UsePipes, ValidationPipe, Request } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards, UsePipes, ValidationPipe, Request, Param } from '@nestjs/common';
+import { Request as ExpressRequest } from 'express';
 import { CreateTopicDto, CreateUserDto, InitMethodDto, MethodFeedbackDto, ReinforceTopicDto, SetPreferencesDto } from '@nexosdi.synapxix/learning/shared';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { LearningService } from './learning.service';
@@ -15,58 +16,68 @@ export class LearningController {
   }
 
   @Post('users')
-  createUser(@Request() req: any, @Body() body: CreateUserDto) {
+  createUser(@Request() req: ExpressRequest & { user: { id: string } }, @Body() body: CreateUserDto) {
     body.userId = req.user.id;
     return this.learningService.createUser(body);
   }
 
   @Post('topics')
-  createTopic(@Request() req: any, @Body() body: CreateTopicDto) {
+  createTopic(@Request() req: ExpressRequest & { user: { id: string } }, @Body() body: CreateTopicDto) {
     body.userId = req.user.id;
     return this.learningService.createTopic(body);
   }
 
   @Post('topics/feedback')
-  feedbackTopic(@Request() req: any, @Body() body: ReinforceTopicDto) {
+  feedbackTopic(@Request() req: ExpressRequest & { user: { id: string } }, @Body() body: ReinforceTopicDto) {
     body.userId = req.user.id;
     return this.learningService.reinforceTopic(body);
   }
 
   @Post('preferences')
-  setPreferences(@Request() req: any, @Body() body: SetPreferencesDto) {
+  setPreferences(@Request() req: ExpressRequest & { user: { id: string } }, @Body() body: SetPreferencesDto) {
     body.userId = req.user.id;
     return this.learningService.setPreferences(body);
   }
 
   @Post('methods/init')
-  initMethod(@Request() req: any, @Body() body: InitMethodDto) {
+  initMethod(@Request() req: ExpressRequest & { user: { id: string } }, @Body() body: InitMethodDto) {
     body.userId = req.user.id;
     return this.learningService.initMethod(body);
   }
 
   @Post('methods/feedback')
-  feedbackMethod(@Request() req: any, @Body() body: MethodFeedbackDto) {
+  feedbackMethod(@Request() req: ExpressRequest & { user: { id: string } }, @Body() body: MethodFeedbackDto) {
     body.userId = req.user.id;
     return this.learningService.reinforceMethod(body);
   }
 
   @Get('topics')
-  topTopics(@Request() req: any, @Query('limit') limit?: string) {
+  topTopics(@Request() req: ExpressRequest & { user: { id: string } }, @Query('limit') limit?: string) {
     return this.learningService.topTopics(req.user.id, Number(limit) || 10);
   }
 
   @Get('preferences')
-  topPreferences(@Request() req: any, @Query('limit') limit?: string) {
+  topPreferences(@Request() req: ExpressRequest & { user: { id: string } }, @Query('limit') limit?: string) {
     return this.learningService.topPreferences(req.user.id, Number(limit) || 10);
   }
 
   @Get('methods')
-  topMethods(@Request() req: any, @Query('limit') limit?: string) {
+  topMethods(@Request() req: ExpressRequest & { user: { id: string } }, @Query('limit') limit?: string) {
     return this.learningService.topMethods(req.user.id, Number(limit) || 10);
   }
 
   @Post('embedding/refresh')
-  refreshEmbedding(@Request() req: any) {
+  refreshEmbedding(@Request() req: ExpressRequest & { user: { id: string } }) {
     return this.learningService.refreshUserEmbedding(req.user.id);
+  }
+
+  @Get(':userId/graph')
+  getUserGraph(@Param('userId') userId: string) {
+    return this.learningService.getUserGraph(userId);
+  }
+
+  @Get(':userId/recommended-path')
+  getRecommendedPath(@Param('userId') userId: string) {
+    return this.learningService.getRecommendedPath(userId);
   }
 }

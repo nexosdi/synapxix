@@ -22,7 +22,7 @@ describe('LearningController', () => {
   };
 
   // Mock del payload que extrae tu JwtAuthGuard
-  const mockRequest = { user: { id: 'user-token-123' } };
+  const mockRequest = { user: { id: 'user-token-123' } } as any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
