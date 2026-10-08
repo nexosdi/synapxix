@@ -1,31 +1,29 @@
-import Cypher, { Clause } from '@neo4j/cypher-builder';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {CreateTopicDto,CreateUserDto,InitMethodDto,MethodFeedbackDto,ReinforceTopicDto,SetPreferencesDto,} from '@nexosdi.synapxix/learning/shared';
-import neo4j, { Driver, QueryResult } from 'neo4j-driver';
-
-export const NEO4J_DRIVER = Symbol('NEO4J_DRIVER');
+import { QueryResult } from 'neo4j-driver';
+import { Neo4jService } from './neo4j.service';
 
 @Injectable()
 export class LearningService {
   private readonly logger = new Logger(LearningService.name);
 
-  constructor(@Inject(NEO4J_DRIVER) private readonly driver: Driver) {}
+  constructor(private readonly neo4jService: Neo4jService) {}
 
   async bootstrapSchema(): Promise<{ constraints: number; catalogs: number }> {
     const constraintQueries = [
-      this.raw(
+      this.neo4jService.raw(
         'CREATE CONSTRAINT user_id IF NOT EXISTS FOR (u:User) REQUIRE u.id IS UNIQUE'
       ),
-      this.raw(
+      this.neo4jService.raw(
         'CREATE CONSTRAINT topic_id IF NOT EXISTS FOR (t:Topic) REQUIRE t.id IS UNIQUE'
       ),
-      this.raw(
+      this.neo4jService.raw(
         'CREATE CONSTRAINT lp_key IF NOT EXISTS FOR (lp:LearnPref) REQUIRE lp.key IS UNIQUE'
       ),
-      this.raw(
+      this.neo4jService.raw(
         'CREATE CONSTRAINT lm_key IF NOT EXISTS FOR (m:LearnMethod) REQUIRE m.key IS UNIQUE'
       ),
-      this.raw(`CREATE VECTOR INDEX topic_vec IF NOT EXISTS
+      this.neo4jService.raw(`CREATE VECTOR INDEX topic_vec IF NOT EXISTS
         FOR (t:Topic) ON (t.embedding)
         OPTIONS {indexConfig: {
           \`vector.dimensions\`: 768,
@@ -34,10 +32,10 @@ export class LearningService {
     ];
 
     for (const query of constraintQueries) {
-      await this.runWrite(query);
+      await this.neo4jService.write(query);
     }
 
-    const preferencesCatalog = this.raw(`
+    const preferencesCatalog = this.neo4jService.raw(`
       UNWIND [
        {key:'linguistic',source:'Gardner',category:'intelligence'},
        {key:'logical_mathematical',source:'Gardner',category:'intelligence'},
@@ -57,7 +55,7 @@ export class LearningService {
             lp.category=row.category
     `);
 
-    const methodsCatalog = this.raw(`
+    const methodsCatalog = this.neo4jService.raw(`
       UNWIND [
        {key:'visual_summary',        description:'Diagrams + key frames'},
        {key:'interactive_quiz',      description:'Short checks for understanding'},
@@ -70,8 +68,8 @@ export class LearningService {
         SET m.description = row.description
     `);
 
-    await this.runWrite(preferencesCatalog);
-    await this.runWrite(methodsCatalog);
+    await this.neo4jService.write(preferencesCatalog);
+    await this.neo4jService.write(methodsCatalog);
 
     return {
       constraints: constraintQueries.length,
@@ -80,8 +78,8 @@ export class LearningService {
   }
 
   async createUser(dto: CreateUserDto) {
-    const result = await this.runWrite(
-      this.raw(
+    const result = await this.neo4jService.write(
+      this.neo4jService.raw(
         `
         MERGE (u:User {id:$userId})
           SET u.name = $name,
@@ -100,8 +98,8 @@ export class LearningService {
   }
 
   async createTopic(dto: CreateTopicDto) {
-    const result = await this.runWrite(
-      this.raw(
+    const result = await this.neo4jService.write(
+      this.neo4jService.raw(
         `
         MERGE (u:User {id:$userId})
         MERGE (t:Topic {id:$topicId})
@@ -132,8 +130,8 @@ export class LearningService {
   }
 
   async reinforceTopic(dto: ReinforceTopicDto) {
-    const result = await this.runWrite(
-      this.raw(
+    const result = await this.neo4jService.write(
+      this.neo4jService.raw(
         `
         MATCH (u:User {id:$userId})-[r:INTEREST_IN]->(t:Topic {id:$topicId})
         SET r.weight = CASE WHEN coalesce(r.weight,0)+$delta < 0.0 THEN 0.0 WHEN coalesce(r.weight,0)+$delta > 1.0 THEN 1.0 ELSE coalesce(r.weight,0)+$delta END
@@ -148,8 +146,8 @@ export class LearningService {
   }
 
   async setPreferences(dto: SetPreferencesDto) {
-    const result = await this.runWrite(
-      this.raw(
+    const result = await this.neo4jService.write(
+      this.neo4jService.raw(
         `
         MATCH (u:User {id:$userId})
         UNWIND $prefKeys AS k
@@ -170,8 +168,8 @@ export class LearningService {
   }
 
   async initMethod(dto: InitMethodDto) {
-    const result = await this.runWrite(
-      this.raw(
+    const result = await this.neo4jService.write(
+      this.neo4jService.raw(
         `
         MATCH (u:User {id:$userId})
         MATCH (m:LearnMethod {key:$methodKey})
@@ -190,8 +188,8 @@ export class LearningService {
   }
 
   async reinforceMethod(dto: MethodFeedbackDto) {
-    const result = await this.runWrite(
-      this.raw(
+    const result = await this.neo4jService.write(
+      this.neo4jService.raw(
         `
         MATCH (u:User {id:$userId})-[r:BENEFITS_FROM]->(m:LearnMethod {key:$methodKey})
         SET r.weight = CASE WHEN coalesce(r.weight,0)+$delta < 0.0 THEN 0.0 WHEN coalesce(r.weight,0)+$delta > 1.0 THEN 1.0 ELSE coalesce(r.weight,0)+$delta END
@@ -205,8 +203,8 @@ export class LearningService {
   }
 
   async topTopics(userId: string, limit = 10) {
-    const result = await this.runRead(
-      this.raw(
+    const result = await this.neo4jService.read(
+      this.neo4jService.raw(
         `
         MATCH (u:User {id:$userId})-[r:INTEREST_IN]->(t:Topic)
         RETURN t.id AS topicId, t.topicContent AS content, r.weight AS weight, t.uses AS uses
@@ -221,8 +219,8 @@ export class LearningService {
   }
 
   async topPreferences(userId: string, limit = 10) {
-    const result = await this.runRead(
-      this.raw(
+    const result = await this.neo4jService.read(
+      this.neo4jService.raw(
         `
         MATCH (u:User {id:$userId})-[r:PREFERS]->(lp:LearnPref)
         RETURN lp.key AS pref, lp.source AS source, r.weight AS weight
@@ -237,8 +235,8 @@ export class LearningService {
   }
 
   async topMethods(userId: string, limit = 10) {
-    const result = await this.runRead(
-      this.raw(
+    const result = await this.neo4jService.read(
+      this.neo4jService.raw(
         `
         MATCH (u:User {id:$userId})-[r:BENEFITS_FROM]->(m:LearnMethod)
         RETURN m.key AS method, m.description AS description, r.weight AS weight
@@ -253,8 +251,8 @@ export class LearningService {
   }
 
   async refreshUserEmbedding(userId: string) {
-    const result = await this.runWrite(
-      this.raw(
+    const result = await this.neo4jService.write(
+      this.neo4jService.raw(
         `
         MATCH (u:User {id:$userId})-[r:INTEREST_IN]->(t:Topic)
         WITH u, collect({v:t.embedding, w:r.weight}) AS items
@@ -275,35 +273,60 @@ export class LearningService {
     return result.records[0]?.toObject();
   }
 
-  private async runWrite(query: Clause): Promise<QueryResult> {
-    return this.run(query, 'WRITE');
+  // Dual Write & Knowledge Graph endpoints
+  
+  async syncTopicPrerequisite(topicId: string, prerequisiteId: string) {
+    await this.neo4jService.write(
+      this.neo4jService.raw(`
+        MERGE (t:Topic {id: $topicId})
+        MERGE (req:Topic {id: $prerequisiteId})
+        MERGE (t)-[:PREREQUISITE]->(req)
+      `, { topicId, prerequisiteId })
+    );
   }
 
-  private async runRead(query: Clause): Promise<QueryResult> {
-    return this.run(query, 'READ');
+  async syncUserProgress(userId: string, topicId: string, status: string, score: number) {
+    await this.neo4jService.write(
+      this.neo4jService.raw(`
+        MERGE (u:User {id: $userId})
+        MERGE (t:Topic {id: $topicId})
+        MERGE (u)-[p:PROGRESS]->(t)
+        SET p.status = $status, p.score = $score
+      `, { userId, topicId, status, score })
+    );
   }
 
-  private async run(
-    query: Clause,
-    mode: 'READ' | 'WRITE'
-  ): Promise<QueryResult> {
-    const { cypher, params } = query.build();
-    const session = this.driver.session({
-      defaultAccessMode:
-        mode === 'WRITE' ? neo4j.session.WRITE : neo4j.session.READ,
-    });
-    try {
-      return await session.run(cypher, params);
-    } catch (error) {
-      this.logger.error(`Neo4j query failed: ${error}`);
-      throw error;
-    } finally {
-      await session.close();
-    }
+  async getUserGraph(userId: string) {
+    const result = await this.neo4jService.read(
+      this.neo4jService.raw(`
+        MATCH (u:User {id: $userId})-[p:PROGRESS]->(t:Topic)
+        OPTIONAL MATCH (t)-[r:PREREQUISITE]->(req:Topic)
+        RETURN t, p, r, req
+      `, { userId })
+    );
+    return result.records.map((r) => r.toObject());
   }
 
-  private raw<T>(cypher: string, params: T = {} as T): Clause {
-    return new Cypher.Raw(() => [cypher, params as Record<string, unknown>]);
+  async getRecommendedPath(userId: string, limit = 3) {
+    const result = await this.neo4jService.read(
+      this.neo4jService.raw(`
+        MATCH (target:Topic)
+        WHERE NOT EXISTS {
+          MATCH (u:User {id: $userId})-[p:PROGRESS]->(target)
+          WHERE p.status = 'COMPLETED'
+        }
+        AND NOT EXISTS {
+          MATCH (target)-[:PREREQUISITE]->(req:Topic)
+          WHERE NOT EXISTS {
+            MATCH (u:User {id: $userId})-[reqP:PROGRESS]->(req)
+            WHERE reqP.status = 'COMPLETED'
+          }
+        }
+        RETURN target
+        LIMIT $limit
+      `, { userId, limit })
+    );
+    return result.records.map((r) => r.toObject());
   }
 
   private unwrapNode(result: QueryResult, key: string) {
