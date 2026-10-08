@@ -1,15 +1,15 @@
-/**
- * This is not a production server yet!
- * This is only a minimal backend to get started.
- */
+
 
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import { AppModule } from './app/app.module';
 
+import { Logger as PinoLogger } from 'nestjs-pino';
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(PinoLogger));
   
   // Security headers (OWASP recommended)
   app.use(helmet());

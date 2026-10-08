@@ -8,6 +8,7 @@ import {
   mockEvaluateSessionDto,
   mockGameSession,
 } from './fixtures/evaluative.fixtures';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 /**
  * Unit tests for the EvaluativeService.
@@ -42,11 +43,17 @@ describe('EvaluativeService', () => {
     },
   };
 
+  const mockCacheManager = {
+    get: jest.fn(),
+    set: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EvaluativeService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: CACHE_MANAGER, useValue: mockCacheManager },
       ],
     }).compile();
 

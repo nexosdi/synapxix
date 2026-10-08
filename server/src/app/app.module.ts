@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
+import { HealthController } from './health.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { DalaModule } from './modules/dala/dala.module';
@@ -31,6 +33,17 @@ import { AdminModule } from './admin/admin.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        customProps: (req) => {
+          const userReq = req as unknown as { user?: { sub?: string; id?: string } };
+          return {
+            userId: userReq.user?.sub || userReq.user?.id || 'anonymous',
+          };
+        },
+        transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
+      },
+    }),
     ScheduleModule.forRoot(),
     TeacherInsightsModule,
     ThrottlerModule.forRoot([
@@ -62,7 +75,7 @@ import { AdminModule } from './admin/admin.module';
     AdminModule,
     NotificationsModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [
     AppService,
     {
