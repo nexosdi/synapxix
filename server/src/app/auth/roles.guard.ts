@@ -19,11 +19,11 @@ export class RolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
     
-    if (!user || !user.realm_access || !user.realm_access.roles) {
+    if (!user || !user.roles) {
       return false;
     }
     
-    const userRoles = user.realm_access.roles;
+    const userRoles = user.roles;
     return requiredRoles.some((role) => userRoles.includes(role));
   }
 }

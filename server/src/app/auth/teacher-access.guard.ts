@@ -16,7 +16,7 @@ export class TeacherAccessGuard implements CanActivate {
     }
 
     // Admins bypass this check
-    const roles = user.realm_access?.roles || [];
+    const roles = user.roles || [];
     if (roles.includes('admin') || roles.includes('neops_admin')) {
       return true;
     }
