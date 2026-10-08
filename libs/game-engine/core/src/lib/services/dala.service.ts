@@ -35,7 +35,7 @@ export class DalaInstrumentationService implements OnDestroy {
     window.addEventListener('beforeunload', this.saveQueue.bind(this));
   }
 
-  createAdapter(instrumentId: 'categorization' | 'timeline-order' | 'intruder' | 'memory-match' | 'word-association', version = '1.0.0'): GameInstrumentAdapter {
+  createAdapter(instrumentId: 'categorization' | 'timeline-order' | 'intruder' | 'memory-match' | 'word-association' | 'pattern-recognition', version = '1.0.0'): GameInstrumentAdapter {
     return new GameInstrumentAdapter(instrumentId as unknown as 'categorization', version, this.emitter);
   }
 

@@ -78,6 +78,7 @@ export class MapComponent {
     'sound-match': 'sound match',
     'memory-match': 'memory match',
     'word-association': 'word association',
+    'pattern-recognition': 'pattern recognition',
   };
 
   readonly activeHistory = this.historyService.activeHistory;

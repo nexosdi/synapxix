@@ -13,6 +13,7 @@ export type GameType =
   | 'sound-match'
   | 'memory-match'
   | 'word-association'
+  | 'pattern-recognition'
   | 'speak-about-photo';
 
 export interface InteractiveContentBase<

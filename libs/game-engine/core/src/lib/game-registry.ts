@@ -64,6 +64,10 @@ export const gameComponentRegistry: Record<GameType, GameComponentLoader> = {
     import(
       './game-types/word-association/word-association.component'
     ).then((m) => m.WordAssociationGameComponent),
+  'pattern-recognition': () =>
+    import(
+      './game-types/pattern-recognition/pattern-recognition.component'
+    ).then((m) => m.PatternRecognitionGameComponent),
 };
 
 export function resolveGameLoader(

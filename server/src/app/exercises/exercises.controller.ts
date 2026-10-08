@@ -140,4 +140,10 @@ export class ExercisesController {
   evaluateTimelineOrderGame(@Body() body: unknown) {
     return this.exercisesService.evaluateGeneric(body);
   }
+
+  @Post('pattern-recognition')
+  @UseGuards(JwtAuthGuard)
+  evaluatePatternRecognition(@Body() body: unknown) {
+    return this.exercisesService.evaluateGeneric(body);
+  }
 }
