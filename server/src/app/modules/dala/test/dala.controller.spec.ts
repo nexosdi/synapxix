@@ -1,8 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DalaController } from '../dala.controller';
+import { Request } from 'express';
 import { DalaFacade } from '../dala.facade';
+import { ConsentService } from '../../../consent/consent.service';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../../../auth/jwt-auth.guard';
+import { KeycloakJwtPayload } from '../../../auth/jwt.strategy';
 import {
   makeEvent,
   SUBJECT_ID,
@@ -27,8 +30,14 @@ const mockFacade = {
 
 describe('DalaController', () => {
   let controller: DalaController;
+  let mockConsentService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
+    mockConsentService = {
+      hasConsent: jest.fn().mockResolvedValue(true),
+      getCurrentConsent: jest.fn().mockResolvedValue({ status: 'GRANTED' }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         ThrottlerModule.forRoot([
@@ -39,6 +48,7 @@ describe('DalaController', () => {
       controllers: [DalaController],
       providers: [
         { provide: DalaFacade, useValue: mockFacade },
+        { provide: ConsentService, useValue: mockConsentService },
       ],
     })
       // Saltamos el guard JWT en tests unitarios del controlador
@@ -57,7 +67,8 @@ describe('DalaController', () => {
       const expected = { eventId: EVENT_ID, status: 'accepted' };
       mockFacade.ingest.mockResolvedValue(expected);
 
-      const result = await controller.ingest(makeEvent());
+      const req = { user: { sub: 'mocked-user-id' } } as unknown as Request & { user: KeycloakJwtPayload };
+      const result = await controller.ingest(req, makeEvent());
 
       expect(mockFacade.ingest).toHaveBeenCalledWith(expect.objectContaining({ eventId: EVENT_ID }));
       expect(result).toEqual(expected);
@@ -66,7 +77,8 @@ describe('DalaController', () => {
     it('should return duplicate status when facade signals duplicate', async () => {
       mockFacade.ingest.mockResolvedValue({ eventId: EVENT_ID, status: 'duplicate' });
 
-      const result = await controller.ingest(makeEvent());
+      const req = { user: { sub: 'mocked-user-id' } } as unknown as Request & { user: KeycloakJwtPayload };
+      const result = await controller.ingest(req, makeEvent());
 
       expect(result.status).toBe('duplicate');
     });
@@ -78,7 +90,8 @@ describe('DalaController', () => {
         reason: 'missing_consent_scope',
       });
 
-      const result = await controller.ingest(makeEvent());
+      const req = { user: { sub: 'mocked-user-id' } } as unknown as Request & { user: KeycloakJwtPayload };
+      const result = await controller.ingest(req, makeEvent());
 
       expect(result.status).toBe('quarantined');
     });
@@ -94,7 +107,8 @@ describe('DalaController', () => {
       ];
       mockFacade.ingestBatch.mockResolvedValue(results);
 
-      const response = await controller.ingestBatch({
+      const req = { user: { sub: 'mocked-user-id' } } as unknown as Request & { user: KeycloakJwtPayload };
+      const response = await controller.ingestBatch(req, {
         events: [makeEvent({ eventId: 'evt-001' }), makeEvent({ eventId: 'evt-002' })],
       });
 
@@ -107,12 +121,13 @@ describe('DalaController', () => {
       expect(response).toEqual(results);
     });
 
-    it('should call facade.ingestBatch with empty array when body.events is undefined', async () => {
+    it('should NOT call facade.ingestBatch when body.events is undefined or empty', async () => {
       mockFacade.ingestBatch.mockResolvedValue([]);
 
-      await controller.ingestBatch({} as never);
+      const req = { user: { sub: 'mocked-user-id' } } as unknown as Request & { user: KeycloakJwtPayload };
+      await controller.ingestBatch(req, {} as never);
 
-      expect(mockFacade.ingestBatch).toHaveBeenCalledWith([]);
+      expect(mockFacade.ingestBatch).not.toHaveBeenCalled();
     });
   });
 

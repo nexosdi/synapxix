@@ -5,6 +5,7 @@ import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import type { DalaBehaviorEvent } from '@nexosdi.synapxix/dala/contracts';
 import { DalaFacade } from './dala.facade';
+import { ConsentService } from '../../consent/consent.service';
 
 /**
  * API interna D.A.L.A. v1 (directrices §13).
@@ -14,7 +15,10 @@ import { DalaFacade } from './dala.facade';
 @Controller('dala/v1')
 @UseGuards(JwtAuthGuard)
 export class DalaController {
-  constructor(private readonly facade: DalaFacade) {}
+  constructor(
+    private readonly facade: DalaFacade,
+    private readonly consentService: ConsentService,
+  ) {}
 
   /**
    * La telemetría de juego emite ráfagas legítimas: el límite global
@@ -23,15 +27,29 @@ export class DalaController {
   @Throttle({ short: { limit: 50, ttl: 1000 }, medium: { limit: 400, ttl: 10000 } })
   @Post('events')
   @HttpCode(HttpStatus.ACCEPTED)
-  ingest(@Body() event: DalaBehaviorEvent) {
+  async ingest(@Req() req: Request & { user: KeycloakJwtPayload }, @Body() event: DalaBehaviorEvent) {
+    const userId = req.user.sub as string;
+    const consent = await this.consentService.getCurrentConsent(userId, event.consent?.scopeId || 'research');
+    if (!consent || consent.status !== 'GRANTED') {
+      return; // Ignore ingestion if no consent
+    }
     return this.facade.ingest(event);
   }
 
   @Throttle({ short: { limit: 10, ttl: 1000 } })
   @Post('events/batch')
   @HttpCode(HttpStatus.ACCEPTED)
-  ingestBatch(@Body() body: { events: DalaBehaviorEvent[] }) {
-    return this.facade.ingestBatch(body?.events ?? []);
+  async ingestBatch(@Req() req: Request & { user: KeycloakJwtPayload }, @Body() body: { events: DalaBehaviorEvent[] }) {
+    const userId = req.user.sub as string;
+    const events = body?.events ?? [];
+    if (events.length === 0) return;
+
+    const consentScope = events[0].consent?.scopeId || 'research';
+    const consent = await this.consentService.getCurrentConsent(userId, consentScope);
+    if (!consent || consent.status !== 'GRANTED') {
+      return; // Ignore batch if no consent
+    }
+    return this.facade.ingestBatch(events);
   }
 
   @Get('subjects/:subjectId/state')

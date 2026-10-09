@@ -10,6 +10,7 @@ import { PrismaModule } from '@nexosdi.synapxix/prisma';
 import { AiPromptRepository } from './repositories/ai-prompt.repository';
 import { AiPromptService } from './services/ai-prompt.service';
 import { AiCacheInterceptor } from './interceptors/ai-cache.interceptor';
+import { AiAdapterProvider } from './providers/ai-adapter.provider';
 
 /**
  * ResearchModule — AI-powered pedagogical analysis.
@@ -49,6 +50,7 @@ import { AiCacheInterceptor } from './interceptors/ai-cache.interceptor';
   controllers: [ResearchController],
   providers: [
     ResearchService,
+    AiAdapterProvider,
     AiProvider,
     AiPromptRepository,
     AiPromptService,
