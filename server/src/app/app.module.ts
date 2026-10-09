@@ -19,6 +19,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TeacherInsightsModule } from './modules/research/teacher-insights/teacher-insights.module';
 import { AdminModule } from './admin/admin.module';
+import { ConsentModule } from './consent/consent.module';
 /**
  * Root application module.
  *
@@ -74,6 +75,7 @@ import { AdminModule } from './admin/admin.module';
     AnalyticsModule,
     AdminModule,
     NotificationsModule,
+    ConsentModule,
   ],
   controllers: [AppController, HealthController],
   providers: [

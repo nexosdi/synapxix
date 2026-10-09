@@ -1,0 +1,19 @@
+{
+  "name": "ai-adapter",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ai-adapter/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/ai-adapter",
+        "main": "libs/ai-adapter/src/index.ts",
+        "tsConfig": "libs/ai-adapter/tsconfig.lib.json",
+        "assets": ["libs/ai-adapter/*.md"]
+      }
+    }
+  }
+}

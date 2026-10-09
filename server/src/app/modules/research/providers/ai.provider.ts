@@ -1,8 +1,9 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
+import { Injectable, InternalServerErrorException, Logger, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { withRetry } from './retry.util';
 import { AiPromptService } from '../services/ai-prompt.service';
+import { AiModelAdapter } from '@nexosdi.synapxix/ai-adapter';
+import { AI_ADAPTER_TOKEN } from './ai-adapter.provider';
 
 /**
  * AiProvider — Central abstraction layer for AI model interactions.
@@ -42,8 +43,6 @@ import { AiPromptService } from '../services/ai-prompt.service';
 @Injectable()
 export class AiProvider {
   private readonly logger = new Logger(AiProvider.name);
-  private genAI?: GoogleGenerativeAI;
-  private lazyModel?: GenerativeModel;
 
   /** Number of retry attempts for transient AI API errors. */
   private readonly maxRetries: number;
@@ -54,49 +53,18 @@ export class AiProvider {
   constructor(
     private readonly configService: ConfigService,
     private readonly aiPromptService: AiPromptService,
+    @Inject(AI_ADAPTER_TOKEN) private readonly aiAdapter: AiModelAdapter,
   ) {
     // Read optional retry configuration from environment, with sensible defaults
     this.maxRetries = this.configService.get<number>('AI_MAX_RETRIES', 3);
     this.baseDelayMs = this.configService.get<number>('AI_RETRY_BASE_DELAY_MS', 1000);
 
-    if (!this.configService.get<string>('GOOGLE_GEN_AI_KEY')?.trim()) {
-      this.logger.warn(
-        'GOOGLE_GEN_AI_KEY is not set — AI-backed endpoints will fail until it is configured. ' +
-          'The rest of the API is unaffected.',
-      );
-    }
-
     this.logger.log(
-      `Initialized with model=gemini-2.5-flash, maxRetries=${this.maxRetries}, baseDelayMs=${this.baseDelayMs}`,
+      `Initialized AiProvider with injected adapter, maxRetries=${this.maxRetries}, baseDelayMs=${this.baseDelayMs}`,
     );
   }
 
-  /**
-   * The Gemini model, created on first use.
-   *
-   * Resolving the API key lazily keeps a missing key from aborting application
-   * bootstrap: only the endpoints that actually call the model fail, and they
-   * fail with a 500 that names the missing variable.
-   */
-  private get model(): GenerativeModel {
-    if (!this.lazyModel) {
-      const apiKey = this.configService.get<string>('GOOGLE_GEN_AI_KEY')?.trim();
 
-      if (!apiKey) {
-        this.logger.error('Google Generative AI API key is not set in environment variables.');
-        throw new InternalServerErrorException(
-          'Google Generative AI API key is not set (GOOGLE_GEN_AI_KEY)',
-        );
-      }
-
-      this.genAI = new GoogleGenerativeAI(apiKey);
-      this.lazyModel = this.genAI.getGenerativeModel({
-        model: "gemini-2.5-flash",
-      });
-    }
-
-    return this.lazyModel;
-  }
 
   /**
    * Analyzes a student's game activity using AI to generate pedagogical insights.
@@ -130,18 +98,14 @@ export class AiProvider {
       Identify strengths, weaknesses, and potential archetypes.
     `;
 
-    // Resolved outside the retry block: a missing API key is a configuration
-    // error, not a transient one, and must not be retried or wrapped.
-    const model = this.model;
-
     try {
       const result = await withRetry(
-        () => model.generateContent(prompt),
+        () => this.aiAdapter.generateContent(prompt),
         { maxRetries: this.maxRetries, baseDelayMs: this.baseDelayMs },
         this.logger,
       );
 
-      const text = result.response.text();
+      const text = result.text();
 
       // Guard against empty AI responses that would be useless downstream
       if (!text) {
@@ -205,25 +169,22 @@ export class AiProvider {
     const promptTemplate = await this.aiPromptService.getPrompt(gameType, 'AUDIO_EVALUATION', defaultPrompt);
     const prompt = promptTemplate.replace('{EXPECTED_TEXT}', expectedText);
 
-    const model = this.model;
-
     try {
       const result = await withRetry(
         () =>
-          model.generateContent([
-            prompt,
+          this.aiAdapter.generateContent([
+            { type: 'text', text: prompt },
             {
-              inlineData: {
-                data: base64Audio,
-                mimeType: mimeType,
-              },
+              type: 'inlineData',
+              data: base64Audio,
+              mimeType: mimeType,
             },
           ]),
         { maxRetries: this.maxRetries, baseDelayMs: this.baseDelayMs },
         this.logger,
       );
 
-      const text = result.response.text();
+      const text = result.text();
 
       // Guard against empty AI responses
       if (!text) {
@@ -276,16 +237,14 @@ export class AiProvider {
       next week's lessons. Be specific and reference the actual numbers.
     `;
 
-    const model = this.model;
-
     try {
       const result = await withRetry(
-        () => model.generateContent(prompt),
+        () => this.aiAdapter.generateContent(prompt),
         { maxRetries: this.maxRetries, baseDelayMs: this.baseDelayMs },
         this.logger,
       );
 
-      const text = result.response.text();
+      const text = result.text();
 
       if (!text) {
         this.logger.error('AI returned empty response for analyzeTeacherWeeklyMetrics');
@@ -346,23 +305,15 @@ export class AiProvider {
       Identify strengths, weaknesses, and potential archetypes.
     `;
 
-    const model = this.model;
-
     try {
-      // Retry only the initial connection — once the stream opens, we consume it directly
-      const streamResult = await withRetry(
-        () => model.generateContentStream(prompt, { signal }),
-        { maxRetries: this.maxRetries, baseDelayMs: this.baseDelayMs },
-        this.logger,
-      );
+      const streamResult = this.aiAdapter.generateContentStream(prompt, {}, signal);
 
       let hasContent = false;
 
-      for await (const chunk of streamResult.stream) {
-        const text = chunk.text();
-        if (text) {
+      for await (const chunk of streamResult) {
+        if (chunk) {
           hasContent = true;
-          yield text;
+          yield chunk;
         }
       }
 
@@ -424,31 +375,22 @@ export class AiProvider {
     const promptTemplate = await this.aiPromptService.getPrompt(gameType, 'AUDIO_EVALUATION', defaultPrompt);
     const prompt = promptTemplate.replace('{EXPECTED_TEXT}', expectedText);
 
-    const model = this.model;
-
     try {
-      const streamResult = await withRetry(
-        () =>
-          model.generateContentStream([
-            prompt,
+      const streamResult = this.aiAdapter.generateContentStream([
+            { type: 'text', text: prompt },
             {
-              inlineData: {
-                data: base64Audio,
-                mimeType: mimeType,
-              },
+              type: 'inlineData',
+              data: base64Audio,
+              mimeType: mimeType,
             },
-          ], { signal }),
-        { maxRetries: this.maxRetries, baseDelayMs: this.baseDelayMs },
-        this.logger,
-      );
+          ], {}, signal);
 
       let hasContent = false;
 
-      for await (const chunk of streamResult.stream) {
-        const text = chunk.text();
-        if (text) {
+      for await (const chunk of streamResult) {
+        if (chunk) {
           hasContent = true;
-          yield text;
+          yield chunk;
         }
       }
 
