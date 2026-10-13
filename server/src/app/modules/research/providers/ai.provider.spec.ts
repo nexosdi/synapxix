@@ -15,6 +15,7 @@ describe('AiProvider', () => {
     adapterMock = {
       generateContent: jest.fn(),
       generateContentStream: jest.fn(),
+      supportsAudioInput: jest.fn().mockReturnValue(true),
     };
 
     configServiceMock = {
@@ -94,6 +95,13 @@ describe('AiProvider', () => {
         },
       ]);
     });
+
+    it('fails explicitly when the selected adapter does not support audio input', async () => {
+      adapterMock.supportsAudioInput.mockReturnValue(false);
+      await expect(provider.analyzeAudio('Read this', 'audio/webm', 'data'))
+        .rejects.toThrow('The selected AI provider does not support audio input.');
+      expect(adapterMock.generateContent).not.toHaveBeenCalled();
+    });
   });
 
   describe('streaming methods', () => {
@@ -111,6 +119,43 @@ describe('AiProvider', () => {
 
       expect(chunks).toEqual(['chunk1', 'chunk2']);
       expect(adapterMock.generateContentStream).toHaveBeenCalled();
+    });
+
+    it('retries transient errors before the first stream chunk', async () => {
+      configServiceMock.get.mockImplementation((key: string) => {
+        if (key === 'AI_MAX_RETRIES') return 1;
+        if (key === 'AI_RETRY_BASE_DELAY_MS') return 0;
+        return undefined;
+      });
+      provider = new AiProvider(configServiceMock, promptServiceMock, adapterMock);
+      adapterMock.generateContentStream
+        .mockReturnValueOnce((async function* () { throw { status: 503, retryAfter: 0.0001 }; })())
+        .mockReturnValueOnce((async function* () { yield 'recovered'; })());
+
+      const chunks = [];
+      for await (const chunk of provider.streamPedagogicalAction('S', 'C', {})) chunks.push(chunk);
+
+      expect(chunks).toEqual(['recovered']);
+      expect(adapterMock.generateContentStream).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not retry a stream after any chunk has been emitted', async () => {
+      adapterMock.generateContentStream.mockReturnValueOnce((async function* () {
+        yield 'partial';
+        throw { status: 503 };
+      })());
+
+      const iterator = provider.streamPedagogicalAction('S', 'C', {});
+      await expect(iterator.next()).resolves.toEqual({ value: 'partial', done: false });
+      await expect(iterator.next()).rejects.toThrow('Failed to stream pedagogical action analysis.');
+      expect(adapterMock.generateContentStream).toHaveBeenCalledTimes(1);
+    });
+
+    it('fails explicitly when streaming audio with an adapter that lacks audio support', async () => {
+      adapterMock.supportsAudioInput.mockReturnValue(false);
+      const iterator = provider.streamAudio('Read this', 'audio/webm', 'data');
+      await expect(iterator.next()).rejects.toThrow('The selected AI provider does not support audio input.');
+      expect(adapterMock.generateContentStream).not.toHaveBeenCalled();
     });
   });
 });

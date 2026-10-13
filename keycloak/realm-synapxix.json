@@ -7,6 +7,13 @@
   "resetPasswordAllowed": true,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
+  "browserSecurityHeaders": {
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:4200 http://localhost:4201; object-src 'none';",
+    "xFrameOptions": "",
+    "xContentTypeOptions": "nosniff",
+    "xRobotsTag": "none",
+    "xXSSProtection": "1; mode=block"
+  },
   "roles": {
     "realm": [
       { "name": "teacher", "description": "Docente" },

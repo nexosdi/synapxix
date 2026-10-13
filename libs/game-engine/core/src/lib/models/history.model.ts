@@ -1,20 +1,8 @@
-export type GameType =
-  | 'avatar'
-  | 'read-select'
-  | 'listen-type'
-  | 'fill-in-the-blanks'
-  | 'read-aloud'
-  | 'timeline-order'
-  | 'categorization'
-  | 'spotlight'
-  | 'neural-link'
-  | 'intruder'
-  | 'balance-master'
-  | 'sound-match'
-  | 'memory-match'
-  | 'word-association'
-  | 'pattern-recognition'
-  | 'speak-about-photo';
+// GameType is defined in learning/shared for full-stack isomorphic use.
+// Re-exported here for backward compatibility within game-engine consumers.
+import type { GameType } from '@nexosdi.synapxix/learning/shared';
+export type { GameType } from '@nexosdi.synapxix/learning/shared';
+
 
 export interface InteractiveContentBase<
   TType extends GameType = GameType,

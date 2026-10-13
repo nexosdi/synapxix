@@ -27,6 +27,10 @@ export function initializeKeycloak(keycloak: KeycloakService): () => Promise<boo
         silentCheckSsoRedirectUri:
           window.location.origin + '/silent-check-sso.html',
         checkLoginIframe: false,
+        // The 3p-cookies endpoint was removed in Keycloak 25+.
+        // Disabling the fallback prevents the adapter from trying to load
+        // /realms/.../3p-cookies/step1.html, which would 404 and block init.
+        silentCheckSsoFallback: false,
       },
       enableBearerInterceptor: true,
       bearerPrefix: 'Bearer',

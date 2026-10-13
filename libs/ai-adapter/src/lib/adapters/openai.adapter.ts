@@ -20,6 +20,9 @@ export class OpenAiAdapter implements AiModelAdapter {
       if (p.type === 'text') {
         return { type: 'text', text: p.text };
       } else {
+        if (!p.mimeType.startsWith('image/')) {
+          throw new Error(`OpenAI adapter does not support ${p.mimeType} input.`);
+        }
         return {
           type: 'image_url',
           image_url: {
@@ -84,5 +87,9 @@ export class OpenAiAdapter implements AiModelAdapter {
 
   supportsMultimodal(): boolean {
     return true;
+  }
+
+  supportsAudioInput(): boolean {
+    return false;
   }
 }

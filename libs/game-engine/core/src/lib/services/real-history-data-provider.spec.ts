@@ -27,6 +27,18 @@ describe('RealHistoryDataProvider', () => {
   });
 
   describe('getHistory()', () => {
+    it('should return HISTORY_MOCK without requesting a session for its own ID', async () => {
+      const result = await provider.getHistory(HISTORY_MOCK.id);
+      const originalGameInput = HISTORY_MOCK.contentMap[0]?.gameInput;
+
+      expect(result).toEqual(HISTORY_MOCK);
+      if (result?.contentMap[0]) {
+        result.contentMap[0].gameInput = {};
+        expect(HISTORY_MOCK.contentMap[0]?.gameInput).toBe(originalGameInput);
+      }
+      httpMock.expectNone(`/api/game-session/${HISTORY_MOCK.id}`);
+    });
+
     it('should fetch session and map it to HISTORY_MOCK', async () => {
       const sessionId = 'session-123';
       const mockSession = {

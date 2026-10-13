@@ -20,6 +20,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TeacherInsightsModule } from './modules/research/teacher-insights/teacher-insights.module';
 import { AdminModule } from './admin/admin.module';
 import { ConsentModule } from './consent/consent.module';
+import { PrismaModule } from '@nexosdi.synapxix/prisma';
 /**
  * Root application module.
  *
@@ -64,6 +65,7 @@ import { ConsentModule } from './consent/consent.module';
         limit: 60,  // max 60 requests per minute
       },
     ]),
+    PrismaModule,
     AuthModule,
     DalaModule,
     LearningModule,

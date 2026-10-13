@@ -15,6 +15,11 @@ describe('AiAdapterFactory', () => {
     expect(adapter).toBeInstanceOf(GeminiAdapter);
   });
 
+  it('does not require credentials for providers that are not selected', () => {
+    expect(() => createAiAdapter({ provider: 'gemini', geminiKey: 'test-key' })).not.toThrow();
+    expect(() => createAiAdapter({ provider: 'openai', openaiKey: 'test-key' })).not.toThrow();
+  });
+
   it('should throw an error if geminiKey is missing for gemini provider', () => {
     expect(() => createAiAdapter({ provider: 'gemini' })).toThrow(/Missing GOOGLE_GEN_AI_KEY/);
   });

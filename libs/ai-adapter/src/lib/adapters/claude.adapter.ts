@@ -20,6 +20,9 @@ export class ClaudeAdapter implements AiModelAdapter {
       if (p.type === 'text') {
         return { type: 'text', text: p.text };
       } else {
+        if (!p.mimeType.startsWith('image/')) {
+          throw new Error(`Claude adapter does not support ${p.mimeType} input.`);
+        }
         return {
           type: 'image',
           source: {
@@ -80,5 +83,9 @@ export class ClaudeAdapter implements AiModelAdapter {
 
   supportsMultimodal(): boolean {
     return true;
+  }
+
+  supportsAudioInput(): boolean {
+    return false;
   }
 }

@@ -1,8 +1,8 @@
-import { Injectable, InternalServerErrorException, Logger, Inject } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { withRetry } from './retry.util';
 import { AiPromptService } from '../services/ai-prompt.service';
-import { AiModelAdapter } from '@nexosdi.synapxix/ai-adapter';
+import { AiGenerateOptions, AiModelAdapter, ContentPart } from '@nexosdi.synapxix/ai-adapter';
 import { AI_ADAPTER_TOKEN } from './ai-adapter.provider';
 
 /**
@@ -151,6 +151,7 @@ export class AiProvider {
     base64Audio: string,
     gameType = 'read-aloud'
   ): Promise<string> {
+    this.assertAudioSupported();
     const defaultPrompt = `
       You are an AI teacher evaluating a student's reading aloud exercise.
       The student was supposed to read the following text:
@@ -306,7 +307,7 @@ export class AiProvider {
     `;
 
     try {
-      const streamResult = this.aiAdapter.generateContentStream(prompt, {}, signal);
+      const streamResult = this.streamWithRetry(prompt, {}, signal);
 
       let hasContent = false;
 
@@ -357,6 +358,7 @@ export class AiProvider {
     gameType = 'read-aloud',
     signal?: AbortSignal,
   ): AsyncGenerator<string> {
+    this.assertAudioSupported();
     const defaultPrompt = `
       You are an AI teacher evaluating a student's reading aloud exercise.
       The student was supposed to read the following text:
@@ -376,7 +378,7 @@ export class AiProvider {
     const prompt = promptTemplate.replace('{EXPECTED_TEXT}', expectedText);
 
     try {
-      const streamResult = this.aiAdapter.generateContentStream([
+      const streamResult = this.streamWithRetry([
             { type: 'text', text: prompt },
             {
               type: 'inlineData',
@@ -411,5 +413,28 @@ export class AiProvider {
         'Failed to stream audio evaluation.',
       );
     }
+  }
+
+  private assertAudioSupported(): void {
+    if (!this.aiAdapter.supportsAudioInput()) {
+      throw new BadRequestException('The selected AI provider does not support audio input.');
+    }
+  }
+
+  /** Retries only stream establishment; once the iterator produces its first item,
+   * retrying would duplicate already-delivered output and corrupt the response. */
+  private async *streamWithRetry(
+    prompt: string | ContentPart[],
+    options: AiGenerateOptions,
+    signal?: AbortSignal,
+  ): AsyncGenerator<string> {
+    const { iterator, first } = await withRetry(async () => {
+      const iterator = this.aiAdapter.generateContentStream(prompt, options, signal);
+      return { iterator, first: await iterator.next() };
+    }, { maxRetries: this.maxRetries, baseDelayMs: this.baseDelayMs }, this.logger);
+
+    if (first.done) return;
+    yield first.value;
+    for await (const chunk of iterator) yield chunk;
   }
 }

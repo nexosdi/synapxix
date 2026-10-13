@@ -121,6 +121,7 @@ El servidor corre en `http://localhost:3000/api`. Todos los endpoints requieren 
 - Node.js 20+
 - Docker y Docker Compose
 - Git
+- npm (incluido con Node.js)
 
 ### 1. Clonar y configurar entorno
 
@@ -132,7 +133,7 @@ cd synapxix
 cp .env.example .env
 ```
 
-Editar `.env` con tus credenciales. Los valores de `APP_DB_*` y `DATABASE_URL` deben coincidir entre sí.
+Editar `.env` según el flujo que vayas a probar. `APP_DB_NAME`, `APP_DB_USER`, `APP_DB_PASSWORD` y `APP_DB_PORT` deben coincidir con `DATABASE_URL`. Los valores de `.env.example` son solo para desarrollo local; reemplazalos antes de compartir el entorno.
 
 ### 2. Instalar dependencias
 
@@ -144,8 +145,7 @@ npm install --legacy-peer-deps
 
 ### 3. Preparar la base de datos
 
-Atajo que levanta Postgres y Redis, genera el cliente de Prisma, aplica las
-migraciones y carga el seed de desarrollo:
+Atajo que levanta PostgreSQL de la aplicación y Redis, genera el cliente de Prisma, aplica las migraciones y carga el seed de desarrollo:
 
 ```bash
 npm run dev:setup
@@ -178,27 +178,26 @@ npx nx serve web-game
 npx nx serve admin-frontend
 ```
 
-### 5. Autenticación en desarrollo
+### 5. Elegir el modo de autenticación
 
 Hay dos modos. Elegí uno según lo que necesites probar.
 
 #### Modo rápido: saltear la validación (`DISABLE_AUTH`)
 
-Alcanza para probar la API y el `admin-frontend`. En tu `.env`:
+Usalo para probar la API y el `admin-frontend`, no el flujo web de `web-game`. En `.env`:
 
 ```env
 DISABLE_AUTH=true
 ```
 
-El backend usa `MockJwtGuard`, que inyecta un usuario docente fijo. No sirve
-para el `web-game`, cuyo guard es de Keycloak y vive en el frontend.
+El backend usa `MockJwtGuard`, que inyecta un usuario docente fijo; ejecutá el seed de desarrollo para que ese usuario exista en la base. Este modo omite la validación JWT de la API, pero el `web-game` tiene su propio guard de Keycloak en el frontend: sus rutas protegidas requieren una sesión real. No uses mock-auth como sustituto del login web.
 
 #### Modo completo: Keycloak local
 
 Necesario para probar el `web-game` de punta a punta.
 
 ```bash
-docker compose --profile keycloak up -d
+docker compose --profile keycloak up -d postgres-keycloak keycloak
 ```
 
 El realm `Synapxix` y el cliente `synapxix-app` se importan solos desde
@@ -206,23 +205,32 @@ El realm `Synapxix` y el cliente `synapxix-app` se importan solos desde
 
 ```env
 DISABLE_AUTH=false
-KEYCLOAK_PORT=8081          # cambialo si el 8080 está libre en tu máquina
-KEYCLOAK_REALM_URL=http://localhost:8081/realms/Synapxix
 KEYCLOAK_ADMIN=admin
-KEYCLOAK_ADMIN_PASSWORD=changeme
+KEYCLOAK_ADMIN_PASSWORD=local-only-change-me
 KEYCLOAK_DB_NAME=keycloak
 KEYCLOAK_DB_USER=keycloak_user
-KEYCLOAK_DB_PASSWORD=changeme
+KEYCLOAK_DB_PASSWORD=local-only-change-me
 ```
 
-Falta un paso manual: crear tu usuario de prueba. Entrá a la consola de admin
-en `http://localhost:8081`, elegí el realm **Synapxix** → *Users* → *Add user*,
-y asignale una contraseña en la pestaña *Credentials*. Si querés que tenga rol,
-usá *Role mapping* con `teacher` o `student`.
+Compose publica Keycloak en `8081` por defecto y el frontend local apunta a ese mismo origen. `.env.example` ya define `KEYCLOAK_PORT=8081`, `KEYCLOAK_PUBLIC_URL=http://localhost:8081` y `KEYCLOAK_REALM_URL=http://localhost:8081/realms/Synapxix`; los valores de credenciales `local-only-*` son solo para pruebas locales. Compose mapea el puerto del host al `8080` interno. Si cambiás el puerto, actualizá estas variables y `keycloak.url` en `web-game/src/environments/environment.ts`.
 
-> Para usar el Keycloak del VPS en lugar del local, poné
-> `KEYCLOAK_REALM_URL=https://auth.aisuite.neops.ai/realms/Synapxix` y cambiá
-> `keycloak.url` en `web-game/src/environments/environment.ts`.
+Crear el usuario de prueba es un paso manual. Entrá a la consola de admin en `http://localhost:8081`, elegí el realm **Synapxix** → *Users* → *Add user*, y asignale una contraseña desde *Credentials*. Si necesitás un rol, asigná `teacher` o `student` desde *Role mapping*. Luego abrí `http://localhost:4300/`, iniciá sesión y usá el botón para entrar al juego. La ruta de mapa es `/history/<historyId>/map`; el identificador mock de desarrollo se obtiene del código, no lo inventes.
+
+> Para usar otro servidor Keycloak, configurá `KEYCLOAK_REALM_URL` para la API y `keycloak.url` en `web-game/src/environments/environment.ts` para el frontend. Ambos deben apuntar al mismo realm.
+
+### Probar la API y el panel con mock-auth
+
+Con `DISABLE_AUTH=true`, la base migrada y el seed aplicado, la API acepta llamadas sin un JWT válido usando la identidad docente fija. Usá `http://localhost:4200` para el panel. Esto permite desarrollar API/admin, pero no verifica login, roles ni tokens de Keycloak en el juego.
+
+### Probar el juego con Keycloak
+
+Usá `DISABLE_AUTH=false`, levantá el perfil `keycloak` y asegurate de que `KEYCLOAK_REALM_URL` y `web-game/src/environments/environment.ts` apunten al mismo realm y puerto. Entrá por `http://localhost:4300/`; el botón inicia el login y vuelve al mapa protegido. El proxy de desarrollo envía `/api` al backend en el puerto 3000.
+
+> Si el acceso al mapa vuelve repetidamente al inicio, revisá la navegación del guard/resolver y que estés usando la historia mock de desarrollo. No confundas ese ciclo de navegación con un error de API: el POST de consentimiento puede devolver HTTP 500 y no se considera resuelto por esta guía.
+
+### Configuración de staging
+
+`docker-compose.staging.yml` usa Keycloak `start-dev` y está destinado exclusivamente a pruebas locales/de integración; no es una configuración de producción. No tiene TLS ni un diseño de proxy/ingress productivo. Para un staging remoto, terminá HTTPS en un reverse proxy/ingress confiable y configurá el hostname público HTTPS de Keycloak antes de exponerlo; no uses el puerto HTTP publicado como ingress público. Antes de levantar este compose, exportá credenciales únicas para `APP_DB_*`, `KEYCLOAK_DB_*`, `KEYCLOAK_ADMIN*`, `REDIS_PASSWORD`, `NEO4J_*` y `GOOGLE_GEN_AI_KEY`; Compose falla explícitamente si falta alguna. Definí también `KEYCLOAK_PUBLIC_URL` (por ejemplo `https://auth.example.com`, sin barra final): Keycloak lo anuncia como hostname y la API valida el issuer `${KEYCLOAK_PUBLIC_URL}/realms/Synapxix`. Para que el cliente web también funcione en un entorno remoto, su `keycloak.url` debe apuntar al mismo hostname HTTPS antes de compilar la imagen. Además, el realm importado limita `frame-ancestors` a orígenes locales: antes de usar otro dominio, actualizá la política CSP del realm para permitir el origen HTTPS exacto del frontend; no uses comodines. `KEYCLOAK_REALM_URL` dentro del contenedor API permanece como endpoint interno de discovery/JWKS (`http://keycloak:8080/realms/Synapxix`), separado del issuer público. No reutilices los valores locales de `.env.example` en staging. Keycloak publica un solo puerto (`KEYCLOAK_PORT`, por defecto `8081`).
 
 ---
 
@@ -272,26 +280,17 @@ npx nx g @nx/js:library libs/<nombre>
 # Todos los tests
 npx nx test
 
-# Test de un proyecto específico
+# Test de un proyecto con target configurado
 npx nx test server
-npx nx test web-game
+npx nx test admin-frontend
 
 # Con cobertura
 npx nx test server --coverage
 ```
 
-### E2E Testing (Playwright)
+### E2E Testing
 
-El proyecto cuenta con pruebas End-to-End para verificar el flujo crítico (ej. `web-game`).
-
-```bash
-# Correr pruebas E2E en consola (headless)
-npx nx e2e web-game
-
-# Correr pruebas E2E abriendo la interfaz visual de Playwright
-npx nx e2e web-game --ui
-```
-> ⚠️ **Nota:** Asegúrate de tener el backend corriendo (`npx nx serve server`) en otra terminal antes de ejecutar los tests E2E, ya que el frontend del juego necesita comunicarse con la API.
+No hay un target E2E `web-game` declarado en `web-game/project.json` en esta configuración. Consultá los targets disponibles con `npx nx show project web-game` antes de asumir que Playwright está configurado.
 
 ---
 
@@ -320,6 +319,8 @@ Ver [`.env.example`](.env.example) para la lista completa. Las variables obligat
 | `APP_DB_PORT` | Puerto expuesto del contenedor (default: `5434`) |
 | `GOOGLE_GEN_AI_KEY` | API key de Google AI Studio (para módulo de IA) |
 | `KEYCLOAK_REALM_URL` | URL pública del realm de Keycloak para validación JWT |
+| `KEYCLOAK_PORT` | Puerto publicado de Keycloak (Compose usa `8081` si no se define) |
+| `DISABLE_AUTH` | `true` activa mock-auth de la API en desarrollo; no omite el guard del frontend |
 
 ---
 

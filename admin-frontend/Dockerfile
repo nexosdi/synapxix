@@ -1,7 +1,7 @@
 FROM node:22.12.0-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 COPY . .
 RUN npx nx build admin-frontend --configuration=production
 

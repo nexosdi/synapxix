@@ -1,4 +1,4 @@
-import { GameType } from '@nexosdi.synapxix/game-engine/core';
+import { GameType } from '@nexosdi.synapxix/learning/shared';
 import{ IsString, IsNotEmpty, IsObject } from 'class-validator';
 
 export interface BaseGameInput {

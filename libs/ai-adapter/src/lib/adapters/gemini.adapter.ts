@@ -86,4 +86,8 @@ export class GeminiAdapter implements AiModelAdapter {
   supportsMultimodal(): boolean {
     return true;
   }
+
+  supportsAudioInput(): boolean {
+    return true;
+  }
 }

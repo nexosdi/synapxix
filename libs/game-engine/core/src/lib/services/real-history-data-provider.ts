@@ -32,6 +32,10 @@ export class RealHistoryDataProvider implements HistoryDataProvider {
   private http = inject(HttpClient);
 
   async getHistory(sessionId: string): Promise<History | null> {
+    if (sessionId === HISTORY_MOCK.id) {
+      return JSON.parse(JSON.stringify(HISTORY_MOCK));
+    }
+
     try {
       // 1. Fetch the session results from the backend
       const session = await lastValueFrom(this.http.get<GameSession>(`/api/game-session/${sessionId}`));
