@@ -1,4 +1,4 @@
-globalThis.ngJest = {
+(globalThis as Record<string, unknown>)['ngJest'] = {
   testEnvironmentOptions: {
     errorOnUnknownElements: true,
     errorOnUnknownProperties: true,

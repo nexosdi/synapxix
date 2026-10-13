@@ -2,6 +2,7 @@ export default {
   displayName: 'web-game',
   preset: '../jest.preset.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+  roots: ['<rootDir>/src'],
   coverageDirectory: '../coverage/web-game',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
