@@ -26,6 +26,7 @@ export class MockJwtGuard implements CanActivate {
       preferred_username: 'teacher_dev',
       email: 'teacher@dev.local',
       realm_access: { roles: ['teacher'] },
+      roles: ['teacher'],
     };
     return true;
   }

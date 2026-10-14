@@ -12,6 +12,7 @@ export type KeycloakJwtPayload = {
   name?: string;
   preferred_username?: string;
   realm_access?: { roles: string[] };
+  roles?: string[];
 };
 
 /**
@@ -40,14 +41,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: KeycloakJwtPayload) {
-    return payload;
+    const roles = payload.realm_access?.roles || [];
+    return {
+      ...payload,
+      roles,
+    };
   }
 }
 
-function normalizeIssuer(domain: string): string {
-  const sanitized = domain.startsWith('http')
-    ? domain.replace(/\/+$/, '')
-    : `https://${domain}`.replace(/\/+$/, '');
 
-  return `${sanitized}/`;
-}
