@@ -20,6 +20,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TeacherInsightsModule } from './modules/research/teacher-insights/teacher-insights.module';
 import { AdminModule } from './admin/admin.module';
 import { ConsentModule } from './consent/consent.module';
+import { PrismaModule } from '@nexosdi.synapxix/prisma';
 /**
  * Root application module.
  *
@@ -42,7 +43,10 @@ import { ConsentModule } from './consent/consent.module';
             userId: userReq.user?.sub || userReq.user?.id || 'anonymous',
           };
         },
-        transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined,
+        transport:
+          process.env.NODE_ENV !== 'production' && process.env.LOG_PRETTY === 'true'
+            ? { target: 'pino-pretty' }
+            : undefined,
       },
     }),
     ScheduleModule.forRoot(),
@@ -64,6 +68,7 @@ import { ConsentModule } from './consent/consent.module';
         limit: 60,  // max 60 requests per minute
       },
     ]),
+    PrismaModule,
     AuthModule,
     DalaModule,
     LearningModule,
