@@ -85,16 +85,16 @@ services:
       - "${KEYCLOAK_PORT:-8080}:8080"
     volumes:
       # Mount custom theme
-      - ./keycloak-theme:/opt/keycloak/themes/synapxix
+      - ./keycloak-theme:/opt/keycloak/themes/synapxix:z
       # Realm de desarrollo, importado en el primer arranque
-      - ./keycloak/realm-synapxix.json:/opt/keycloak/data/import/realm-synapxix.json:ro
+      - ./keycloak/realm-synapxix.json:/opt/keycloak/data/import/realm-synapxix.json:ro,z
     depends_on:
       postgres-keycloak:
         condition: service_healthy
     networks:
       - keycloak-network
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /realms/Synapxix HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"]
       interval: 30s
       timeout: 10s
       retries: 5
