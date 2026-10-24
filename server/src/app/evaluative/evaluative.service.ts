@@ -1,12 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@nexosdi.synapxix/prisma';
 import { EvaluateSessionDto, GameAttemptRecordDto } from './dto/evaluate-session.dto';
+import { KeycloakJwtPayload } from '../auth/jwt.strategy';
+import { linkType, Prisma } from '@prisma/client';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { Inject } from '@nestjs/common';
 
 @Injectable()
 export class EvaluativeService {
   private readonly logger = new Logger(EvaluativeService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   /**
    * Process the session attempts mathematically to evaluate cognitive performance,
@@ -124,12 +132,43 @@ export class EvaluativeService {
   /**
    * Retrieves summaries of performance metrics for all students.
    */
-  async getStudentList() {
+  async getStudentList(userPayload?: KeycloakJwtPayload) {
+    const userId = userPayload?.sub || 'anonymous';
+    const cacheKey = `students-metrics-${userId}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    let studentIds: string[] | undefined = undefined;
+
+    // If the user is a teacher (and not an admin), we restrict the list to their students
+    const roles = userPayload?.realm_access?.roles || [];
+    const isTeacher = roles.includes('teacher');
+    const isAdmin = roles.includes('admin') || roles.includes('neops_admin');
+
+    if (isTeacher && !isAdmin && userPayload?.sub) {
+      const links = await this.prisma.userLink.findMany({
+        where: {
+          id_user_from: userPayload.sub,
+          link_type: linkType.TEACHER,
+          id_user_to: { not: null },
+        },
+        select: { id_user_to: true },
+      });
+      studentIds = links.map((l) => l.id_user_to as string);
+    }
+
+    const whereClause: Prisma.app_userWhereInput = {
+      role: { in: ['user', 'student'] },
+    };
+    if (studentIds !== undefined) {
+      whereClause.user_id = { in: studentIds };
+    }
+
     // 1. Fetch only student user attributes (no metrics)
     const students = await this.prisma.app_user.findMany({
-      where: {
-        role: { in: ['user', 'student'] },
-      },
+      where: whereClause,
       select: {
         user_id: true,
         firstname: true,
@@ -171,7 +210,7 @@ export class EvaluativeService {
     );
 
     // 4. Map students with their corresponding aggregated data (O(N) total)
-    return students.map((user) => {
+    const result = students.map((user) => {
       const agg = aggMap.get(user.user_id);
       return {
         userId: user.user_id,
@@ -182,6 +221,9 @@ export class EvaluativeService {
         lastActive: agg?.lastActive ?? user.created_at.toISOString(),
       };
     });
+
+    await this.cacheManager.set(cacheKey, result);
+    return result;
   }
 
   /**

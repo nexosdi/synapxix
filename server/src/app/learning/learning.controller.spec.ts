@@ -21,8 +21,8 @@ describe('LearningController', () => {
     refreshUserEmbedding: jest.fn(),
   };
 
-  // Mock del payload que extrae tu JwtAuthGuard
-  const mockRequest = { user: { id: 'user-token-123' } };
+  // Mock of the payload extracted by JwtAuthGuard
+  const mockRequest = { user: { id: 'user-token-123' } } as any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -41,57 +41,57 @@ describe('LearningController', () => {
     jest.clearAllMocks();
   });
 
-  it('bootstrap: debe llamar a bootstrapSchema', async () => {
+  it('bootstrap: should call bootstrapSchema', async () => {
     await controller.bootstrap();
     expect(service.bootstrapSchema).toHaveBeenCalled();
   });
 
-  it('createUser: debe inyectar el ID del token', async () => {
+  it('createUser: should inject the token ID', async () => {
     await controller.createUser(mockRequest, { name: 'Fernando' } as any);
     expect(service.createUser).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-token-123', name: 'Fernando' }));
   });
 
-  it('createTopic: debe inyectar el ID del token', async () => {
+  it('createTopic: should inject the token ID', async () => {
     await controller.createTopic(mockRequest, { topicId: 'T1' } as any);
     expect(service.createTopic).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-token-123' }));
   });
 
-  it('feedbackTopic: debe inyectar el ID del token', async () => {
+  it('feedbackTopic: should inject the token ID', async () => {
     await controller.feedbackTopic(mockRequest, { topicId: 'T1', delta: 1 } as any);
     expect(service.reinforceTopic).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-token-123' }));
   });
 
-  it('setPreferences: debe inyectar el ID del token', async () => {
+  it('setPreferences: should inject the token ID', async () => {
     await controller.setPreferences(mockRequest, { prefKeys: ['visual'] } as any);
     expect(service.setPreferences).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-token-123' }));
   });
 
-  it('initMethod: debe inyectar el ID del token', async () => {
+  it('initMethod: should inject the token ID', async () => {
     await controller.initMethod(mockRequest, { methodKey: 'M1' } as any);
     expect(service.initMethod).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-token-123' }));
   });
 
-  it('feedbackMethod: debe inyectar el ID del token', async () => {
+  it('feedbackMethod: should inject the token ID', async () => {
     await controller.feedbackMethod(mockRequest, { methodKey: 'M1', delta: 1 } as any);
     expect(service.reinforceMethod).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-token-123' }));
   });
 
-  it('topTopics: debe usar el userId del token y parsear el limite', async () => {
+  it('topTopics: should use the token userId and parse the limit', async () => {
     await controller.topTopics(mockRequest, '5');
     expect(service.topTopics).toHaveBeenCalledWith('user-token-123', 5);
   });
 
-  it('topPreferences: debe usar el userId del token y parsear el limite', async () => {
+  it('topPreferences: should use the token userId and parse the limit', async () => {
     await controller.topPreferences(mockRequest, '15');
     expect(service.topPreferences).toHaveBeenCalledWith('user-token-123', 15);
   });
 
-  it('topMethods: debe usar el userId del token y parsear el limite', async () => {
+  it('topMethods: should use the token userId and parse the limit', async () => {
     await controller.topMethods(mockRequest, '5');
     expect(service.topMethods).toHaveBeenCalledWith('user-token-123', 5);
   });
 
-  it('refreshEmbedding: debe usar el userId del token', async () => {
+  it('refreshEmbedding: should use the token userId', async () => {
     await controller.refreshEmbedding(mockRequest);
     expect(service.refreshUserEmbedding).toHaveBeenCalledWith('user-token-123');
   });

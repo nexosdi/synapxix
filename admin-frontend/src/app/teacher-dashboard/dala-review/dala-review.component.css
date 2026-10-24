@@ -1,0 +1,126 @@
+@import '../teacher-dashboard.component.css';
+
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.decision-card {
+  border: 1px solid var(--sx-border);
+  border-radius: var(--sx-radius-lg);
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: box-shadow var(--sx-transition), border-color var(--sx-transition);
+  background: var(--sx-white);
+}
+
+.decision-card:hover {
+  box-shadow: var(--sx-shadow-sm);
+  border-color: var(--sx-blue);
+}
+
+.decision-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.decision-date {
+  color: var(--sx-text-muted);
+  font-size: 0.85rem;
+}
+
+.decision-card__title {
+  color: var(--sx-blue-deep);
+  font-size: 1.1rem;
+  font-weight: var(--sx-weight-bold);
+  margin-bottom: 0.5rem;
+}
+
+.decision-card__action {
+  color: var(--sx-text);
+  margin-bottom: 1rem;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.trace-section {
+  margin-bottom: 1.5rem;
+}
+.trace-section h4 {
+  color: var(--sx-blue-deep);
+  margin-bottom: 0.5rem;
+  font-weight: var(--sx-weight-bold);
+}
+.trace-section p {
+  color: var(--sx-text);
+}
+
+.review-form {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--sx-border);
+}
+.review-form label {
+  display: block;
+  color: var(--sx-blue-deep);
+  font-weight: var(--sx-weight-bold);
+  margin-bottom: 0.5rem;
+}
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--sx-border);
+  border-radius: var(--sx-radius-md);
+  font-family: var(--sx-font);
+  font-size: 1rem;
+  color: var(--sx-text);
+  margin-bottom: 1rem;
+  resize: vertical;
+}
+.form-control:focus {
+  outline: none;
+  border-color: var(--sx-blue);
+  box-shadow: 0 0 0 3px var(--sx-sky);
+}
+.form-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-approve {
+  background: var(--sx-success);
+  color: var(--sx-white);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--sx-radius-pill);
+  font-weight: var(--sx-weight-bold);
+  cursor: pointer;
+  flex: 1;
+  transition: opacity var(--sx-transition);
+}
+.btn-approve:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-reject {
+  background: var(--sx-white);
+  color: var(--sx-danger);
+  border: 1px solid var(--sx-danger);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--sx-radius-pill);
+  font-weight: var(--sx-weight-bold);
+  cursor: pointer;
+  flex: 1;
+  transition: opacity var(--sx-transition);
+}
+.btn-reject:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

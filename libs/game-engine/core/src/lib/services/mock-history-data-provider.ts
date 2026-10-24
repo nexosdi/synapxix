@@ -39,7 +39,7 @@ export class MockHistoryDataProvider implements HistoryDataProvider {
     }
     if (filter?.tags?.length) {
       results = results.filter(h => 
-        filter.tags!.some(tag => h.tags?.includes(tag))
+        filter.tags?.some(tag => h.tags?.includes(tag))
       );
     }
 

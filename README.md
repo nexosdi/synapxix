@@ -237,6 +237,15 @@ usá *Role mapping* con `teacher` o `student`.
 4. Si hay cambio de schema → crear migración: `npx prisma migrate dev --config prisma.config.ts --name <nombre>`
 5. Regenerar el cliente: `npx prisma generate --config prisma.config.ts`
 
+### Resolver conflictos en package-lock.json
+
+El repositorio usa `.gitattributes` con `merge=ours` para `package-lock.json`.
+Si un merge toca dependencias:
+
+1. Completar el merge normalmente (el lockfile se auto-resuelve)
+2. Correr `npm install --legacy-peer-deps` para regenerar el lockfile con la mezcla correcta
+3. Commitear el lockfile actualizado
+
 ### Cambiar el schema de Prisma
 
 ```bash

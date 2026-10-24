@@ -39,50 +39,54 @@ describe('ReadSelectGameComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create and initialize options correctly', () => {
+  it('should create and initialize options', () => {
     expect(component).toBeTruthy();
     expect(component.options().length).toBe(4);
     expect(component.foundWords().size).toBe(0);
     expect(component.wrongWords().size).toBe(0);
   });
 
-  it('should register a correct word in foundWords', () => {
-    const correctOption = component.options().find(o => o.isReal)!;
+  it('should add to foundWords when correct option clicked', () => {
+    const correctOption = component.options().find(o => o.isReal);
+    if (!correctOption) throw new Error('Option not found');
     component.onOptionClick(correctOption);
-
+    
     expect(component.foundWords().has(correctOption.text)).toBe(true);
-    expect(component.wrongWords().has(correctOption.text)).toBe(false);
+    expect(component.isFinished()).toBe(false);
   });
 
-  it('should register an incorrect word in wrongWords', () => {
-    const wrongOption = component.options().find(o => !o.isReal)!;
-    component.onOptionClick(wrongOption);
-
-    expect(component.wrongWords().has(wrongOption.text)).toBe(true);
-    expect(component.foundWords().has(wrongOption.text)).toBe(false);
+  it('should add to wrongWords when incorrect option clicked', () => {
+    const incorrectOption = component.options().find(o => !o.isReal);
+    if (!incorrectOption) throw new Error('Option not found');
+    component.onOptionClick(incorrectOption);
+    
+    expect(component.wrongWords().has(incorrectOption.text)).toBe(true);
+    expect(component.foundWords().size).toBe(0);
+    expect(component.isFinished()).toBe(false);
   });
 
-  it('should not register words if disabled', () => {
+  it('should ignore clicks if disabled', () => {
     componentRef.setInput('disabled', true);
     fixture.detectChanges();
 
-    const correctOption = component.options().find(o => o.isReal)!;
+    const correctOption = component.options().find(o => o.isReal);
+    if (!correctOption) throw new Error('Option not found');
     component.onOptionClick(correctOption);
-
-    expect(component.foundWords().size).toBe(0);
+    
+    expect(component.foundWords().has(correctOption.text)).toBe(false);
   });
 
-  it('should emit answerSubmitted when the minimum of correct options is reached', () => {
+  it('should finish game and emit answerSubmitted when minCorrectToPass reached', () => {
     jest.spyOn(component.answerSubmitted, 'emit');
 
     const correctOptions = component.options().filter(o => o.isReal);
     
-    // Seleccionamos la primera
+    expect(component.viewModel().minCorrectToPass).toBe(2);
+
     component.onOptionClick(correctOptions[0]);
     expect(component.answerSubmitted.emit).not.toHaveBeenCalled();
     expect(component.isFinished()).toBe(false);
 
-    // Seleccionamos la segunda (alcanza minCorrectToPass = 2)
     component.onOptionClick(correctOptions[1]);
     
     expect(component.isFinished()).toBe(true);

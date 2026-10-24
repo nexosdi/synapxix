@@ -5,7 +5,9 @@ import { BaseGameComponent } from '../../components/base-game.component';
 import { 
   TimelineOrderInteractiveContent, 
   toTimelineOrderGameModel 
-} from './timeline-order-game.module';
+} from './timeline-order-game.model';
+import { DalaInstrumentationService } from '../../services/dala.service';
+import { OnInit, inject } from '@angular/core';
 
 @Component({
   selector: 'lib-timeline-order-game',
@@ -76,19 +78,30 @@ import {
     }
   `
 })
-export class TimelineOrderGameComponent implements BaseGameComponent {
+export class TimelineOrderGameComponent implements BaseGameComponent, OnInit {
   readonly answerSubmitted = output<AnyGameResult>();
   
   readonly content = input.required<TimelineOrderInteractiveContent>();
   readonly disabled = input<boolean>(false);
   readonly viewModel = computed(() => toTimelineOrderGameModel(this.content()));
 
-  userOrder = signal<any[]>([]);
+  userOrder = signal<{id: string, text: string, order: number}[]>([]);
   feedbackState = signal<'idle' | 'success' | 'error'>('idle');
 
   readonly shuffledEvents = computed(() => {
     return [...this.viewModel().events].sort(() => Math.random() - 0.5);
   });
+
+  private readonly dala = inject(DalaInstrumentationService);
+  private readonly dalaAdapter = this.dala.createAdapter('timeline-order', '1.0.0');
+
+  ngOnInit() {
+    this.dalaAdapter.mapInteraction({
+      kind: 'task_shown',
+      taskId: 'timeline-task',
+      difficulty: this.viewModel().events.length
+    });
+  }
 
   // Configuración dinámica del Pop-up
   readonly feedbackConfig = computed(() => {
@@ -108,30 +121,62 @@ export class TimelineOrderGameComponent implements BaseGameComponent {
     };
   });
 
-  selectEvent(event: any) {
+  selectEvent(event: {id: string, text: string, order: number}) {
     if (this.disabled()) return;
     if (!this.isEventSelected(event)) {
       this.userOrder.update(list => [...list, event]);
+      
+      this.dalaAdapter.mapInteraction({
+        kind: 'item_action',
+        taskId: 'timeline-task',
+        detail: { action: 'select', eventId: event.id }
+      });
     }
   }
 
-  isEventSelected(event: any) {
+  isEventSelected(event: {id: string, text?: string, order?: number}) {
     return this.userOrder().some(e => e.id === event.id);
   }
 
   reset() {
     this.userOrder.set([]);
     this.feedbackState.set('idle');
-  }
-
-  checkAnswer() {
-    const isCorrect = this.userOrder().every((event, index) => event.order === index + 1);
     
+    this.dalaAdapter.mapInteraction({
+      kind: 'retry',
+      taskId: 'timeline-task',
+      attempt: 1
+    });
+  }
+  private isOrderCorrect(): boolean {
+    const events = this.viewModel().events;
+    const userOrder = this.userOrder();
+    if (userOrder.length !== events.length) return false;
+
+    const expected = [...events].sort((a, b) => a.order - b.order);
+    return userOrder.every((event, index) => event.id === expected[index].id);
+  }
+  checkAnswer() {
+    if (this.disabled()) return;
+    const isCorrect = this.isOrderCorrect();    
+    this.dalaAdapter.mapInteraction({
+      kind: 'answer',
+      taskId: 'timeline-task',
+      correct: isCorrect,
+      attempt: 1
+    });
+
     if (isCorrect) {
       this.feedbackState.set('success');
+      
+      this.dalaAdapter.mapInteraction({
+        kind: 'complete',
+        taskId: 'timeline-task'
+      });
+
       this.answerSubmitted.emit({
         gameType: 'timeline-order',
-        answer: { orderedItemIds: this.userOrder().map((e: any) => e.id) },
+        answer: { orderedItemIds: this.userOrder().map(e => e.id) },
         isCorrect: true,
         score: 100,
         timeSpentMs: 0

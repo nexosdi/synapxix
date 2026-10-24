@@ -80,3 +80,6 @@ data/
 postgres/
 data/
 .env
+.atl/.skill-registry.cache.json
+.gitignore
+.atl/skill-registry.md

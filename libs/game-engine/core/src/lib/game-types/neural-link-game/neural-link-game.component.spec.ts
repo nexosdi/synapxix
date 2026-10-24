@@ -37,10 +37,9 @@ describe('NeuralLinkGameComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should initialize correctly and set up cards', () => {
+  it('should create and initialize cards', () => {
     expect(component).toBeTruthy();
     expect(component.cards().length).toBe(4);
-    // Usamos toBe(true) por convención de Jest
     expect(component.cards().every(c => !c.isFlipped && !c.isMatched)).toBe(true);
   });
 
@@ -63,50 +62,73 @@ describe('NeuralLinkGameComponent', () => {
     expect(component.flippedCards().length).toBe(0);
   });
 
-  it('should successfully match cards and emit event when all matched', fakeAsync(() => {
-    // Usamos jest.spyOn para compatibilidad con el runner actual
-    jest.spyOn(component.answerSubmitted, 'emit');
+  it('should handle successful match', fakeAsync(() => {
+    const pair1 = component.cards().filter(c => c.matchId === 'group1');
     
-    const group1 = component.cards().filter(c => c.matchId === 'group1');
-    const group2 = component.cards().filter(c => c.matchId === 'group2');
+    jest.spyOn(component.answerSubmitted, 'emit');
 
-    // Volteamos el par 1
-    component.flipCard(group1[0]);
-    component.flipCard(group1[1]);
-    tick(500); // Esperamos el timeout de éxito
+    component.flipCard(pair1[0]);
+    component.flipCard(pair1[1]);
 
-    expect(component.cards().filter(c => c.isMatched).length).toBe(2);
+    expect(component.flippedCards().length).toBe(2);
+    
+    // Simulate timeout
+    tick(500);
 
-    // Volteamos el par 2
-    component.flipCard(group2[0]);
-    component.flipCard(group2[1]);
-    tick(500); // Esperamos el timeout de éxito
+    const updatedPair = component.cards().filter(c => c.matchId === 'group1');
+    expect(updatedPair[0].isMatched).toBe(true);
+    expect(updatedPair[1].isMatched).toBe(true);
+    expect(component.flippedCards().length).toBe(0);
+  }));
+
+  it('should handle failed match', fakeAsync(() => {
+    // Find two cards that do not match
+    const c1 = component.cards().find(c => c.matchId === 'group1');
+    const c2 = component.cards().find(c => c.matchId === 'group2');
+    
+    if (!c1 || !c2) throw new Error('Setup failed');
+
+    component.flipCard(c1);
+    component.flipCard(c2);
+
+    expect(component.flippedCards().length).toBe(2);
+
+    // Simulate timeout
+    tick(1000);
+
+    const updatedC1 = component.cards().find(c => c.id === c1.id);
+    const updatedC2 = component.cards().find(c => c.id === c2.id);
+    
+    expect(updatedC1?.isMatched).toBe(false);
+    expect(updatedC2?.isMatched).toBe(false);
+    expect(updatedC1?.isFlipped).toBe(false);
+    expect(updatedC2?.isFlipped).toBe(false);
+    expect(component.flippedCards().length).toBe(0);
+  }));
+
+  it('should emit answerSubmitted when all cards are matched', fakeAsync(() => {
+    jest.spyOn(component.answerSubmitted, 'emit');
+
+    // Match pair 1
+    const pair1 = component.cards().filter(c => c.matchId === 'group1');
+    component.flipCard(pair1[0]);
+    component.flipCard(pair1[1]);
+    tick(500);
+
+    // Match pair 2
+    const pair2 = component.cards().filter(c => c.matchId === 'group2');
+    component.flipCard(pair2[0]);
+    component.flipCard(pair2[1]);
+    tick(500);
 
     expect(component.cards().filter(c => c.isMatched).length).toBe(4);
     expect(component.feedbackState()).toBe('success');
     
-    // Verificamos el payload con la estructura estricta del motor
     expect(component.answerSubmitted.emit).toHaveBeenCalledWith(
       expect.objectContaining({
         isCorrect: true,
         gameType: 'neural-link'
       })
     );
-  }));
-
-  it('should revert cards to unflipped state if they do not match', fakeAsync(() => {
-    const group1 = component.cards().filter(c => c.matchId === 'group1');
-    const group2 = component.cards().filter(c => c.matchId === 'group2');
-
-    // Volteamos una carta de cada grupo para forzar el fallo
-    component.flipCard(group1[0]);
-    component.flipCard(group2[0]);
-    
-    expect(component.flippedCards().length).toBe(2);
-
-    tick(1000); // Esperamos el timeout de fallo
-
-    expect(component.flippedCards().length).toBe(0);
-    expect(component.cards().some(c => c.isMatched)).toBe(false);
   }));
 });

@@ -11,6 +11,9 @@ export type GameType =
   | 'intruder'
   | 'balance-master'
   | 'sound-match'
+  | 'memory-match'
+  | 'word-association'
+  | 'pattern-recognition'
   | 'speak-about-photo';
 
 export interface InteractiveContentBase<

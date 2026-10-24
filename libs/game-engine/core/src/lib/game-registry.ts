@@ -56,6 +56,18 @@ export const gameComponentRegistry: Record<GameType, GameComponentLoader> = {
     import(
       './game-types/sound-match/sound-match.component' // <-- Corregido aquí
     ).then((m) => m.SoundMatchGameComponent),
+  'memory-match': () =>
+    import(
+      './game-types/memory-match/memory-match.component'
+    ).then((m) => m.MemoryMatchGameComponent),
+  'word-association': () =>
+    import(
+      './game-types/word-association/word-association.component'
+    ).then((m) => m.WordAssociationGameComponent),
+  'pattern-recognition': () =>
+    import(
+      './game-types/pattern-recognition/pattern-recognition.component'
+    ).then((m) => m.PatternRecognitionGameComponent),
 };
 
 export function resolveGameLoader(

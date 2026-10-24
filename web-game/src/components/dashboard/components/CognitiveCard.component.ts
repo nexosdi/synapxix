@@ -36,37 +36,37 @@ import { CognitiveElement } from '../models/CognitiveElement.model';
   `,
   styles: [`
     .card {
-      background: white;
+      background: var(--sx-surface);
       padding: 1.5rem;
-      border-radius: 16px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border-radius: var(--sx-radius-lg);
+      box-shadow: var(--sx-shadow-sm);
       cursor: pointer;
-      border: 2px solid transparent;
-      transition: all 0.3s ease; /* Simplificado para incluir el focus */
+      border: 1.5px solid var(--sx-border);
+      transition: all var(--sx-transition);
       outline: none;
     }
-    .card:hover, .card:focus { 
-      box-shadow: 0 8px 16px rgba(0,0,0,0.1); 
-      transform: translateY(-2px); /* Un toque extra de UX */
+    .card:hover, .card:focus {
+      box-shadow: var(--sx-shadow-md);
+      transform: translateY(-2px);
+      border-color: var(--sx-border-strong);
     }
-    .card:focus { border-color: #c9e0ff; }
-    .card--selected { border-color: var(--accent); background: #f5f9ff; }
+    .card--selected { border-color: var(--accent); background: var(--sx-blue-50); }
     .card__header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1rem;
     }
-    .card__name { font-weight: 600; color: #0a4fbf; }
-    .card__score { font-weight: 800; font-size: 1.2rem; }
+    .card__name { font-weight: var(--sx-weight-medium); color: var(--sx-blue-deep); }
+    .card__score { font-weight: var(--sx-weight-black); font-size: 1.2rem; }
     .card__bar-track {
-      background: #f5f9ff;
-      border-radius: 99px;
+      background: var(--sx-blue-50);
+      border-radius: var(--sx-radius-pill);
       height: 12px;
       overflow: hidden;
     }
     .card__bar-fill { height: 100%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
-    .card__hint { font-size: 0.75rem; color: #8fb8e0; margin-top: 10px; margin-bottom: 0; }
+    .card__hint { font-size: 0.75rem; color: var(--sx-text-muted); margin-top: 10px; margin-bottom: 0; }
   `],
 })
 export class CognitiveCardComponent {

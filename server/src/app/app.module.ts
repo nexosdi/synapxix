@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
+import { HealthController } from './health.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { DalaModule } from './modules/dala/dala.module';
@@ -13,7 +15,12 @@ import { ResearchModule } from './modules/research/research.module';
 import { EvaluativeModule } from './evaluative/evaluative.module';
 import { ExercisesModule } from './exercises/exercises.module';
 import { AnalyticsModule } from './analytics/analytics.module';
-
+import { NotificationsModule } from './notifications/notifications.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TeacherInsightsModule } from './modules/research/teacher-insights/teacher-insights.module';
+import { AdminModule } from './admin/admin.module';
+import { ConsentModule } from './consent/consent.module';
+import { PrismaModule } from '@nexosdi.synapxix/prisma';
 /**
  * Root application module.
  *
@@ -28,6 +35,22 @@ import { AnalyticsModule } from './analytics/analytics.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        customProps: (req) => {
+          const userReq = req as unknown as { user?: { sub?: string; id?: string } };
+          return {
+            userId: userReq.user?.sub || userReq.user?.id || 'anonymous',
+          };
+        },
+        transport:
+          process.env.NODE_ENV !== 'production' && process.env.LOG_PRETTY === 'true'
+            ? { target: 'pino-pretty' }
+            : undefined,
+      },
+    }),
+    ScheduleModule.forRoot(),
+    TeacherInsightsModule,
     ThrottlerModule.forRoot([
       {
         name: 'short',
@@ -45,6 +68,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
         limit: 60,  // max 60 requests per minute
       },
     ]),
+    PrismaModule,
     AuthModule,
     DalaModule,
     LearningModule,
@@ -54,8 +78,11 @@ import { AnalyticsModule } from './analytics/analytics.module';
     EvaluativeModule,
     ExercisesModule,
     AnalyticsModule,
+    AdminModule,
+    NotificationsModule,
+    ConsentModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [
     AppService,
     {

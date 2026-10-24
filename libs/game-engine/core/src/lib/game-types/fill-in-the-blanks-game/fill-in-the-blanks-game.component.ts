@@ -95,7 +95,7 @@ export class FillInTheBlanksGameComponent implements BaseGameComponent {
   readonly selections = signal<Map<number, string>>(new Map());
   readonly isFinished = signal(false);
 
-  onChoiceClick(blankIndex: number, choice: any) {
+  onChoiceClick(blankIndex: number, choice: { label: string, isCorrect?: boolean }) {
     if (this.disabled() || this.isCorrect(blankIndex)) return;
 
     this.selections.update(prev => {

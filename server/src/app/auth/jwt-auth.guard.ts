@@ -7,12 +7,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   private readonly mockGuard = new MockJwtGuard();
 
   override canActivate(context: ExecutionContext) {
-    // El bypass se evalúa por request, no al construir el módulo: los guards
-    // declarados con `@UseGuards(JwtAuthGuard)` se instancian desde la colección
-    // `injectables` del módulo anfitrión, por lo que un `useClass` en el provider
-    // nunca los reemplaza. Además, leer aquí garantiza que ConfigModule ya cargó
-    // el .env.
-    if (process.env.DISABLE_AUTH === 'true') {
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    if (!isProduction && process.env.DISABLE_AUTH === 'true') {
       return this.mockGuard.canActivate(context);
     }
 

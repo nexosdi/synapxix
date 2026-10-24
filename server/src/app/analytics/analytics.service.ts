@@ -32,11 +32,20 @@ export class AnalyticsService {
     const where: any = {};
 
     if (startDate) {
-      where.created_at = { ...where.created_at, gte: new Date(startDate) };
+      const parsedStart = new Date(startDate);
+      if (!isNaN(parsedStart.getTime())) {
+        where.created_at = { ...where.created_at, gte: parsedStart };
+      }
     }
 
     if (endDate) {
-      where.created_at = { ...where.created_at, lte: new Date(endDate) };
+      const parsedEnd = new Date(endDate);
+      if (!isNaN(parsedEnd.getTime())) {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+          parsedEnd.setUTCHours(23, 59, 59, 999);
+        }
+        where.created_at = { ...where.created_at, lte: parsedEnd };
+      }
     }
 
     if (!startDate && !endDate) {

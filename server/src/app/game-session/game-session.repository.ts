@@ -73,4 +73,13 @@ export class GameSessionRepository {
       }
     });
   }
+
+  async getLastNCompletedSessions(userId: string, n: number) {
+    return this.prisma.gameSession.findMany({
+      where: { user_id: userId, status: 'completed' },
+      orderBy: { finished_at: 'desc' },
+      take: n,
+      include: { attempts: true },
+    });
+  }
 }

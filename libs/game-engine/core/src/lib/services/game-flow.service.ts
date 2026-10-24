@@ -31,10 +31,12 @@ export class GameFlowService implements OnDestroy {
   public readonly isLoading = this._stateMachine.isLoading;
   public readonly isReady = this._stateMachine.isReady;
   public readonly isPlaying = this._stateMachine.isPlaying;
+  public readonly isPaused = this._stateMachine.isPaused;
   public readonly isAnswering = this._stateMachine.isAnswering;
   public readonly isFeedback = this._stateMachine.isFeedback;
   public readonly isAdvancing = this._stateMachine.isAdvancing;
   public readonly isCompleted = this._stateMachine.isCompleted;
+
 
   /**
    * Accumulated text from the AI feedback stream.
@@ -133,6 +135,9 @@ export class GameFlowService implements OnDestroy {
    * Start loading content. Transitions IDLE → LOADING.
    */
   public startLoading(): boolean {
+    if (!this._stateMachine.canTransitionTo('LOADING')) {
+      return false;
+    }
     return this._stateMachine.transitionTo('LOADING');
   }
 
@@ -141,6 +146,9 @@ export class GameFlowService implements OnDestroy {
    * The READY → PLAYING transition happens automatically via timer.
    */
   public contentReady(): boolean {
+    if (!this._stateMachine.canTransitionTo('READY')) {
+      return false;
+    }
     return this._stateMachine.transitionTo('READY');
   }
 
@@ -149,8 +157,32 @@ export class GameFlowService implements OnDestroy {
    * The ANSWERING → FEEDBACK transition happens automatically via timer.
    */
   public answerSubmitted(): boolean {
+    if (!this._stateMachine.canTransitionTo('ANSWERING')) {
+      return false;
+    }
     return this._stateMachine.transitionTo('ANSWERING');
   }
+
+  /**
+   * Pause the active game session. Transitions PLAYING → PAUSED.
+   */
+  public pause(): boolean {
+    if (!this._stateMachine.canTransitionTo('PAUSED')) {
+      return false;
+    }
+    return this._stateMachine.transitionTo('PAUSED');
+  }
+
+  /**
+   * Resume playing from paused state. Transitions PAUSED → PLAYING.
+   */
+  public resume(): boolean {
+    if (!this._stateMachine.canTransitionTo('PLAYING')) {
+      return false;
+    }
+    return this._stateMachine.transitionTo('PLAYING');
+  }
+
 
   // ── Streaming feedback API ─────────────────────────────
 
@@ -233,9 +265,13 @@ export class GameFlowService implements OnDestroy {
     if (this._stateMachine.isCompleted()) {
       return true;
     }
+    if (!this._stateMachine.canTransitionTo('COMPLETED')) {
+      return false;
+    }
     this.cancelAllTimers();
     return this._stateMachine.transitionTo('COMPLETED');
   }
+
 
   /**
    * Full reset for a new session.

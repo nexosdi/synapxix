@@ -3,7 +3,6 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { EconomyDispatcher, EconomyClaimPayload } from './economy-dispatcher';
 
-
 @Injectable({ providedIn: 'root' })
 export class HttpEconomyDispatcher implements EconomyDispatcher {
   private readonly http = inject(HttpClient);

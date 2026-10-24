@@ -6,7 +6,6 @@ describe('D.A.L.A. Core - Evidence Rules v0.1 (evidence-rules.spec.ts)', () => {
     sessionEvents: [],
   };
 
-  // Combinamos la flexibilidad de tu helper (HEAD) con los requerimientos estrictos de reward (main)
   const ev = (
     partial: Partial<DalaBehaviorEvent>,
     rewardCondition: 'none' | 'xp' | 'credits' = 'none'
@@ -26,7 +25,7 @@ describe('D.A.L.A. Core - Evidence Rules v0.1 (evidence-rules.spec.ts)', () => {
   });
 
   describe('masteryFromAnswer', () => {
-    it('debería emitir evidencia positiva para respuesta correcta sin pistas', () => {
+    it('should emit positive evidence for correct answer without hint', () => {
       const event = ev({ eventType: 'answer_submitted', payload: { correct: true } });
       const evidence = deriveEvidence(event, baseContext, EVIDENCE_RULES_V01);
       
@@ -35,7 +34,7 @@ describe('D.A.L.A. Core - Evidence Rules v0.1 (evidence-rules.spec.ts)', () => {
       expect(mastery?.weight).toBe(1);
     });
 
-    it('debería emitir evidencia negativa para respuesta incorrecta', () => {
+    it('should emit negative evidence for incorrect answer', () => {
       const event = ev({ eventType: 'answer_submitted', payload: { correct: false } });
       const evidence = deriveEvidence(event, baseContext, EVIDENCE_RULES_V01);
       
@@ -43,7 +42,7 @@ describe('D.A.L.A. Core - Evidence Rules v0.1 (evidence-rules.spec.ts)', () => {
       expect(mastery?.weight).toBe(-0.5);
     });
 
-    it('debería ignorar respuesta correcta si se usó pista previa', () => {
+    it('should ignore correct answer if hint was used', () => {
       const event = ev({ eventType: 'answer_submitted', payload: { correct: true }, sequence: 3 });
       const context = {
         sessionEvents: [ev({ eventType: 'hint_requested', sequence: 1 })],
@@ -55,7 +54,7 @@ describe('D.A.L.A. Core - Evidence Rules v0.1 (evidence-rules.spec.ts)', () => {
   });
 
   describe('persistenceFromRetry', () => {
-    it('debería emitir evidencia de persistencia si hay fallo previo', () => {
+    it('should emit persistence evidence if prior fail exists', () => {
       const event = ev({ eventType: 'attempt_repeated', payload: { attempt: 2 }, sequence: 2 });
       const context = {
         sessionEvents: [ev({ eventType: 'answer_submitted', payload: { correct: false }, sequence: 1 })],
@@ -66,7 +65,7 @@ describe('D.A.L.A. Core - Evidence Rules v0.1 (evidence-rules.spec.ts)', () => {
       expect(persistence?.weight).toBe(1);
     });
 
-    it('debería emitir persistencia negativa si los intentos > 5', () => {
+    it('should emit negative persistence if attempts > 5', () => {
       const event = ev({ eventType: 'attempt_repeated', payload: { attempt: 6 }, sequence: 2 });
       const context = {
         sessionEvents: [ev({ eventType: 'answer_submitted', payload: { correct: false }, sequence: 1 })],
@@ -77,7 +76,7 @@ describe('D.A.L.A. Core - Evidence Rules v0.1 (evidence-rules.spec.ts)', () => {
       expect(persistence?.weight).toBe(-0.3);
     });
 
-    it('debería ignorar el reintento si rewardCondition está activo', () => {
+    it('should ignore retry if reward condition is active', () => {
       const event = ev({ eventType: 'attempt_repeated', payload: { attempt: 2 }, sequence: 2 }, 'xp');
       const context = {
         sessionEvents: [ev({ eventType: 'answer_submitted', payload: { correct: false }, sequence: 1 })],
@@ -89,7 +88,7 @@ describe('D.A.L.A. Core - Evidence Rules v0.1 (evidence-rules.spec.ts)', () => {
   });
 
   describe('helpSeekingFromHint', () => {
-    it('debería emitir evidencia de búsqueda de ayuda si se intentó primero', () => {
+    it('should emit help seeking evidence if tried first', () => {
       const event = ev({ eventType: 'hint_requested', sequence: 3 });
       const context = {
         sessionEvents: [ev({ eventType: 'answer_submitted', payload: { correct: false }, sequence: 1 })],
@@ -99,7 +98,7 @@ describe('D.A.L.A. Core - Evidence Rules v0.1 (evidence-rules.spec.ts)', () => {
       expect(evidence.find((e) => e.ruleId === 'help-seeking-from-hint')).toBeDefined();
     });
 
-    it('debería ignorar si no hubo intento previo', () => {
+    it('should ignore if not tried first', () => {
       const event = ev({ eventType: 'hint_requested', sequence: 1 });
       const evidence = deriveEvidence(event, baseContext, EVIDENCE_RULES_V01);
       expect(evidence.find((e) => e.ruleId === 'help-seeking-from-hint')).toBeUndefined();
@@ -107,13 +106,13 @@ describe('D.A.L.A. Core - Evidence Rules v0.1 (evidence-rules.spec.ts)', () => {
   });
 
   describe('flexibilityFromStrategyChange', () => {
-    it('debería emitir evidencia de flexibilidad por cambio de estrategia', () => {
+    it('should emit flexibility evidence', () => {
       const event = ev({ eventType: 'strategy_changed', sequence: 2 });
       const evidence = deriveEvidence(event, baseContext, EVIDENCE_RULES_V01);
       expect(evidence.find((e) => e.ruleId === 'flexibility-from-strategy-change')).toBeDefined();
     });
 
-    it('debería ignorar si el cambio fue inducido por pista recientemente', () => {
+    it('should ignore if induced by hint recently', () => {
       const event = ev({ eventType: 'strategy_changed', sequence: 3 });
       const context = {
         sessionEvents: [ev({ eventType: 'hint_requested', sequence: 2 })],
@@ -125,19 +124,19 @@ describe('D.A.L.A. Core - Evidence Rules v0.1 (evidence-rules.spec.ts)', () => {
   });
 
   describe('engagementFromCompletion', () => {
-    it('debería emitir engagement positivo al completar', () => {
+    it('should emit positive engagement on completion', () => {
       const event = ev({ eventType: 'task_completed', sequence: 1 });
       const evidence = deriveEvidence(event, baseContext, EVIDENCE_RULES_V01);
       expect(evidence.find((e) => e.ruleId === 'engagement-from-completion')?.weight).toBe(1);
     });
 
-    it('debería emitir engagement negativo al abandonar', () => {
+    it('should emit negative engagement on abandon', () => {
       const event = ev({ eventType: 'task_abandoned', sequence: 1 });
       const evidence = deriveEvidence(event, baseContext, EVIDENCE_RULES_V01);
       expect(evidence.find((e) => e.ruleId === 'engagement-from-completion')?.weight).toBe(-0.6);
     });
 
-    it('debería ignorar si rewardCondition está activo', () => {
+    it('should ignore if reward condition is active', () => {
       const event = ev({ eventType: 'task_completed', sequence: 1 }, 'credits');
       const evidence = deriveEvidence(event, baseContext, EVIDENCE_RULES_V01);
       expect(evidence.find((e) => e.ruleId === 'engagement-from-completion')).toBeUndefined();
