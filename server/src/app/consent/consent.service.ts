@@ -14,6 +14,23 @@ export class ConsentService {
   }
 
   async updateConsent(userId: string, dto: UpdateConsentDto) {
+    // Defensive safeguard: Ensure app_user exists in auth.app_user to satisfy
+    // the foreign key constraint on dala_consent.user_id before performing mutations.
+    await this.prisma.app_user
+      .upsert({
+        where: { user_id: userId },
+        update: {},
+        create: {
+          user_id: userId,
+          username: userId,
+          email: `${userId}@synapxix.local`,
+          firstname: 'User',
+          lastname: 'Synapxix',
+          role: 'user',
+        },
+      })
+      .catch(() => undefined);
+
     const existing = await this.prisma.dalaConsent.findUnique({
       where: {
         user_id_scope_version: {
