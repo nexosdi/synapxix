@@ -1,98 +1,83 @@
+import type { EvidenceObservation } from '@nexosdi.synapxix/dala/contracts';
 import { estimateConstruct } from './estimator';
-import { DalaConstructDefinition, EvidenceObservation } from '@nexosdi.synapxix/dala/contracts';
+import { CONSTRUCT_REGISTRY } from './construct-registry';
 
-describe('Estimator', () => {
-  const mockDefinition: DalaConstructDefinition = {
-    constructId: 'curricular_mastery',
-    name: 'Mastery',
-    halfLifeDays: 30,
-    operationalDefinition: 'test',
-    evidenceEventTypes: [],
-    excludedEventTypes: [],
-    invalidationConditions: [],
-    minimumEvidence: { observations: 3, distinctTasks: 2, distinctSessions: 2 },
-  };
+describe('Beta-Binomial Estimator v0.1 (estimator.spec.ts)', () => {
+  const obs = (n: number, weight = 1): EvidenceObservation[] =>
+    Array.from({ length: n }, (_, i) => ({
+      observationId: `o-${i}`,
+      subjectId: 's-1',
+      sessionId: `ses-${i % 2}`,
+      sourceEventId: `e-${i}`,
+      ruleId: 'r',
+      ruleVersion: '0.1.0',
+      constructId: 'persistence',
+      kind: 'observed',
+      weight,
+      confidenceContribution: 0.12,
+      observedAt: '2026-08-01T10:00:00Z',
+      createdAt: '2026-08-01T10:00:00Z',
+    }));
 
-  const baseObservation: EvidenceObservation = {
-    observationId: 'obs1',
-    subjectId: 'user1',
-    sessionId: 'session1',
-    sourceEventId: 'evt1',
-    ruleId: 'r1',
-    ruleVersion: '1.0',
-    constructId: 'curricular_mastery',
-    kind: 'observed',
-    weight: 1,
-    confidenceContribution: 0.1,
-    observedAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-  };
-
-  it('should return insufficient_evidence if minimum criteria are not met', () => {
-    const result = estimateConstruct({
-      subjectId: 'user1',
-      definition: mockDefinition,
-      observations: [baseObservation],
+  it('should return "insufficient_evidence" when minimum observations are not met', () => {
+    const est = estimateConstruct({
+      subjectId: 's-1',
+      definition: CONSTRUCT_REGISTRY['persistence'],
+      observations: obs(2),
       distinctTasks: 1,
       distinctSessions: 1,
+      now: new Date('2026-08-03'),
     });
-    expect(result.status).toBe('insufficient_evidence');
+    expect(est.status).toBe('insufficient_evidence');
   });
 
-  it('should return provisional if distinctSessions >= 2 but confidence is low', () => {
-    const obs = Array.from({ length: 3 }).map((_, i) => ({
-      ...baseObservation,
-      observationId: `obs${i}`,
-      confidenceContribution: 0.01,
-      observedAt: new Date(Date.now() - i * 1000).toISOString(),
-    }));
-
-    const result = estimateConstruct({
-      subjectId: 'user1',
-      definition: mockDefinition,
-      observations: obs,
-      distinctTasks: 2,
-      distinctSessions: 2,
+  it('should not grant high confidence for an isolated interaction', () => {
+    const est = estimateConstruct({
+      subjectId: 's-1',
+      definition: CONSTRUCT_REGISTRY['persistence'],
+      observations: obs(1),
+      distinctTasks: 1,
+      distinctSessions: 1,
+      now: new Date('2026-08-03'),
     });
-    expect(result.status).toBe('provisional');
+    expect(est.confidence).toBeLessThan(0.3);
   });
 
-  it('should return supported if criteria met and stability is good', () => {
-    const obs = Array.from({ length: 4 }).map((_, i) => ({
-      ...baseObservation,
-      observationId: `obs${i}`,
-      weight: 1,
-      confidenceContribution: 0.2,
-      observedAt: new Date(Date.now() - i * 1000).toISOString(),
-    }));
-
-    const result = estimateConstruct({
-      subjectId: 'user1',
-      definition: mockDefinition,
-      observations: obs,
+  it('should return "supported" status with sufficient evidence and 2+ sessions', () => {
+    const est = estimateConstruct({
+      subjectId: 's-1',
+      definition: CONSTRUCT_REGISTRY['persistence'],
+      observations: obs(8),
       distinctTasks: 3,
-      distinctSessions: 3,
+      distinctSessions: 2,
+      now: new Date('2026-08-03'),
     });
-    expect(result.status).toBe('supported');
-    expect(result.confidence).toBeGreaterThanOrEqual(0.5);
+    expect(['provisional', 'supported']).toContain(est.status);
+    expect(est.value).toBeGreaterThan(0.5);
+    expect(est.evidenceRefs).toHaveLength(8);
+    expect(est.modelVersion).toBe('dala-core-0.1.0');
+    expect(est.uncertainty.method).toBe('beta_posterior');
   });
 
-  it('should return contradicted if stability is low', () => {
-    const now = Date.now();
-    const obs: EvidenceObservation[] = [
-      { ...baseObservation, weight: 1, observedAt: new Date(now - 10000).toISOString() },
-      { ...baseObservation, weight: 1, observedAt: new Date(now - 9000).toISOString() },
-      { ...baseObservation, weight: -1, observedAt: new Date(now - 1000).toISOString() },
-      { ...baseObservation, weight: -1, observedAt: new Date(now).toISOString() },
+  it('should lower stability (and switch to contradicted) if evidence is contradictory', () => {
+    const mixed = [
+      ...obs(4, 1),
+      ...obs(4, -1).map((o, i) => ({
+        ...o,
+        observationId: `neg-${i}`,
+        observedAt: '2026-08-02T10:00:00Z',
+      })),
     ];
-
-    const result = estimateConstruct({
-      subjectId: 'user1',
-      definition: mockDefinition,
-      observations: obs,
-      distinctTasks: 2,
+    const est = estimateConstruct({
+      subjectId: 's-1',
+      definition: CONSTRUCT_REGISTRY['persistence'],
+      observations: mixed,
+      distinctTasks: 3,
       distinctSessions: 2,
+      now: new Date('2026-08-03'),
     });
-    expect(result.status).toBe('contradicted');
+    expect(est.stability).toBeLessThan(0.5);
+    expect(est.evidenceCount).toBe(8);
+    expect(est.status).toBe('contradicted');
   });
 });

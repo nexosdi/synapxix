@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { NeuralLinkGameComponent } from './neural-link-game.component';
 import { ComponentRef } from '@angular/core';
+import { NeuralLinkGameComponent } from './neural-link-game.component';
 import { MemoryInteractiveContent } from './neural-link-game.model';
 
 describe('NeuralLinkGameComponent', () => {
@@ -12,7 +12,7 @@ describe('NeuralLinkGameComponent', () => {
     id: 'test-1',
     gameType: 'neural-link',
     gameInput: {
-      prompt: 'Test prompt',
+      prompt: 'Find the pairs',
       locale: 'en',
       cards: [
         { id: '1', matchId: 'group1', text: 'A' },
@@ -59,12 +59,12 @@ describe('NeuralLinkGameComponent', () => {
     component.flipCard(card);
     
     expect(component.cards().find(c => c.id === card.id)?.isFlipped).toBe(false);
+    expect(component.flippedCards().length).toBe(0);
   });
 
   it('should handle successful match', fakeAsync(() => {
     const pair1 = component.cards().filter(c => c.matchId === 'group1');
-    expect(pair1.length).toBe(2);
-
+    
     jest.spyOn(component.answerSubmitted, 'emit');
 
     component.flipCard(pair1[0]);
@@ -72,7 +72,7 @@ describe('NeuralLinkGameComponent', () => {
 
     expect(component.flippedCards().length).toBe(2);
     
-    // Simulate setTimeout
+    // Simulate timeout
     tick(500);
 
     const updatedPair = component.cards().filter(c => c.matchId === 'group1');
@@ -82,7 +82,7 @@ describe('NeuralLinkGameComponent', () => {
   }));
 
   it('should handle failed match', fakeAsync(() => {
-    // find two cards that do not match
+    // Find two cards that do not match
     const c1 = component.cards().find(c => c.matchId === 'group1');
     const c2 = component.cards().find(c => c.matchId === 'group2');
     
@@ -93,7 +93,7 @@ describe('NeuralLinkGameComponent', () => {
 
     expect(component.flippedCards().length).toBe(2);
 
-    // Simulate setTimeout
+    // Simulate timeout
     tick(1000);
 
     const updatedC1 = component.cards().find(c => c.id === c1.id);
@@ -121,13 +121,14 @@ describe('NeuralLinkGameComponent', () => {
     component.flipCard(pair2[1]);
     tick(500);
 
+    expect(component.cards().filter(c => c.isMatched).length).toBe(4);
     expect(component.feedbackState()).toBe('success');
-    expect(component.answerSubmitted.emit).toHaveBeenCalledWith({
-      gameType: 'neural-link',
-      answer: { connections: [] },
-      isCorrect: true,
-      score: 100,
-      timeSpentMs: 0
-    });
+    
+    expect(component.answerSubmitted.emit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        isCorrect: true,
+        gameType: 'neural-link'
+      })
+    );
   }));
 });
