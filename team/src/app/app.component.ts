@@ -1,4 +1,5 @@
 import { Component, HostListener, OnDestroy, computed, inject, signal } from '@angular/core';
+import { PULSO_WEB_FRAMEWORK } from '@nexosdi.synapxix/dala/framework';
 import { PulseSessionService } from './services/pulse-session.service';
 import { UiService } from './services/ui.service';
 import { EntryComponent } from './scenes/entry.component';
@@ -7,17 +8,20 @@ import { PortalComponent } from './scenes/portal.component';
 import { MissionCategorizeComponent } from './scenes/mission-categorize.component';
 import { MissionTimelineComponent } from './scenes/mission-timeline.component';
 import { MissionIntruderComponent } from './scenes/mission-intruder.component';
-import { ShadowComponent } from './scenes/shadow.component';
+import { ShadowComponent, type AssignedStep } from './scenes/shadow.component';
+import { ContrastComponent } from './scenes/contrast.component';
 import { ResultComponent } from './scenes/result.component';
+import { InvestigacionComponent } from './scenes/investigacion.component';
+import { SCENE_OF_SCREEN } from './scene-observation';
 
-const SCREENS = ['entry', 'vision', 'portal', 'categorize', 'timeline', 'intruder', 'shadow', 'result'] as const;
+const SCREENS = ['entry', 'vision', 'portal', 'categorize', 'timeline', 'intruder', 'shadow', 'contrast', 'result'] as const;
 type Screen = (typeof SCREENS)[number];
 
 /**
- * Primer Pulso · onboarding web — cáscara de la experiencia.
- * Implementa el flujo del diseño de experiencia conectado al motor
- * D.A.L.A. real: cada misión es un instrumento con sesión propia y el
- * modelo dinámico de la persona se persiste en el servidor.
+ * Primer Pulso · piloto D.A.L.A. (marco pulso-web@0.1) — cáscara.
+ * Las escenas son puras: emiten observaciones. Solo esta cáscara conoce el
+ * puente: lo conecta a cada escena y marca la entrada y salida de escena.
+ * Con ?investigacion abre la vista del equipo investigador.
  */
 @Component({
   selector: 'synapxix-root',
@@ -30,7 +34,9 @@ type Screen = (typeof SCREENS)[number];
     MissionTimelineComponent,
     MissionIntruderComponent,
     ShadowComponent,
+    ContrastComponent,
     ResultComponent,
+    InvestigacionComponent,
   ],
   template: `
     <div class="app">
@@ -41,7 +47,7 @@ type Screen = (typeof SCREENS)[number];
         <div class="brand"><img src="logo-light.png" alt="" /><span>Synapxix</span></div>
         <div class="topright">
           <button class="sound" (click)="toggleSound()" aria-label="Activar o silenciar sonido">
-            {{ session.soundOn() ? '♪' : '×' }}
+            {{ ui.soundOn() ? '♪' : '×' }}
           </button>
           <div class="status">
             <i class="dot" [class.live]="screen() !== 'entry'"></i>
@@ -51,6 +57,9 @@ type Screen = (typeof SCREENS)[number];
       </header>
       <div class="progress"><i [style.width.%]="progress()"></i></div>
 
+      @if (research) {
+        <section class="screen"><synapxix-investigacion /></section>
+      } @else {
       @switch (screen()) {
         @case ('entry') {
           <section class="screen"><synapxix-entry (done)="go('vision')" /></section>
@@ -59,28 +68,34 @@ type Screen = (typeof SCREENS)[number];
           <section class="screen"><synapxix-vision (done)="go('portal')" /></section>
         }
         @case ('portal') {
-          <section class="screen"><synapxix-portal (done)="go('categorize')" /></section>
+          <section class="screen"><synapxix-portal (observe)="session.observe($event)" (done)="go('categorize')" /></section>
         }
         @case ('categorize') {
-          <section class="screen"><synapxix-mission-categorize (done)="go('timeline')" /></section>
+          <section class="screen"><synapxix-mission-categorize (observe)="session.observe($event)" (done)="go('timeline')" /></section>
         }
         @case ('timeline') {
-          <section class="screen"><synapxix-mission-timeline (done)="go('intruder')" /></section>
+          <section class="screen"><synapxix-mission-timeline (observe)="session.observe($event)" (done)="go('intruder')" /></section>
         }
         @case ('intruder') {
-          <section class="screen"><synapxix-mission-intruder (done)="go('shadow')" /></section>
+          <section class="screen"><synapxix-mission-intruder (observe)="session.observe($event)" (done)="go('shadow')" /></section>
         }
         @case ('shadow') {
-          <section class="screen"><synapxix-shadow (done)="go('result')" /></section>
+          <section class="screen"><synapxix-shadow (observe)="session.observe($event)" (done)="assigned.set($event); go('contrast')" /></section>
+        }
+        @case ('contrast') {
+          @if (assigned(); as step) {
+            <section class="screen"><synapxix-contrast [step]="step" (observe)="session.observe($event)" (done)="go('result')" /></section>
+          }
         }
         @case ('result') {
-          <section class="screen"><synapxix-result /></section>
+          <section class="screen"><synapxix-result (observe)="session.observe($event)" /></section>
         }
+      }
       }
 
       <footer class="footer">
-        <span>v0.3 · PILOTO ADULTOS 21–36</span>
-        <span>EVENTO → EVIDENCIA → ESTADO → DECISIÓN → OUTCOME</span>
+        <span>PILOTO D.A.L.A. · MARCO {{ frameworkVersion }} · ADULTOS 21–36</span>
+        <span>ESCENA → OPORTUNIDAD → ACCIÓN → EVIDENCIA → AFIRMACIÓN → DECISIÓN → RESULTADO</span>
       </footer>
 
       @if (session.pendingEvents() > 0) {
@@ -121,26 +136,37 @@ export class AppComponent implements OnDestroy {
   private parallaxFrame = 0;
   private readonly stillness = matchMedia('(prefers-reduced-motion: reduce)');
 
+  readonly research = new URLSearchParams(location.search).has('investigacion');
+  readonly frameworkVersion = PULSO_WEB_FRAMEWORK.version;
   readonly screen = signal<Screen>('entry');
+  readonly assigned = signal<AssignedStep | null>(null);
+  /** El puente arranca la sesión en el portal. */
+  private currentScene = 'portal';
   readonly progress = computed(() => (SCREENS.indexOf(this.screen()) / (SCREENS.length - 1)) * 100);
   readonly statusText = computed(() =>
     this.screen() === 'entry'
       ? 'NÚCLEO EN ESPERA'
       : this.screen() === 'result'
-        ? 'MODELO PROVISIONAL'
+        ? `RETRATO · ${this.session.emittedCount()} SEÑALES`
         : `NÚCLEO ACTIVO · ${this.session.emittedCount()} SEÑALES`,
   );
 
   go(next: Screen) {
+    const scene = SCENE_OF_SCREEN[next];
+    if (scene && scene !== this.currentScene) {
+      this.session.leaveScene();
+      this.session.enterScene(scene);
+      this.currentScene = scene;
+    }
     this.screen.set(next);
-    this.session.tone(480 + SCREENS.indexOf(next) * 35);
+    this.ui.tone(480 + SCREENS.indexOf(next) * 35);
     window.scrollTo({ top: 0 });
   }
 
   toggleSound() {
-    this.session.soundOn.update((s) => !s);
-    this.ui.toast(this.session.soundOn() ? 'Sonido activado' : 'Sonido silenciado');
-    this.session.tone();
+    this.ui.soundOn.update((s) => !s);
+    this.ui.toast(this.ui.soundOn() ? 'Sonido activado' : 'Sonido silenciado');
+    this.ui.tone();
   }
 
   /**

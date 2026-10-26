@@ -1,97 +1,128 @@
-import { Component, EventEmitter, OnInit, Output, computed, inject, signal } from '@angular/core';
-import { MISSION3_INSTRUCTIONS, MISSION3_ROUNDS } from '../content';
+import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
+import { FORMAT_INTROS, FORMAT_LABELS, MISSION3_INSTRUCTIONS, MISSION3_ROUNDS, type FormatId } from '../content';
+import type { SceneObservation } from '../scene-observation';
 import { PulseSessionService } from '../services/pulse-session.service';
 import { UiService } from '../services/ui.service';
+import { FormatChoiceComponent } from './format-choice.component';
+
+const SCENE = 'camara';
+const CONSIGNA = { id: `${SCENE}:consigna`, kind: 'consigna' };
+
+type Phase = 'answering' | 'failed' | 'solved';
 
 /**
- * Misión 03 / Cámara de eco — instrumento `intruder`.
- * Seleccionar y verificar: entre lecturas que respetan la evidencia, una
- * dice más de lo que puede sostener.
+ * Misión 03 · Cámara de eco. Dos rondas: entre afirmaciones que respetan la
+ * evidencia, una dice más de lo que puede sostener. Cambiar la selección
+ * antes de verificar es una revisión; descartar una opción es apoyo.
  */
 @Component({
   selector: 'synapxix-mission-intruder',
   standalone: true,
+  imports: [FormatChoiceComponent],
   template: `
     <div class="mission">
       <aside class="rail">
         <span class="missionId">MISIÓN 03 / CÁMARA DE ECO</span>
         <div class="signalMeter">
           <header><span>SEÑALES</span><b>{{ session.emittedCount() }}</b></header>
-          <div class="meter"><i [style.width.%]="meterPct()"></i></div>
+          <div class="meter"><i [style.width.%]="(roundIndex() / rounds.length) * 100"></i></div>
         </div>
       </aside>
 
       <div class="game">
-        <div class="gameHead">
-          <div>
-            <p class="eyebrow"><b>INSTRUMENTO</b> · INTRUDER</p>
-            <h2>Encuentra la frase peligrosa.</h2>
-            <p>Tres frases respetan la evidencia. Una dice más de lo que puede sostener.</p>
+        @if (!format()) {
+          <synapxix-format-choice
+            scene="camara"
+            title="Encuentra la frase que dice demasiado."
+            (observe)="observe.emit($event)"
+            (chosen)="start($event)"
+          />
+        } @else if (!finished()) {
+          <div class="gameHead">
+            <div>
+              <p class="eyebrow"><b>ESCENA</b> · CÁMARA DE ECO</p>
+              <h2>Encuentra la frase que dice demasiado.</h2>
+              <p class="formatIntro"><b>{{ formatLabel() }}</b>{{ intro() }}</p>
+            </div>
+            <div class="gameTools">
+              <button class="tool" (click)="openInstructions()">? Consigna</button>
+              <button class="tool" [disabled]="hinted() || phase() === 'solved'" (click)="hint()">✦ Descartar una</button>
+            </div>
           </div>
-          <div class="gameTools">
-            <button class="tool" (click)="openInstructions()">? Consigna</button>
-            <button class="tool" [disabled]="hinted() || solved()" (click)="hint()">✦ Descartar una</button>
-          </div>
-        </div>
 
-        <div class="intruderGrid">
-          @for (claim of round().claims; track claim.text; let i = $index) {
-            <button
-              class="claim"
-              [class.selected]="selected() === i"
-              [class.discarded]="discarded().includes(i)"
-              [disabled]="solved()"
-              (click)="select(i)"
-            >
-              <small>AFIRMACIÓN {{ pad(i + 1) }}</small>
-              <p>“{{ claim.text }}”</p>
-            </button>
+          <div class="intruderGrid">
+            @for (claim of round().claims; track claim.text; let i = $index) {
+              <button
+                class="claim"
+                [class.selected]="selected() === i"
+                [class.discarded]="discarded() === i"
+                [disabled]="phase() === 'solved' || discarded() === i"
+                (click)="select(i)"
+              >
+                <small>AFIRMACIÓN {{ pad(i + 1) }}</small>
+                <p>“{{ claim.text }}”</p>
+              </button>
+            }
+          </div>
+
+          <div class="timelineControls">
+            <span class="eyebrow" style="margin: 0"><b>RONDA {{ pad(roundIndex() + 1) }}</b> / {{ pad(rounds.length) }}</span>
+            @if (phase() !== 'solved') {
+              <button class="btn primary" [disabled]="selected() === null" (click)="verify()">VERIFICAR ELECCIÓN</button>
+            }
+          </div>
+
+          @if (phase() === 'failed') {
+            <div class="feedback bad">
+              <b>Esa frase mantiene el alcance.</b>Busca la que convierte una conducta puntual en identidad permanente.
+              <div class="feedbackActions">
+                <button class="btn ghost" (click)="skip()">Omitir esta ronda →</button>
+              </div>
+            </div>
           }
-        </div>
-
-        <div class="timelineControls">
-          <span class="eyebrow" style="margin: 0"><b>RONDA {{ pad(roundIndex() + 1) }}</b> / 02</span>
-          <button class="btn primary" [disabled]="selected() === null || solved()" (click)="verify()">
-            VERIFICAR ELECCIÓN
-          </button>
-        </div>
-
-        @if (feedback(); as fb) {
-          <div class="feedback" [class.bad]="!fb.good"><b>{{ fb.title }}</b>{{ fb.text }}</div>
-        }
-        @if (finished()) {
-          <button class="btn primary" style="margin-top: 14px" (click)="continue_()">
-            ABRIR SHADOW MODE →
-          </button>
+          @if (phase() === 'solved') {
+            <div class="feedback">
+              <b>Sobreinferencia detectada.</b>
+              @if (whyOpen()) {
+                <span class="whyText">{{ round().why }}</span>
+              }
+              <div class="feedbackActions">
+                @if (!whyOpen()) {
+                  <button class="btn ghost" (click)="openWhy()">¿Por qué?</button>
+                }
+                <button class="btn primary" (click)="advance()">Siguiente →</button>
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="promptCard">
+            <small>CÁMARA COMPLETA</small>
+            <p>Leíste afirmaciones como las que este sistema podría escribir sobre ti. A continuación verás la primera que escribió.</p>
+          </div>
+          <button class="btn primary" style="margin-top: 14px" (click)="done.emit()">ABRIR SHADOW MODE →</button>
         }
       </div>
     </div>
   `,
 })
-export class MissionIntruderComponent implements OnInit {
+export class MissionIntruderComponent {
   readonly session = inject(PulseSessionService);
   private readonly ui = inject(UiService);
 
+  @Output() observe = new EventEmitter<SceneObservation>();
   @Output() done = new EventEmitter<void>();
 
   readonly rounds = MISSION3_ROUNDS;
+  readonly format = signal<FormatId | null>(null);
   readonly roundIndex = signal(0);
   readonly selected = signal<number | null>(null);
-  readonly discarded = signal<number[]>([]);
+  readonly discarded = signal<number | null>(null);
   readonly hinted = signal(false);
-  readonly solved = signal(false);
+  readonly whyOpen = signal(false);
+  readonly phase = signal<Phase>('answering');
   readonly finished = signal(false);
-  readonly feedback = signal<{ good: boolean; title: string; text: string } | null>(null);
-  readonly meterPct = computed(() => Math.min(100, (this.session.emittedCount() / 78) * 100));
 
   private attempt = 0;
-  private shownAt = Date.now();
-  private adapter: ReturnType<PulseSessionService['startInstrument']> | null = null;
-
-  ngOnInit() {
-    this.adapter = this.session.startInstrument('intruder');
-    this.presentRound();
-  }
 
   round() {
     return this.rounds[this.roundIndex()];
@@ -101,92 +132,115 @@ export class MissionIntruderComponent implements OnInit {
     return String(n).padStart(2, '0');
   }
 
-  private presentRound() {
-    const round = this.round();
-    this.session.interact(
-      { kind: 'task_shown', taskId: round.taskId, skillIds: [round.skillId], difficulty: 0.62 },
-    );
+  formatLabel() {
+    const f = this.format();
+    return f ? FORMAT_LABELS[f].label : '';
+  }
+
+  intro() {
+    const f = this.format();
+    return f ? FORMAT_INTROS.camara[f] : '';
+  }
+
+  start(format: FormatId) {
+    this.format.set(format);
+    this.observe.emit({ type: 'instruction_presented', opportunity: CONSIGNA });
+    this.present();
+  }
+
+  private opp() {
+    return { id: `${SCENE}:${this.round().id}`, kind: 'tarea' };
+  }
+
+  private present() {
+    const opportunity = this.opp();
     this.selected.set(null);
-    this.discarded.set([]);
+    this.discarded.set(null);
     this.hinted.set(false);
-    this.solved.set(false);
-    this.feedback.set(null);
+    this.whyOpen.set(false);
+    this.phase.set('answering');
     this.attempt = 0;
-    this.shownAt = Date.now();
+    this.observe.emit({ type: 'task_presented', opportunity });
+    this.observe.emit({
+      type: 'options_presented',
+      opportunity,
+      payload: { options: this.round().claims.map((_, i) => i + 1) },
+    });
+    this.observe.emit({ type: 'support_available', opportunity, payload: { support: 'descartar' } });
   }
 
   select(index: number) {
-    if (this.solved() || this.discarded().includes(index)) return;
+    if (this.phase() === 'solved' || this.discarded() === index || this.selected() === index) return;
+    const previous = this.selected();
     this.selected.set(index);
-    this.session.interact({
-      kind: 'item_action',
-      taskId: this.round().taskId,
-      detail: { action: 'select', item: index },
+    this.observe.emit({
+      type: previous === null ? 'action_performed' : 'answer_revised',
+      opportunity: this.opp(),
+      payload: { action: 'select', item: index + 1, ...(previous === null ? {} : { previous: previous + 1 }) },
     });
   }
 
   openInstructions() {
-    this.session.interact({ kind: 'instructions_opened', taskId: this.round().taskId });
+    this.observe.emit({ type: 'instructions_opened', opportunity: CONSIGNA });
     this.ui.openModal(MISSION3_INSTRUCTIONS);
   }
 
   hint() {
-    if (this.hinted() || this.solved()) return;
+    if (this.hinted() || this.phase() === 'solved') return;
     this.hinted.set(true);
-    this.session.interact({ kind: 'hint', taskId: this.round().taskId, level: 1 });
-    const safe = this.round().claims.findIndex((c, i) => !c.bad && !this.discarded().includes(i));
-    if (safe >= 0) {
-      this.discarded.update((prev) => [...prev, safe]);
-      if (this.selected() === safe) this.selected.set(null);
-    }
-    this.ui.toast('Una afirmación responsable fue descartada.');
+    const opportunity = this.opp();
+    this.observe.emit({ type: 'hint_requested', opportunity, payload: { level: 1 } });
+    // Descarta una afirmación responsable que no esté seleccionada, si la hay.
+    const claims = this.round().claims;
+    const pick = claims.findIndex((c, i) => !c.bad && i !== this.selected());
+    this.discarded.set(pick);
+    if (this.selected() === pick) this.selected.set(null);
+    this.observe.emit({ type: 'support_delivered', opportunity, payload: { support: 'descartar', item: pick + 1 } });
+    this.ui.toast('Una afirmación responsable quedó descartada.');
   }
 
   verify() {
     const index = this.selected();
-    if (index === null) return;
+    if (index === null || this.phase() === 'solved') return;
     this.attempt += 1;
-    if (this.attempt > 1) {
-      this.session.interact({ kind: 'retry', taskId: this.round().taskId, attempt: this.attempt });
-    }
     const correct = this.round().claims[index].bad;
-    this.session.interact({
-      kind: 'answer',
-      taskId: this.round().taskId,
-      correct,
-      latencyMs: Date.now() - this.shownAt,
-      attempt: this.attempt,
+    this.observe.emit({
+      type: 'response_submitted',
+      opportunity: this.opp(),
+      payload: { correct, attempt: this.attempt, choice: index + 1 },
     });
-
     if (!correct) {
-      this.session.tone(230);
-      this.feedback.set({
-        good: false,
-        title: 'Esa frase mantiene el alcance.',
-        text: 'Busca la que transforma una conducta puntual en una identidad permanente.',
-      });
+      this.phase.set('failed');
+      this.ui.tone(230);
       return;
     }
-
-    this.session.tone(760);
-    this.solved.set(true);
-    this.session.interact({ kind: 'complete', taskId: this.round().taskId });
-    this.feedback.set({
-      good: true,
-      title: 'Sobreinferencia detectada.',
-      text: 'La frase convierte una señal contextual en un rasgo estable. D.A.L.A. no está autorizado a hacer eso.',
-    });
-    setTimeout(() => {
-      if (this.roundIndex() < this.rounds.length - 1) {
-        this.roundIndex.update((i) => i + 1);
-        this.presentRound();
-      } else {
-        this.finished.set(true);
-      }
-    }, 1600);
+    this.ui.tone(760);
+    this.observe.emit({ type: 'task_completed', opportunity: this.opp() });
+    this.observe.emit({ type: 'exploration_offered', opportunity: this.whyOpp() });
+    this.phase.set('solved');
   }
 
-  continue_() {
-    void this.session.endInstrument(true, this.adapter ?? undefined).then(() => this.done.emit());
+  skip() {
+    if (this.phase() !== 'failed') return;
+    this.observe.emit({ type: 'task_skipped', opportunity: this.opp() });
+    this.advance();
+  }
+
+  openWhy() {
+    this.whyOpen.set(true);
+    this.observe.emit({ type: 'exploration_opened', opportunity: this.whyOpp() });
+  }
+
+  advance() {
+    if (this.roundIndex() < this.rounds.length - 1) {
+      this.roundIndex.update((i) => i + 1);
+      this.present();
+      return;
+    }
+    this.finished.set(true);
+  }
+
+  private whyOpp() {
+    return { id: `${this.opp().id}:porque`, kind: 'exploracion' };
   }
 }

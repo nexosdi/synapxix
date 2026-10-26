@@ -6,17 +6,15 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
-import type { DalaBehaviorEvent } from '@nexosdi.synapxix/dala/contracts';
+import {
+  DALA_EVENT_SCHEMA_V2,
+  type DalaBehaviorEvent,
+  type DalaEventV2,
+} from '@nexosdi.synapxix/dala/contracts';
 import { DalaFacade } from '../dala/dala.facade';
 import { TeamRepository } from './team.repository';
 import { TEAM_JWT_SECRET, TeamTokenPayload } from './team-auth.guard';
-import {
-  ARCHETYPE_META,
-  computeArchetypeAffinity,
-  DeclaredProfile,
-  TEAM_ARCHETYPES,
-  TeamArchetype,
-} from './archetype';
+import { ARCHETYPE_META, DeclaredProfile, TEAM_ARCHETYPES, TeamArchetype } from './archetype';
 
 /** Versión del consentimiento del Primer Pulso. El equipo lo acepta al entrar. */
 export const TEAM_CONSENT_SCOPE = 'team-primer-pulso-v1';
@@ -118,7 +116,7 @@ export class TeamService {
    * subjectId de CADA evento se verifica contra el del token. Nadie emite
    * a nombre de otro.
    */
-  async ingestBatch(auth: TeamTokenPayload, events: DalaBehaviorEvent[]) {
+  async ingestBatch(auth: TeamTokenPayload, events: Array<DalaBehaviorEvent | DalaEventV2>) {
     if (!Array.isArray(events) || events.length === 0) return [];
     if (events.length > 200) throw new BadRequestException('batch_too_large');
     for (const event of events) {
@@ -126,7 +124,9 @@ export class TeamService {
         throw new ForbiddenException('subject_mismatch');
       }
     }
-    return this.dala.ingestBatch(events);
+    const v2 = events.filter((e): e is DalaEventV2 => e.schemaVersion === DALA_EVENT_SCHEMA_V2);
+    const v1 = events.filter((e): e is DalaBehaviorEvent => e.schemaVersion !== DALA_EVENT_SCHEMA_V2);
+    return [...(await this.dala.ingestBatchV2(v2)), ...(await this.dala.ingestBatch(v1))];
   }
 
   // ── Declarado (nunca se mezcla con evidencia conductual) ────────────────
@@ -174,10 +174,12 @@ export class TeamService {
     return { member: this.publicMember(member) };
   }
 
-  // ── Ciclo D.A.L.A. propio (decisión shadow → review → outcome → traza) ──
+  // ── Ciclo D.A.L.A. (Modelo Fundacional 0.1) ─────────────────────────────
+  // Instantánea → decisión del catálogo → veredicto humano → contenido
+  // asignado → resultado de contraste → nueva instantánea encadenada.
 
   decide(auth: TeamTokenPayload) {
-    return this.dala.decide(auth.subjectId);
+    return this.dala.decideV2(auth.subjectId);
   }
 
   async review(
@@ -185,9 +187,10 @@ export class TeamService {
     decisionId: string,
     verdict: 'approved' | 'rejected' | 'edited',
     reason?: string,
+    chosen?: string,
   ) {
     await this.assertOwnDecision(auth, decisionId);
-    return this.dala.review(decisionId, verdict, reason);
+    return this.dala.reviewV2(decisionId, verdict, chosen, reason);
   }
 
   async recordOutcome(
@@ -198,9 +201,18 @@ export class TeamService {
     return this.dala.recordOutcome(input);
   }
 
-  async trace(auth: TeamTokenPayload, decisionId: string) {
-    await this.assertOwnDecision(auth, decisionId);
-    return this.dala.getTrace(decisionId);
+  /** De una afirmación propia a los eventos que la sostienen. */
+  traceClaim(auth: TeamTokenPayload, claimKey: string) {
+    return this.dala.traceClaimV2(auth.subjectId, claimKey);
+  }
+
+  /** La persona puede descargar sus propios datos seudónimos (§20). */
+  exportOwn(auth: TeamTokenPayload) {
+    return this.dala.exportV2(auth.subjectId);
+  }
+
+  replayCheck(auth: TeamTokenPayload) {
+    return this.dala.replayCheckV2(auth.subjectId);
   }
 
   private async assertOwnDecision(auth: TeamTokenPayload, decisionId: string) {
@@ -210,143 +222,82 @@ export class TeamService {
     }
   }
 
-  // ── Modelado por persona ────────────────────────────────────────────────
+  // ── Retrato trazable ────────────────────────────────────────────────────
 
   /**
-   * Capa narrativa del reporte (maestro §5.2): toda lectura viaja con sus
-   * explicaciones alternativas no descartadas y su próxima validación.
-   * Es interpretación acotada del contexto del pulso — nunca entra al motor.
-   */
-  private static readonly CONSTRUCT_NARRATIVE: Record<
-    string,
-    { alternatives: string[]; nextValidation: string }
-  > = {
-    curricular_mastery: {
-      alternatives: [
-        'El contenido era sobre Synapxix mismo: familiaridad previa puede inflar la lectura.',
-        'Una sola jornada con herramienta nueva: efecto novedad no descartado.',
-      ],
-      nextValidation: 'Repetir la señal con material nuevo, sin pistas, en otra sesión.',
-    },
-    persistence: {
-      alternatives: [
-        'Los retos son cortos: la persistencia de horas o días no está observada.',
-        'El contexto era de bajo riesgo: insistir no costaba nada.',
-      ],
-      nextValidation: 'Observar la reacción al primer bloqueo real que dure más de un día.',
-    },
-    help_seeking: {
-      alternatives: [
-        'Pedir poca ayuda puede ser dominio alto, no evitación.',
-        'Pedir mucha puede ser exploración de la interfaz, no dependencia.',
-      ],
-      nextValidation: 'Ver si el apoyo llega a tiempo en la primera tarea con presión real.',
-    },
-    strategy_flexibility: {
-      alternatives: [
-        'Cambiar de enfoque pudo ser curiosidad por la interfaz, no estrategia.',
-        'No cambiar pudo significar que el primer enfoque alcanzaba.',
-      ],
-      nextValidation: 'Confirmar ante un problema real que exija abandonar un camino invertido.',
-    },
-    task_engagement: {
-      alternatives: [
-        'Completar una experiencia guiada y única no equivale a retorno voluntario.',
-      ],
-      nextValidation: 'El retorno voluntario se observa recién en las próximas semanas de trabajo.',
-    },
-  };
-
-  /**
-   * El reporte completo de una persona: estado D.A.L.A. real (con
-   * incertidumbre, alternativas y próxima validación), rigor observacional
-   * del caso, actividad, lo declarado, decisiones shadow con veredicto y
-   * la afinidad narrativa de arquetipos.
+   * El retrato de una persona: la instantánea vigente proyectada desde su
+   * registro, lo declarado (separado de lo observado) y sus decisiones.
+   * Las etiquetas de ámbitos y escenas vienen del marco versionado.
    */
   async report(auth: TeamTokenPayload) {
-    const member = await this.repository.findById(auth.sub);
+    return this.reportFor(auth.sub, auth.subjectId);
+  }
+
+  private async reportFor(memberId: string, subjectId: string) {
+    const member = await this.repository.findById(memberId);
     if (!member) throw new NotFoundException('unknown_member');
-
-    const state = await this.dala.getState(auth.subjectId);
-    const timeline = await this.dala.getTimeline(auth.subjectId);
-    const decisions = await this.dala.decisionsFor(auth.subjectId, 5);
-
-    const byType: Record<string, number> = {};
-    const sessions = new Set<string>();
-    for (const event of timeline as Array<{ event_type: string; session_id: string }>) {
-      byType[event.event_type] = (byType[event.event_type] ?? 0) + 1;
-      sessions.add(event.session_id);
-    }
-
-    // Rigor observacional: desempeño en el caso (tareas caso-*), donde la
-    // persona separó observado de inferido y decidió como la política.
-    let caseAnswers = 0;
-    let caseCorrect = 0;
-    for (const event of timeline as Array<{
-      event_type: string;
-      context_json: unknown;
-      payload_json: unknown;
-    }>) {
-      if (event.event_type !== 'answer_submitted') continue;
-      const taskId = (event.context_json as { taskId?: string })?.taskId ?? '';
-      if (!taskId.startsWith('caso-')) continue;
-      caseAnswers += 1;
-      if ((event.payload_json as { correct?: boolean })?.correct === true) caseCorrect += 1;
-    }
-    const rigor =
-      caseAnswers === 0
-        ? null
-        : {
-            answers: caseAnswers,
-            correct: caseCorrect,
-            accuracy: Math.round((caseCorrect / caseAnswers) * 100) / 100,
-            reading:
-              caseCorrect / caseAnswers >= 0.8
-                ? 'Distinguiste observación de inferencia con soltura, y elegiste ayuda mínima.'
-                : caseCorrect / caseAnswers >= 0.5
-                  ? 'El criterio está en construcción: algunas lecturas pidieron más evidencia de la que había.'
-                  : 'La tentación de sobreinferir apareció seguido — el detector de test disfrazado es para practicarlo.',
-          };
-
-    const constructs = Object.fromEntries(
-      Object.entries(state.constructs).map(([id, reading]) => [
-        id,
-        {
-          ...(reading as object),
-          alternatives: TeamService.CONSTRUCT_NARRATIVE[id]?.alternatives ?? [],
-          nextValidation: TeamService.CONSTRUCT_NARRATIVE[id]?.nextValidation ?? null,
-        },
-      ]),
-    );
-
-    const declared = (member.declared_json ?? {}) as DeclaredProfile;
-    const affinities = computeArchetypeAffinity(
-      declared,
-      state.constructs as Parameters<typeof computeArchetypeAffinity>[1],
-    );
-
+    const snapshot = await this.dala.snapshotV2(subjectId);
+    const decisions = await this.dala.decisionsFor(subjectId, 5);
+    const outcomes = await Promise.all(decisions.map((d) => this.dala.outcomesFor(d.decision_id)));
+    const fw = this.dala.framework;
     return {
       member: this.publicMember(member),
-      subjectId: auth.subjectId,
-      constructs,
-      rigor,
-      activity: { totalEvents: timeline.length, sessions: sessions.size, byType },
-      declared,
-      decisions: decisions.map((d) => ({
+      subjectId,
+      declared: (member.declared_json ?? {}) as DeclaredProfile,
+      snapshot,
+      framework: {
+        version: fw.version,
+        ambitos: fw.ambitos,
+        skills: fw.skills,
+        scenes: fw.scenes.map((s) => ({ id: s.id, title: s.title })),
+        decisions: fw.decisions.map((d) => ({ id: d.id, label: d.label, purpose: d.purpose })),
+        constructs: fw.constructs.map((c) => ({
+          id: c.id,
+          name: c.name,
+          question: c.question,
+          limits: c.limits,
+          sufficiency: c.sufficiency,
+        })),
+      },
+      decisions: decisions.map((d, i) => ({
         decisionId: d.decision_id,
         objective: d.objective,
         selectedAction: d.selected_action,
         reasons: d.reasons,
-        confidence: d.confidence,
         policyVersion: d.policy_version,
-        requiresHumanApproval: d.requires_human_approval,
         humanVerdict: d.human_verdict,
         humanVerdictReason: d.human_verdict_reason,
         expectedOutcome: d.expected_outcome,
+        stateSnapshotId: d.state_snapshot_id,
         createdAt: d.created_at,
+        outcome: (outcomes[i].at(-1)?.metrics ?? null) as Record<string, unknown> | null,
       })),
-      archetypes: affinities.map((a) => ({ ...a, meta: ARCHETYPE_META[a.archetype] })),
     };
+  }
+
+  // ── Vista de investigación (X-Team-Admin-Code) ──────────────────────────
+
+  private async subjectOfMember(memberId: string) {
+    const member = await this.repository.findById(memberId);
+    if (!member) throw new NotFoundException('unknown_member');
+    const { subjectId } = await this.dala.resolveSubject(member.member_id);
+    return subjectId;
+  }
+
+  async adminReport(memberId: string) {
+    return this.reportFor(memberId, await this.subjectOfMember(memberId));
+  }
+
+  async adminTrace(memberId: string, claimKey: string) {
+    return this.dala.traceClaimV2(await this.subjectOfMember(memberId), claimKey);
+  }
+
+  async adminExport(memberId: string) {
+    return this.dala.exportV2(await this.subjectOfMember(memberId));
+  }
+
+  async adminReplay(memberId: string) {
+    return this.dala.replayCheckV2(await this.subjectOfMember(memberId));
   }
 
   // ── Administración ──────────────────────────────────────────────────────
@@ -375,11 +326,7 @@ export class TeamService {
         inviteCode: m.invite_code,
         email: m.email,
         declared: shared
-          ? {
-              entryMode: declared.entryMode,
-              workRhythm: declared.workRhythm,
-              feedbackMode: declared.feedbackMode,
-            }
+          ? { area: declared.area, portal: declared.portal }
           : 'la persona decidió no compartirlo',
       };
     });

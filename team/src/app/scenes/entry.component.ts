@@ -27,7 +27,7 @@ import { UiService } from '../services/ui.service';
         <div class="microGrid">
           <div><strong>08</strong><span>minutos</span></div>
           <div><strong>03</strong><span>misiones</span></div>
-          <div><strong>01</strong><span>modelo inicial</span></div>
+          <div><strong>01</strong><span>retrato trazable</span></div>
         </div>
       </div>
 
@@ -122,7 +122,7 @@ export class EntryComponent {
       if ('returning' in result && result.returning) {
         this.ui.toast('Canal reabierto: tu modelo sigue acumulando desde la última sesión.');
       }
-      this.session.tone(650);
+      this.ui.tone(650);
       this.done.emit();
     } catch (err) {
       const message = err instanceof Error ? err.message : '';

@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import type { DalaClaim, DalaSnapshotV2 } from '@nexosdi.synapxix/dala/contracts';
 import { PulseSessionService } from './pulse-session.service';
 
 const API = '/api/team/v1';
@@ -10,56 +11,90 @@ export interface JoinResponse {
   member: { memberId: string; name: string | null; roleLabel: string | null; status: string };
 }
 
-export interface ConstructState {
-  value: number;
-  confidence: number;
-  stability: number;
-  status: string;
-  uncertainty: { lower: number; upper: number; method: string };
-  evidenceCount: number;
-  validUntil: string | null;
-  modelVersion: string;
-  /** Explicaciones rivales aún no descartadas (capa narrativa del reporte). */
-  alternatives: string[];
-  /** Qué observación confirmaría o refutaría esta lectura. */
-  nextValidation: string | null;
+export interface FrameworkView {
+  version: string;
+  ambitos: Array<{ id: string; name: string; question: string; withoutOpportunity: string }>;
+  skills: Record<string, string>;
+  scenes: Array<{ id: string; title: string }>;
+  decisions: Array<{ id: string; label: string; purpose: string }>;
+  constructs: Array<{
+    id: string;
+    name: string;
+    question: string;
+    limits: string;
+    sufficiency: { provisional: { minOpportunities: number }; supported: { minOpportunities: number; minScenes: number } };
+  }>;
 }
 
 export interface PulseReport {
-  member: { memberId: string; name: string | null; roleLabel: string | null; status: string; archetype: string | null };
+  member: { memberId: string; name: string | null; roleLabel: string | null; status: string };
   subjectId: string;
-  constructs: Record<string, ConstructState>;
-  /** Desempeño en El Caso: separar observado de inferido y decidir con límites. */
-  rigor: { answers: number; correct: number; accuracy: number; reading: string } | null;
-  activity: { totalEvents: number; sessions: number; byType: Record<string, number> };
-  declared: {
-    entryMode?: string;
-    portal?: string;
-    area?: string;
-    workRhythm?: string;
-    feedbackMode?: string;
-    stateReview?: string;
-    shareConditions?: boolean;
-  };
+  declared: { area?: string; portal?: string };
+  snapshot: DalaSnapshotV2 & { snapshotId: string; reused: boolean };
+  framework: FrameworkView;
   decisions: Array<{
     decisionId: string;
-    objective: string;
     selectedAction: string;
-    reasons: Array<{ type: string; referenceId: string; explanation: string }>;
-    confidence: number;
-    policyVersion: string;
-    requiresHumanApproval: boolean;
     humanVerdict: string | null;
     humanVerdictReason: string | null;
-    expectedOutcome: { metric: string; probability: number } | null;
+    stateSnapshotId: string;
     createdAt: string;
+    outcome: { independiente?: boolean; resuelta?: boolean; pista_usada?: boolean; omitida?: boolean } | null;
   }>;
-  archetypes: Array<{
-    archetype: string;
-    affinity: number;
-    signals: string[];
-    meta: { label: string; accentA: string; accentB: string; mood: string };
-  }>;
+}
+
+export interface ShadowDecision {
+  decisionId: string;
+  selected: string;
+  label: string;
+  objective: string;
+  reasons: Array<{ type: string; referenceId: string; explanation: string }>;
+  alternatives: Array<{ id: string; label: string; whyNot: string }>;
+  expectedOutcome: { metric: string; description: string };
+  verification: string;
+  snapshotId: string;
+  policyVersion: string;
+}
+
+export interface ReviewResult {
+  decisionId: string;
+  verdict: 'approved' | 'edited' | 'rejected';
+  assigned: { id: string; label: string; content: { scene: string; hintAvailable: boolean } };
+}
+
+export interface TraceEvent {
+  eventId: string;
+  seconds: number;
+  scene: string;
+  sceneRef: string;
+  opportunity: { id: string; kind: string } | null;
+  type: string;
+  origin: string;
+  payload: Record<string, unknown>;
+}
+
+export interface TraceResult {
+  claim: DalaClaim;
+  snapshotId: string;
+  events: TraceEvent[];
+}
+
+export interface ReplayCheck {
+  reproducible: boolean | null;
+  snapshotId?: string;
+  events?: number;
+  claims?: number;
+  engineVersion?: string;
+}
+
+export interface MemberRow {
+  memberId: string;
+  name: string | null;
+  roleLabel: string | null;
+  status: string;
+  email: string | null;
+  completedAt: string | null;
+  declared: { area?: string; portal?: string } | string;
 }
 
 /** Cliente de la API del Primer Pulso. El token vive en PulseSessionService. */
@@ -76,35 +111,16 @@ export class PulseApiService {
     return this.post(`${API}/register`, input, false);
   }
 
-  saveDeclared(declared: {
-    entryMode?: string;
-    portal?: string;
-    area?: string;
-    ageBand?: string;
-    workRhythm?: string;
-    feedbackMode?: string;
-    stateReview?: string;
-    shareConditions?: boolean;
-  }) {
+  saveDeclared(declared: { portal?: string; area?: string; ageBand?: string }) {
     return this.post(`${API}/declared`, declared);
   }
 
-  requestDecision(): Promise<{
-    decision_id: string;
-    objective: string;
-    selected_action: string;
-    candidate_actions: string[];
-    reasons: Array<{ type: string; referenceId: string; explanation: string }>;
-    confidence: number;
-    policy_version: string;
-    requires_human_approval: boolean;
-    expected_outcome: { metric: string; probability: number } | null;
-  }> {
+  decide(): Promise<ShadowDecision> {
     return this.post(`${API}/me/decision`, {});
   }
 
-  review(decisionId: string, verdict: 'approved' | 'rejected' | 'edited', reason?: string) {
-    return this.post(`${API}/me/decisions/${decisionId}/review`, { verdict, reason });
+  review(decisionId: string, verdict: 'approved' | 'edited' | 'rejected', chosen?: string, reason?: string): Promise<ReviewResult> {
+    return this.post(`${API}/me/decisions/${decisionId}/review`, { verdict, chosen, reason });
   }
 
   recordOutcome(decisionId: string, interventionId: string, metrics: Record<string, unknown>) {
@@ -115,30 +131,48 @@ export class PulseApiService {
     return this.get(`${API}/me/report`);
   }
 
-  trace(decisionId: string): Promise<{
-    decision: unknown;
-    stateSnapshot: unknown;
-    evidence: Array<{ observationId: string; constructId: string; rule: string; weight: number }>;
-    outcomes: unknown[];
-  }> {
-    return this.get(`${API}/me/trace/${decisionId}`);
+  traceClaim(claimKey: string): Promise<TraceResult> {
+    return this.get(`${API}/me/claims/${encodeURIComponent(claimKey)}/trace`);
+  }
+
+  replay(): Promise<ReplayCheck> {
+    return this.get(`${API}/me/replay`);
+  }
+
+  exportOwn(): Promise<unknown> {
+    return this.get(`${API}/me/export`);
   }
 
   complete(archetype?: string) {
     return this.post(`${API}/complete`, { archetype });
   }
 
-  starAi(archetype: string): Promise<{ mimeType: string; base64: string; label: string }> {
-    return this.post(`${API}/me/star/ai`, { archetype });
+  // ── Vista de investigación ──────────────────────────────────────────────
+
+  adminMembers(code: string): Promise<MemberRow[]> {
+    return this.get(`${API}/admin/members`, code);
+  }
+
+  adminReport(code: string, memberId: string): Promise<PulseReport> {
+    return this.get(`${API}/admin/members/${memberId}/report`, code);
+  }
+
+  adminTrace(code: string, memberId: string, claimKey: string): Promise<TraceResult> {
+    return this.get(`${API}/admin/members/${memberId}/claims/${encodeURIComponent(claimKey)}/trace`, code);
+  }
+
+  adminReplay(code: string, memberId: string): Promise<ReplayCheck> {
+    return this.get(`${API}/admin/members/${memberId}/replay`, code);
+  }
+
+  adminExport(code: string, memberId: string): Promise<unknown> {
+    return this.get(`${API}/admin/members/${memberId}/export`, code);
   }
 
   private async post<T>(url: string, body: unknown, withAuth = true): Promise<T> {
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(withAuth ? this.session.authHeader : {}),
-      },
+      headers: { 'Content-Type': 'application/json', ...(withAuth ? this.session.authHeader : {}) },
       body: JSON.stringify(body),
     });
     if (!response.ok) {
@@ -148,8 +182,9 @@ export class PulseApiService {
     return response.json() as Promise<T>;
   }
 
-  private async get<T>(url: string): Promise<T> {
-    const response = await fetch(url, { headers: this.session.authHeader });
+  private async get<T>(url: string, adminCode?: string): Promise<T> {
+    const headers: Record<string, string> = adminCode ? { 'X-Team-Admin-Code': adminCode } : this.session.authHeader;
+    const response = await fetch(url, { headers });
     if (!response.ok) throw new Error(`request_failed_${response.status}`);
     return response.json() as Promise<T>;
   }

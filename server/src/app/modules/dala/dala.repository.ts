@@ -1,6 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@nexosdi.synapxix/prisma';
-import type { DalaBehaviorEvent } from '@nexosdi.synapxix/dala/contracts';
+import { Prisma } from '@prisma/client';
+import {
+  DALA_EVENT_SCHEMA_V2,
+  type DalaBehaviorEvent,
+  type DalaEventV2,
+  type DalaSnapshotV2,
+} from '@nexosdi.synapxix/dala/contracts';
+
+/** UUID nulo para rangos vacíos (las columnas de rango son UUID). */
+const NIL_UUID = '00000000-0000-0000-0000-000000000000';
 
 /**
  * Acceso a datos del bounded context D.A.L.A.
@@ -305,6 +314,109 @@ export class DalaRepository {
     return this.prisma.dalaEvidenceObservation.findMany({
       where: { subject_id: subjectId },
       orderBy: { observed_at: 'asc' },
+    });
+  }
+
+  // ── Modelo Fundacional 0.1: eventos v2 e instantáneas proyectadas ───────
+
+  /**
+   * Inserta un evento v2 en el mismo registro inmutable. Escena, oportunidad
+   * y origen viajan en `context_json`; la escena ocupa el lugar del
+   * instrumento. Un choque de (sesión, secuencia) con otro eventId es un
+   * error de emisor: se informa, no se pisa.
+   */
+  async appendEventV2(event: DalaEventV2): Promise<'accepted' | 'duplicate' | 'sequence_conflict'> {
+    const existing = await this.prisma.dalaBehaviorEvent.findUnique({
+      where: { event_id: event.eventId },
+      select: { id: true },
+    });
+    if (existing) return 'duplicate';
+    try {
+      await this.prisma.dalaBehaviorEvent.create({
+        data: {
+          event_id: event.eventId,
+          subject_id: event.subjectId,
+          session_id: event.sessionId,
+          event_type: event.eventType,
+          sequence: event.sequence,
+          occurred_at: new Date(event.occurredAt),
+          instrument_id: event.scene.id,
+          instrument_version: event.scene.version,
+          schema_version: event.schemaVersion,
+          context_json: {
+            ...event.context,
+            scene: event.scene,
+            opportunity: event.opportunity ?? null,
+            origin: event.origin,
+            source: event.source,
+          } as object,
+          payload_json: event.payload as object,
+          consent_scope: event.consent.scopeId,
+          research_allowed: event.consent.researchAllowed,
+        },
+      });
+      return 'accepted';
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return 'sequence_conflict';
+      }
+      throw error;
+    }
+  }
+
+  /** Todo el registro v2 de un sujeto, reconstruido al contrato original. */
+  async eventsV2ForSubject(subjectId: string): Promise<DalaEventV2[]> {
+    const rows = await this.prisma.dalaBehaviorEvent.findMany({
+      where: { subject_id: subjectId, schema_version: DALA_EVENT_SCHEMA_V2 },
+      orderBy: [{ occurred_at: 'asc' }, { sequence: 'asc' }],
+    });
+    return rows.map((r) => {
+      const ctx = r.context_json as Record<string, unknown>;
+      const { scene, opportunity, origin, source, ...context } = ctx as {
+        scene: DalaEventV2['scene'];
+        opportunity: DalaEventV2['opportunity'] | null;
+        origin: DalaEventV2['origin'];
+        source: DalaEventV2['source'];
+      } & Record<string, unknown>;
+      return {
+        schemaVersion: DALA_EVENT_SCHEMA_V2,
+        eventId: r.event_id,
+        subjectId: r.subject_id,
+        sessionId: r.session_id,
+        occurredAt: r.occurred_at.toISOString(),
+        sequence: r.sequence,
+        eventType: r.event_type as DalaEventV2['eventType'],
+        origin,
+        source,
+        scene,
+        ...(opportunity ? { opportunity } : {}),
+        context: context as DalaEventV2['context'],
+        payload: r.payload_json as Record<string, unknown>,
+        consent: { scopeId: r.consent_scope, researchAllowed: r.research_allowed },
+      };
+    });
+  }
+
+  /** Instantáneas del motor de proyección, de la más reciente a la más antigua. */
+  snapshotsV2(subjectId: string, engineVersion: string, take = 50) {
+    return this.prisma.dalaHumanStateSnapshot.findMany({
+      where: { subject_id: subjectId, model_version: engineVersion },
+      orderBy: { created_at: 'desc' },
+      take,
+    });
+  }
+
+  /** Persiste una instantánea con id propio: las afirmaciones lo usan en su claimId. */
+  saveSnapshotV2(snapshotId: string, snapshot: DalaSnapshotV2) {
+    return this.prisma.dalaHumanStateSnapshot.create({
+      data: {
+        snapshot_id: snapshotId,
+        subject_id: snapshot.subjectId,
+        state_json: snapshot as unknown as object,
+        source_event_from: snapshot.eventRange.from ?? NIL_UUID,
+        source_event_to: snapshot.eventRange.to ?? NIL_UUID,
+        model_version: snapshot.engineVersion,
+      },
     });
   }
 }

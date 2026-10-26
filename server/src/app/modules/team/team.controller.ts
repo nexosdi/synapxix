@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
-import type { DalaBehaviorEvent } from '@nexosdi.synapxix/dala/contracts';
+import type { DalaBehaviorEvent, DalaEventV2 } from '@nexosdi.synapxix/dala/contracts';
 import { TeamAdminGuard, TeamAuthGuard, TeamTokenPayload } from './team-auth.guard';
 import { TeamService } from './team.service';
 import type { DeclaredProfile, TeamArchetype } from './archetype';
@@ -44,7 +44,7 @@ export class TeamController {
   @Throttle({ short: { limit: 50, ttl: 1000 }, medium: { limit: 400, ttl: 10000 } })
   @Post('events/batch')
   @HttpCode(HttpStatus.ACCEPTED)
-  ingestBatch(@Req() req: TeamRequest, @Body() body: { events: DalaBehaviorEvent[] }) {
+  ingestBatch(@Req() req: TeamRequest, @Body() body: { events: Array<DalaBehaviorEvent | DalaEventV2> }) {
     return this.service.ingestBatch(req.teamMember, body?.events ?? []);
   }
 
@@ -73,9 +73,9 @@ export class TeamController {
   review(
     @Req() req: TeamRequest,
     @Param('decisionId') decisionId: string,
-    @Body() body: { verdict: 'approved' | 'rejected' | 'edited'; reason?: string },
+    @Body() body: { verdict: 'approved' | 'rejected' | 'edited'; reason?: string; chosen?: string },
   ) {
-    return this.service.review(req.teamMember, decisionId, body?.verdict, body?.reason);
+    return this.service.review(req.teamMember, decisionId, body?.verdict, body?.reason, body?.chosen);
   }
 
   @UseGuards(TeamAuthGuard)
@@ -87,13 +87,28 @@ export class TeamController {
     return this.service.recordOutcome(req.teamMember, body);
   }
 
+  /** De una afirmación a los eventos que la sostienen. */
   @UseGuards(TeamAuthGuard)
-  @Get('me/trace/:decisionId')
-  trace(@Req() req: TeamRequest, @Param('decisionId') decisionId: string) {
-    return this.service.trace(req.teamMember, decisionId);
+  @Get('me/claims/:claimKey/trace')
+  traceClaim(@Req() req: TeamRequest, @Param('claimKey') claimKey: string) {
+    return this.service.traceClaim(req.teamMember, claimKey);
   }
 
-  /** Modelado completo de la persona (estado + declarado + arquetipos). */
+  /** Datos propios, seudónimos, para descargar. */
+  @UseGuards(TeamAuthGuard)
+  @Get('me/export')
+  exportOwn(@Req() req: TeamRequest) {
+    return this.service.exportOwn(req.teamMember);
+  }
+
+  /** ¿La última instantánea se reproduce idéntica desde el registro? */
+  @UseGuards(TeamAuthGuard)
+  @Get('me/replay')
+  replayCheck(@Req() req: TeamRequest) {
+    return this.service.replayCheck(req.teamMember);
+  }
+
+  /** Retrato trazable: instantánea vigente + declarado + decisiones. */
   @UseGuards(TeamAuthGuard)
   @Get('me/report')
   report(@Req() req: TeamRequest) {
@@ -120,5 +135,31 @@ export class TeamController {
   @Get('admin/members')
   listMembers() {
     return this.service.listMembers();
+  }
+
+  // ── Vista de investigación ──────────────────────────────────────────────
+
+  @UseGuards(TeamAdminGuard)
+  @Get('admin/members/:memberId/report')
+  adminReport(@Param('memberId') memberId: string) {
+    return this.service.adminReport(memberId);
+  }
+
+  @UseGuards(TeamAdminGuard)
+  @Get('admin/members/:memberId/claims/:claimKey/trace')
+  adminTrace(@Param('memberId') memberId: string, @Param('claimKey') claimKey: string) {
+    return this.service.adminTrace(memberId, claimKey);
+  }
+
+  @UseGuards(TeamAdminGuard)
+  @Get('admin/members/:memberId/export')
+  adminExport(@Param('memberId') memberId: string) {
+    return this.service.adminExport(memberId);
+  }
+
+  @UseGuards(TeamAdminGuard)
+  @Get('admin/members/:memberId/replay')
+  adminReplay(@Param('memberId') memberId: string) {
+    return this.service.adminReplay(memberId);
   }
 }

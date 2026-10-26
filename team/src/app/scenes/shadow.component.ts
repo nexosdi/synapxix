@@ -1,24 +1,28 @@
 import { Component, EventEmitter, OnInit, Output, inject, signal } from '@angular/core';
-import { ACTION_LABELS } from '../content';
-import { PulseApiService } from '../services/pulse-api.service';
+import type { SceneObservation } from '../scene-observation';
+import { PulseApiService, type ReviewResult, type ShadowDecision } from '../services/pulse-api.service';
 import { PulseSessionService } from '../services/pulse-session.service';
 import { UiService } from '../services/ui.service';
 
-interface ShadowDecision {
+type Verdict = 'approved' | 'edited' | 'rejected';
+
+const VERDICT_LABEL: Record<Verdict, string> = {
+  approved: 'aprobada',
+  edited: 'cambiada por otra opción',
+  rejected: 'rechazada',
+};
+
+export interface AssignedStep {
   decisionId: string;
-  action: string;
-  objective: string;
-  reasons: Array<{ referenceId: string; explanation: string }>;
-  confidence: number;
-  policyVersion: string;
-  expectedOutcome: { metric: string; probability: number } | null;
+  assigned: ReviewResult['assigned'];
+  verdict: Verdict;
 }
 
 /**
- * Cierre / Shadow mode. La recomendación NO es teatro: sale de la política
- * determinista real (core-policy-0.1.0) sobre el estado estimado con la
- * evidencia de esta sesión. El veredicto humano queda en el DecisionRecord
- * y el outcome cierra el ciclo.
+ * Escena decisión · shadow mode. La recomendación sale del catálogo del
+ * marco aplicado a la instantánea real de esta persona. Las razones están a
+ * un toque (abrirlas es observable) y el veredicto humano decide qué
+ * contenido se asigna: la máquina propone, la persona gobierna.
  */
 @Component({
   selector: 'synapxix-shadow',
@@ -27,59 +31,68 @@ interface ShadowDecision {
     <div class="mission">
       <aside class="rail">
         <span class="missionId">CIERRE / SHADOW MODE</span>
-        <span class="chainNote">estado → candidato → decisión → veredicto → outcome</span>
+        <span class="chainNote">instantánea → decisión → veredicto → contenido → resultado</span>
       </aside>
 
       <div class="game">
-        <p class="eyebrow"><b>DECISION RECORD</b> · POLÍTICA {{ decision()?.policyVersion ?? '…' }}</p>
-        <h2 style="margin: 0; letter-spacing: -0.04em">Tu primera recomendación.</h2>
+        <p class="eyebrow"><b>DECISIÓN</b> · {{ decision()?.policyVersion ?? '…' }}</p>
+        <h2 style="margin: 0; letter-spacing: -0.04em">La primera recomendación sobre ti.</h2>
         <p class="lead" style="margin: 14px 0 0">
-          La máquina propone; vos decidís. Calculada por el motor real con las señales de esta
-          sesión — y con las explicaciones alternativas todavía abiertas.
+          El sistema eligió un siguiente paso con lo que vio hasta ahora. Tú decides si se aplica.
         </p>
 
-        @if (decision(); as d) {
+        @if (error()) {
+          <div class="feedback bad" style="margin-top: 22px"><b>No pudimos calcularla.</b>{{ error() }}</div>
+        } @else if (decision(); as d) {
           <div class="shadowBox">
             <article class="record dark">
               <span class="recordLabel">RECOMENDACIÓN D.A.L.A.</span>
-              <h3>{{ actionLabel(d.action) }}</h3>
-              <p>{{ d.reasons[0].explanation }}</p>
-              <div class="codeList">
-                <div class="code">
-                  evidencia de sesión: {{ session.retryCount() }} reintentos ·
-                  {{ session.hintCount() }} ayudas · cambio de enfoque
-                  {{ session.shiftCount() > 0 ? 'sí' : 'no' }}
+              <h3>{{ d.label }}</h3>
+              <p>{{ d.objective }}</p>
+              @if (reasonsOpen()) {
+                <div class="codeList">
+                  @for (r of d.reasons; track $index) {
+                    <div class="code">{{ r.explanation }}</div>
+                  }
+                  <div class="code">se comprobará así: {{ d.verification }}</div>
+                  <div class="code">esperado antes de actuar: {{ d.expectedOutcome.description }}</div>
+                  <div class="code">sin probabilidad: el modelo no está calibrado</div>
                 </div>
-                <div class="code">objetivo: {{ d.objective }} · confianza {{ pct(d.confidence) }}</div>
-                <div class="code">restricción: no revelar respuesta ni atribuir rasgos</div>
-                @if (d.expectedOutcome) {
-                  <div class="code">
-                    esperado ANTES de intervenir: {{ d.expectedOutcome.metric }}
-                    ({{ pct(d.expectedOutcome.probability) }})
-                  </div>
-                }
-              </div>
+              } @else {
+                <button class="btn ghost" (click)="openReasons()">Ver las razones</button>
+              }
             </article>
 
             <article class="record">
-              <span class="recordLabel">VEREDICTO HUMANO</span>
-              <h3>¿Aplicarías esta decisión?</h3>
-              <p>Tu revisión no borra la recomendación original. Añade una capa de gobernanza.</p>
+              <span class="recordLabel">TU VEREDICTO</span>
+              <h3>¿Aplicamos este paso?</h3>
+              <p>Tu revisión no borra la recomendación: queda registrada al lado, y decide qué viene después.</p>
               <div class="verdicts">
                 <button class="verdict approve" [class.selected]="verdict() === 'approved'" (click)="setVerdict('approved')">Aprobar</button>
+                <button class="verdict" [class.selected]="verdict() === 'edited'" (click)="setVerdict('edited')">Elegir otra</button>
                 <button class="verdict reject" [class.selected]="verdict() === 'rejected'" (click)="setVerdict('rejected')">Rechazar</button>
-                <button class="verdict" [class.selected]="verdict() === 'ASK'" (click)="setVerdict('ASK')">Cambiar a ASK</button>
-                <button class="verdict" [class.selected]="verdict() === 'CLARIFY'" (click)="setVerdict('CLARIFY')">Cambiar a CLARIFY</button>
               </div>
-              <button class="btn primary wide" style="margin-top: 14px" [disabled]="!verdict() || closing()" (click)="closeLoop()">
-                {{ closing() ? 'REGISTRANDO…' : 'CERRAR EL CICLO →' }}
+              @if (verdict() === 'edited') {
+                <div class="altList">
+                  @for (alt of d.alternatives; track alt.id) {
+                    <button class="altOption" [class.selected]="chosen() === alt.id" (click)="chosen.set(alt.id)">
+                      <strong>{{ alt.label }}</strong>
+                      <small>Por qué no fue la primera: {{ alt.whyNot }}</small>
+                    </button>
+                  }
+                </div>
+              }
+              @if (verdict() === 'rejected') {
+                <p class="footNote">Si la rechazas, seguimos con el paso neutro: recoger más evidencia.</p>
+              }
+              <button class="btn primary wide" style="margin-top: 14px" [disabled]="!ready() || closing()" (click)="confirm()">
+                {{ closing() ? 'REGISTRANDO…' : 'CONFIRMAR VEREDICTO →' }}
               </button>
             </article>
           </div>
         } @else {
           <div class="feedback" style="margin-top: 22px">
-            <b>Consultando la política…</b>El motor está congelando un snapshot de tu estado y
-            eligiendo la acción con sus razones.
+            <b>Calculando…</b>El motor está proyectando tus eventos y consultando el catálogo de decisiones.
           </div>
         }
       </div>
@@ -87,61 +100,72 @@ interface ShadowDecision {
   `,
 })
 export class ShadowComponent implements OnInit {
-  readonly session = inject(PulseSessionService);
+  private readonly session = inject(PulseSessionService);
   private readonly api = inject(PulseApiService);
   private readonly ui = inject(UiService);
 
-  @Output() done = new EventEmitter<void>();
+  @Output() observe = new EventEmitter<SceneObservation>();
+  @Output() done = new EventEmitter<AssignedStep>();
 
   readonly decision = signal<ShadowDecision | null>(null);
-  readonly verdict = signal<'approved' | 'rejected' | 'ASK' | 'CLARIFY' | ''>('');
+  readonly verdict = signal<Verdict | null>(null);
+  readonly chosen = signal<string | null>(null);
+  readonly reasonsOpen = signal(false);
   readonly closing = signal(false);
+  readonly error = signal('');
 
   async ngOnInit() {
-    // Todo lo pendiente entra antes de decidir: la política ve la sesión completa.
-    await this.session.flushAll();
-    const d = await this.api.requestDecision();
-    this.decision.set({
-      decisionId: d.decision_id,
-      action: d.selected_action,
-      objective: d.objective,
-      reasons: d.reasons,
-      confidence: d.confidence,
-      policyVersion: d.policy_version,
-      expectedOutcome: d.expected_outcome,
-    });
-  }
-
-  actionLabel(action: string) {
-    return ACTION_LABELS[action] ?? action;
-  }
-
-  pct(x: number) {
-    return `${Math.round(x * 100)}%`;
-  }
-
-  setVerdict(v: 'approved' | 'rejected' | 'ASK' | 'CLARIFY') {
-    this.verdict.set(v);
-    this.session.tone(650);
-  }
-
-  async closeLoop() {
-    const decision = this.decision();
-    const verdict = this.verdict();
-    if (!decision || !verdict) return;
-    this.closing.set(true);
     try {
-      // "Cambiar a X" es el veredicto 'edited' del contrato, con la acción elegida.
-      const mapped = verdict === 'approved' ? 'approved' : verdict === 'rejected' ? 'rejected' : 'edited';
-      await this.api.review(decision.decisionId, mapped, mapped === 'edited' ? `prefer:${verdict}` : undefined);
-      await this.api.recordOutcome(decision.decisionId, 'onboarding-web-v1', {
-        completed: true,
-        humanVerdict: verdict,
-      });
-      this.ui.toast('Decisión, veredicto y outcome quedaron en la traza.');
-      this.done.emit();
+      // La decisión ve la sesión completa: todo lo pendiente entra antes.
+      await this.session.flush();
+      const d = await this.api.decide();
+      this.decision.set(d);
+      this.observe.emit({ type: 'recommendation_presented', opportunity: this.opp(d), payload: { selected: d.selected } });
+    } catch {
+      this.error.set('Revisa la conexión y vuelve a cargar: tus eventos siguen guardados.');
+    }
+  }
+
+  ready() {
+    const v = this.verdict();
+    return v !== null && (v !== 'edited' || this.chosen() !== null);
+  }
+
+  openReasons() {
+    const d = this.decision();
+    if (!d || this.reasonsOpen()) return;
+    this.reasonsOpen.set(true);
+    this.observe.emit({ type: 'reasons_opened', opportunity: this.opp(d) });
+  }
+
+  setVerdict(v: Verdict) {
+    this.verdict.set(v);
+    if (v !== 'edited') this.chosen.set(null);
+    this.ui.tone(650);
+  }
+
+  async confirm() {
+    const d = this.decision();
+    const verdict = this.verdict();
+    if (!d || !verdict || !this.ready()) return;
+    this.closing.set(true);
+    const chosen = this.chosen() ?? undefined;
+    this.observe.emit({
+      type: 'recommendation_reviewed',
+      opportunity: this.opp(d),
+      payload: { verdict, verdictLabel: VERDICT_LABEL[verdict], ...(chosen ? { chosen } : {}) },
+    });
+    try {
+      const result = await this.api.review(d.decisionId, verdict, chosen);
+      this.done.emit({ decisionId: d.decisionId, assigned: result.assigned, verdict });
+    } catch {
+      this.ui.toast('No pudimos registrar el veredicto. Intenta de nuevo.');
     } finally {
       this.closing.set(false);
     }
+  }
+
+  private opp(d: ShadowDecision) {
+    return { id: `decision:${d.decisionId}`, kind: 'recomendacion_ia' };
   }
 }

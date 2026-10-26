@@ -1,13 +1,19 @@
-import { Component, EventEmitter, OnInit, Output, computed, inject, signal } from '@angular/core';
-import { MISSION1_BUCKETS, MISSION1_HINT, MISSION1_INSTRUCTIONS, MISSION1_TASKS } from '../content';
+import { Component, EventEmitter, OnInit, Output, inject, signal } from '@angular/core';
+import { MISSION1_BUCKETS, MISSION1_CARDS, MISSION1_HINT, MISSION1_INSTRUCTIONS } from '../content';
+import type { SceneObservation } from '../scene-observation';
 import { PulseSessionService } from '../services/pulse-session.service';
 import { UiService } from '../services/ui.service';
 
+const SCENE = 'observatorio';
+const CONSIGNA = { id: `${SCENE}:consigna`, kind: 'consigna' };
+
+type Phase = 'answering' | 'failed' | 'solved';
+
 /**
- * Misión 01 / Observatorio — instrumento `categorization`.
- * Separar señal de historia: observado / declarado / inferido. Cada tarjeta
- * bien colocada se archiva visualmente en su categoría; equivocarse no
- * resta y queda registrado como reintento (eso también es señal).
+ * Misión 01 · Observatorio. Seis tarjetas, cada una una oportunidad con
+ * pista disponible. Tras un error la persona elige entre reintentar u
+ * omitir; tras acertar, abrir o no el porqué. Ninguna elección es mejor:
+ * todas quedan registradas con lo que estaba disponible.
  */
 @Component({
   selector: 'synapxix-mission-categorize',
@@ -18,26 +24,26 @@ import { UiService } from '../services/ui.service';
         <span class="missionId">MISIÓN 01 / OBSERVATORIO</span>
         <div class="signalMeter">
           <header><span>SEÑALES</span><b>{{ session.emittedCount() }}</b></header>
-          <div class="meter"><i [style.width.%]="meterPct()"></i></div>
+          <div class="meter"><i [style.width.%]="(index() / cards.length) * 100"></i></div>
         </div>
       </aside>
 
       <div class="game">
         <div class="gameHead">
           <div>
-            <p class="eyebrow"><b>INSTRUMENTO</b> · CATEGORIZATION</p>
+            <p class="eyebrow"><b>ESCENA</b> · OBSERVATORIO</p>
             <h2>¿Qué tipo de señal es?</h2>
             <p>Clasifica cada tarjeta. Equivocarte no resta nada.</p>
           </div>
           <div class="gameTools">
             <button class="tool" (click)="openInstructions()">? Consigna</button>
-            <button class="tool" (click)="hint()">✦ Pedir pista</button>
+            <button class="tool" [disabled]="hinted() || phase() === 'solved' || finished()" (click)="hint()">✦ Pedir pista</button>
           </div>
         </div>
 
         <div class="cardArena">
           @for (bucket of buckets; track bucket.id) {
-            <div class="bucket" [class.pulseHint]="hinted() && bucket.id === current()?.kind">
+            <div class="bucket">
               <div class="bucketHead">
                 <i>{{ bucket.icon }}</i>
                 <div>
@@ -56,29 +62,45 @@ import { UiService } from '../services/ui.service';
 
         @if (current(); as card) {
           <div class="promptCard">
-            <small>TARJETA {{ pad(cardNumber()) }} / 06</small>
+            <small>TARJETA {{ pad(index() + 1) }} / {{ pad(cards.length) }}</small>
             <p>{{ card.text }}</p>
-            <div class="promptActions">
-              @for (bucket of buckets; track bucket.id) {
-                <button (click)="answer(bucket.id)">Es {{ bucket.label.toLowerCase() }}</button>
-              }
-            </div>
+            @if (phase() !== 'solved') {
+              <div class="promptActions">
+                @for (bucket of buckets; track bucket.id) {
+                  <button (click)="answer(bucket.id)">Es {{ bucket.label.toLowerCase() }}</button>
+                }
+              </div>
+            }
           </div>
+
+          @if (phase() === 'failed') {
+            <div class="feedback bad">
+              <b>Todavía no.</b>¿Ocurrió, lo dijo alguien o es una interpretación? Puedes reintentar o seguir con la próxima.
+              <div class="feedbackActions">
+                <button class="btn ghost" (click)="skip()">Omitir esta tarjeta →</button>
+              </div>
+            </div>
+          }
+          @if (phase() === 'solved') {
+            <div class="feedback">
+              <b>Señal bien separada.</b>
+              @if (whyOpen()) {
+                <span class="whyText">{{ card.why }}</span>
+              }
+              <div class="feedbackActions">
+                @if (!whyOpen()) {
+                  <button class="btn ghost" (click)="openWhy()">¿Por qué?</button>
+                }
+                <button class="btn primary" (click)="next()">Siguiente →</button>
+              </div>
+            </div>
+          }
         } @else {
           <div class="promptCard">
             <small>OBSERVATORIO COMPLETO</small>
-            <p>Nodo de evidencia activado.</p>
+            <p>{{ summary() }}</p>
           </div>
-        }
-
-        @if (feedback(); as fb) {
-          <div class="feedback" [class.bad]="!fb.good"><b>{{ fb.title }}</b>{{ fb.text }}</div>
-        }
-
-        @if (finished()) {
-          <button class="btn primary" style="margin-top: 14px" (click)="continue_()">
-            ACTIVAR SIGUIENTE NODO →
-          </button>
+          <button class="btn primary" style="margin-top: 14px" (click)="done.emit()">ACTIVAR SIGUIENTE NODO →</button>
         }
       </div>
     </div>
@@ -88,122 +110,116 @@ export class MissionCategorizeComponent implements OnInit {
   readonly session = inject(PulseSessionService);
   private readonly ui = inject(UiService);
 
+  @Output() observe = new EventEmitter<SceneObservation>();
   @Output() done = new EventEmitter<void>();
 
   readonly buckets = MISSION1_BUCKETS;
-  readonly tasks = MISSION1_TASKS;
-  readonly taskIndex = signal(0);
-  readonly cardIndex = signal(0);
+  readonly cards = MISSION1_CARDS;
+  readonly index = signal(0);
+  readonly phase = signal<Phase>('answering');
   readonly hinted = signal(false);
+  readonly whyOpen = signal(false);
   readonly finished = signal(false);
-  readonly feedback = signal<{ good: boolean; title: string; text: string } | null>(null);
   readonly placed = signal<Record<string, string[]>>({ observed: [], reported: [], inferred: [] });
-  readonly meterPct = computed(() => Math.min(100, (this.session.emittedCount() / 34) * 100));
 
-  private attempt = 1;
-  private failedThis = false;
-  private shownAt = Date.now();
-  private locked = false;
-  private adapter: ReturnType<PulseSessionService['startInstrument']> | null = null;
+  private attempt = 0;
+  private skipped = 0;
 
   ngOnInit() {
-    this.adapter = this.session.startInstrument('categorization');
-    this.presentTask();
-  }
-
-  task() {
-    return this.tasks[this.taskIndex()];
+    this.observe.emit({ type: 'instruction_presented', opportunity: CONSIGNA });
+    this.present();
   }
 
   current() {
-    return this.finished() ? null : this.task().cards[this.cardIndex()];
-  }
-
-  cardNumber() {
-    return this.taskIndex() * 3 + this.cardIndex() + 1;
+    return this.finished() ? null : this.cards[this.index()];
   }
 
   pad(n: number) {
     return String(n).padStart(2, '0');
   }
 
-  private presentTask() {
-    const task = this.task();
-    this.session.interact(
-      { kind: 'task_shown', taskId: task.taskId, skillIds: [task.skillId], difficulty: 0.42 },
-    );
-    this.shownAt = Date.now();
+  summary() {
+    const solved = this.cards.length - this.skipped;
+    return `${solved} de ${this.cards.length} tarjetas clasificadas. Lo que hiciste en cada una ya es evidencia.`;
+  }
+
+  private opp() {
+    return { id: `${SCENE}:${this.cards[this.index()].id}`, kind: 'tarea' };
+  }
+
+  private present() {
+    const opportunity = this.opp();
+    this.attempt = 0;
+    this.phase.set('answering');
+    this.hinted.set(false);
+    this.whyOpen.set(false);
+    this.observe.emit({ type: 'task_presented', opportunity });
+    this.observe.emit({ type: 'options_presented', opportunity, payload: { options: this.buckets.map((b) => b.id) } });
+    this.observe.emit({ type: 'support_available', opportunity, payload: { support: 'pista' } });
   }
 
   openInstructions() {
-    this.session.interact({ kind: 'instructions_opened', taskId: this.task().taskId });
+    this.observe.emit({ type: 'instructions_opened', opportunity: CONSIGNA });
     this.ui.openModal(MISSION1_INSTRUCTIONS);
   }
 
   hint() {
-    if (this.locked || this.finished() || this.hinted()) return;
+    if (this.hinted() || this.phase() === 'solved' || this.finished()) return;
     this.hinted.set(true);
-    this.session.interact({ kind: 'hint', taskId: this.task().taskId, level: 1 });
+    const opportunity = this.opp();
+    this.observe.emit({ type: 'hint_requested', opportunity, payload: { level: 1 } });
+    this.observe.emit({ type: 'support_delivered', opportunity, payload: { support: 'pista' } });
     this.ui.openModal(MISSION1_HINT);
   }
 
   answer(bucketId: string) {
-    if (this.locked || this.finished()) return;
     const card = this.current();
-    if (!card) return;
+    if (!card || this.phase() === 'solved') return;
     const correct = card.kind === bucketId;
-
-    if (this.failedThis) {
-      this.session.interact({ kind: 'retry', taskId: this.task().taskId, attempt: ++this.attempt });
-    }
-    this.session.interact({
-      kind: 'answer',
-      taskId: this.task().taskId,
-      correct,
-      latencyMs: Date.now() - this.shownAt,
-      attempt: this.attempt,
+    this.attempt += 1;
+    this.observe.emit({
+      type: 'response_submitted',
+      opportunity: this.opp(),
+      payload: { correct, attempt: this.attempt, choice: bucketId },
     });
-
     if (!correct) {
-      this.failedThis = true;
-      this.session.tone(230);
-      this.feedback.set({
-        good: false,
-        title: 'Todavía no.',
-        text: 'Pregunta: ¿esto ocurrió, fue declarado o es una interpretación? Puedes reintentar sin penalización.',
-      });
+      this.phase.set('failed');
+      this.ui.tone(230);
       return;
     }
-
-    this.session.tone(720);
-    this.feedback.set({ good: true, title: 'Señal bien separada.', text: card.onCorrect });
+    this.ui.tone(720);
+    this.observe.emit({ type: 'task_completed', opportunity: this.opp() });
     this.placed.update((prev) => ({ ...prev, [card.kind]: [...prev[card.kind], card.text] }));
-    this.locked = true;
-    setTimeout(() => {
-      this.attempt = 1;
-      this.failedThis = false;
-      this.hinted.set(false);
-      this.feedback.set(null);
-      if (this.cardIndex() < this.task().cards.length - 1) {
-        this.cardIndex.update((i) => i + 1);
-        this.shownAt = Date.now();
-        this.locked = false;
-        return;
-      }
-      this.session.interact({ kind: 'complete', taskId: this.task().taskId });
-      if (this.taskIndex() < this.tasks.length - 1) {
-        this.taskIndex.update((i) => i + 1);
-        this.cardIndex.set(0);
-        this.presentTask();
-        this.locked = false;
-        return;
-      }
-      this.finished.set(true);
-      this.locked = false;
-    }, 1400);
+    this.observe.emit({ type: 'exploration_offered', opportunity: this.whyOpp() });
+    this.phase.set('solved');
   }
 
-  continue_() {
-    void this.session.endInstrument(true, this.adapter ?? undefined).then(() => this.done.emit());
+  skip() {
+    if (this.phase() !== 'failed') return;
+    this.observe.emit({ type: 'task_skipped', opportunity: this.opp() });
+    this.skipped += 1;
+    this.advance();
+  }
+
+  openWhy() {
+    this.whyOpen.set(true);
+    this.observe.emit({ type: 'exploration_opened', opportunity: this.whyOpp() });
+  }
+
+  next() {
+    this.advance();
+  }
+
+  private whyOpp() {
+    return { id: `${this.opp().id}:porque`, kind: 'exploracion' };
+  }
+
+  private advance() {
+    if (this.index() < this.cards.length - 1) {
+      this.index.update((i) => i + 1);
+      this.present();
+      return;
+    }
+    this.finished.set(true);
   }
 }
