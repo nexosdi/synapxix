@@ -3,14 +3,14 @@ import { CYCLE_STEPS, FORMAT_INTROS, FORMAT_LABELS, MISSION2_HINT, MISSION2_INST
 import type { SceneObservation } from '../scene-observation';
 import { PulseSessionService } from '../services/pulse-session.service';
 import { UiService } from '../services/ui.service';
-import { FormatChoiceComponent } from './format-choice.component';
+import { MissionPrepComponent, type Prep } from './mission-prep.component';
 
 const SCENE = 'ciclo';
 const CONSIGNA = { id: `${SCENE}:consigna`, kind: 'consigna' };
 const TASK = { id: `${SCENE}:secuencia`, kind: 'tarea' };
 const WHY = { id: `${SCENE}:secuencia:porque`, kind: 'exploracion' };
 /** Mezcla fija: comparable entre personas. */
-const POOL = ['Intervención', 'Estado', 'Actualización', 'Evidencia', 'Outcome', 'Decisión'];
+const POOL = ['Intervención', 'Estado', 'Actualización', 'Evidencia', 'Resultado', 'Decisión'];
 
 /**
  * Misión 02 · El ciclo. Construir la secuencia es acción, deshacer es
@@ -20,7 +20,7 @@ const POOL = ['Intervención', 'Estado', 'Actualización', 'Evidencia', 'Outcome
 @Component({
   selector: 'synapxix-mission-timeline',
   standalone: true,
-  imports: [FormatChoiceComponent],
+  imports: [MissionPrepComponent],
   template: `
     <div class="mission">
       <aside class="rail">
@@ -33,17 +33,18 @@ const POOL = ['Intervención', 'Estado', 'Actualización', 'Evidencia', 'Outcome
 
       <div class="game">
         @if (!format()) {
-          <synapxix-format-choice scene="ciclo" title="Cierra el ciclo." (observe)="observe.emit($event)" (chosen)="start($event)" />
+          <synapxix-mission-prep scene="ciclo" (observe)="observe.emit($event)" (begin)="start($event)" />
         } @else {
           <div class="gameHead">
             <div>
-              <p class="eyebrow"><b>ESCENA</b> · CICLO</p>
               <h2>Cierra el ciclo.</h2>
               <p class="formatIntro"><b>{{ formatLabel() }}</b>{{ intro() }}</p>
             </div>
             <div class="gameTools">
               <button class="tool" (click)="openInstructions()">? Consigna</button>
-              <button class="tool" [disabled]="hintVisible() || closed()" (click)="hint()">✦ Pedir pista</button>
+              @if (withHint) {
+                <button class="tool" [disabled]="hintVisible() || closed()" (click)="hint()">✦ Pedir pista</button>
+              }
             </div>
           </div>
 
@@ -81,7 +82,7 @@ const POOL = ['Intervención', 'Estado', 'Actualización', 'Evidencia', 'Outcome
           }
           @if (failed() && !closed()) {
             <div class="feedback bad">
-              <b>El ciclo todavía queda abierto.</b>Revisa qué debe existir antes de intervenir y qué debe observarse antes de actualizar.
+              <b>El ciclo queda abierto.</b>¿Qué tiene que pasar antes de actualizar?
               <div class="feedbackActions">
                 <button class="btn ghost" (click)="skip()">Omitir y seguir →</button>
               </div>
@@ -97,15 +98,15 @@ const POOL = ['Intervención', 'Estado', 'Actualización', 'Evidencia', 'Outcome
                 @if (!whyOpen()) {
                   <button class="btn ghost" (click)="openWhy()">¿Por qué?</button>
                 }
-                <button class="btn primary" (click)="done.emit()">CRUZAR A LA CÁMARA DE ECO →</button>
+                <button class="btn primary" (click)="done.emit()">VOLVER AL MAPA →</button>
               </div>
             </div>
           }
           @if (outcome() === 'skipped') {
             <div class="feedback">
-              <b>Seguimos.</b>Omitir también es una decisión válida y queda registrada como tal.
+              <b>Seguimos.</b>
               <div class="feedbackActions">
-                <button class="btn primary" (click)="done.emit()">CRUZAR A LA CÁMARA DE ECO →</button>
+                <button class="btn primary" (click)="done.emit()">VOLVER AL MAPA →</button>
               </div>
             </div>
           }
@@ -149,12 +150,15 @@ export class MissionTimelineComponent {
     return f ? FORMAT_INTROS.ciclo[f] : '';
   }
 
-  start(format: FormatId) {
-    this.format.set(format);
+  withHint = true;
+
+  start(prep: Prep) {
+    this.withHint = prep.mode === 'con_pista';
+    this.format.set(prep.format);
     this.observe.emit({ type: 'instruction_presented', opportunity: CONSIGNA });
     this.observe.emit({ type: 'task_presented', opportunity: TASK });
     this.observe.emit({ type: 'options_presented', opportunity: TASK, payload: { options: POOL } });
-    this.observe.emit({ type: 'support_available', opportunity: TASK, payload: { support: 'pista' } });
+    if (this.withHint) this.observe.emit({ type: 'support_available', opportunity: TASK, payload: { support: 'pista' } });
   }
 
   openInstructions() {
@@ -163,7 +167,7 @@ export class MissionTimelineComponent {
   }
 
   hint() {
-    if (this.hintVisible() || this.closed()) return;
+    if (!this.withHint || this.hintVisible() || this.closed()) return;
     this.observe.emit({ type: 'hint_requested', opportunity: TASK, payload: { level: 1 } });
     this.observe.emit({ type: 'support_delivered', opportunity: TASK, payload: { support: 'pista' } });
     this.hintVisible.set(true);

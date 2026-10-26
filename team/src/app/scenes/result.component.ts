@@ -21,7 +21,8 @@ import { RetratoComponent, type ClaimVerdict } from './retrato.component';
       <synapxix-retrato
         [report]="r"
         [replay]="replay()"
-        [heading]="'Esto es lo que vimos, ' + session.memberName().split(' ')[0] + '.'"
+        [heading]="session.memberName().split(' ')[0] + ', esto es lo que vimos.'"
+        [name]="session.memberName()"
         [reviewable]="true"
         [reviewed]="reviewed()"
         [traceLoader]="traceLoader"

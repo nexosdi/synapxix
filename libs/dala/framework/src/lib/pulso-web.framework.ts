@@ -1,5 +1,10 @@
 /**
- * Marco D.A.L.A. del piloto web "Primer Pulso" — versión pulso-web@0.1.
+ * Marco D.A.L.A. del piloto web "Primer Pulso" — versión pulso-web@0.2.
+ *
+ * 0.2: la escena de gustos reemplaza al portal (puerta + pares de
+ * actividades), el mapa deja elegir el orden de las misiones y cada misión
+ * ofrece jugar con o sin pista. Dos fichas nuevas: intereses declarados y
+ * búsqueda de desafío.
  *
  * Primera aplicación ejecutable del Modelo Fundacional 0.1. Población:
  * adultos (equipo e investigadores) como banco de pruebas, antes de las
@@ -17,7 +22,7 @@ const DESCRIPTIVA = (provisional: number, supported: number, scenes: number): Su
 const TAREA_EXPOSICION = ['task_presented', 'options_presented', 'support_available'] as const;
 
 export const PULSO_WEB_FRAMEWORK: DalaFramework = {
-  version: 'pulso-web@0.1',
+  version: 'pulso-web@0.2',
 
   ambitos: [
     {
@@ -231,6 +236,50 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
       decisionsInformed: [],
     },
     {
+      id: 'intereses_declarados',
+      version: '0.1',
+      ambito: 'intereses',
+      name: 'Intereses declarados',
+      question: '¿Qué tipo de actividad dice que le tienta más?',
+      operationalDefinition:
+        'Elecciones rápidas entre pares de actividades comparables; cada familia aparece el mismo número de veces.',
+      opportunityKind: 'preferencia',
+      observables: ['par presentado', 'actividad elegida'],
+      method: 'intereses@0.1',
+      claimTemplate: 'Entre {d} pares de actividades, eligió «{detail.top}» {n} veces.',
+      claimExtras: [{ when: 'segunda', text: 'Le siguió «{detail.second}».' }],
+      alternatives: [
+        'La redacción de una actividad pudo resultar más atractiva que la otra',
+        'Una preferencia de hoy, no un interés estable',
+        'Lo que se elige rápido no siempre es lo que se sostiene',
+      ],
+      nextCheck: 'Contrastar con qué contenido opcional elige y sostiene cuando puede elegir de verdad.',
+      limits: 'Es una declaración: no dice en qué es buena la persona ni qué rol le corresponde.',
+      sufficiency: DESCRIPTIVA(3, 12, 2),
+      decisionsInformed: [],
+    },
+    {
+      id: 'busqueda_de_desafio',
+      version: '0.1',
+      ambito: 'intereses',
+      name: 'Búsqueda de desafío',
+      question: '¿Elige jugar sin red cuando puede elegir?',
+      operationalDefinition: 'Elección entre jugar una misión con la pista disponible o sin ella, antes de empezarla.',
+      opportunityKind: 'eleccion_desafio',
+      observables: ['modos ofrecidos', 'modo elegido'],
+      method: 'desafio@0.1',
+      claimTemplate: 'Eligió jugar sin pista en {n} de {d} misiones en que pudo elegir.',
+      alternatives: [
+        'Confianza en un tema que ya conocía',
+        'Ganas de terminar más rápido',
+        'Curiosidad por probar el otro modo',
+      ],
+      nextCheck: 'Ofrecer la misma elección en tareas de dificultad conocida y ver si el desempeño la acompaña.',
+      limits: 'No describe ambición ni tolerancia al riesgo como rasgos.',
+      sufficiency: DESCRIPTIVA(1, 3, 3),
+      decisionsInformed: [],
+    },
+    {
       id: 'coherencia_declarado_observado',
       version: '0.1',
       ambito: 'intereses',
@@ -277,30 +326,60 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
 
   scenes: [
     {
-      id: 'portal',
-      version: '0.1',
-      title: 'La puerta de entrada',
-      purpose: 'Recoger una preferencia declarada para contrastarla con elecciones posteriores.',
+      id: 'gustos',
+      version: '0.2',
+      title: 'Gustos',
+      purpose: 'Recoger preferencias declaradas: cómo prefiere entender algo nuevo y qué actividades le tientan.',
       opportunities: [
         {
           kind: 'declaracion',
-          description: 'Elegir por qué puerta entrar: ver el sistema, vivir una historia o entender la arquitectura.',
+          description: 'Elegir cómo prefiere entender algo nuevo: mapa, historia o reglas.',
+          exposureEvents: ['options_presented'],
+          actionEvents: ['declaration_made'],
+        },
+        {
+          kind: 'preferencia',
+          description: 'Seis pares de actividades; cada familia (crear, analizar, acompañar, construir) aparece tres veces.',
           exposureEvents: ['options_presented'],
           actionEvents: ['declaration_made'],
         },
       ],
       affordances: {},
-      variablesToControl: ['orden de las puertas'],
+      variablesToControl: ['orden de los pares', 'lado de cada actividad'],
       exclusions: [],
-      contrast: 'Elecciones de formato en las misiones 2 y 3.',
+      contrast: 'Elecciones de formato y de ruta en las misiones.',
+    },
+    {
+      id: 'mapa',
+      version: '0.2',
+      title: 'El mapa del núcleo',
+      purpose: 'Dejar que la persona elija el orden de las misiones.',
+      opportunities: [
+        {
+          kind: 'eleccion_ruta',
+          description: 'Elegir la próxima misión entre las que faltan.',
+          exposureEvents: ['choice_offered'],
+          actionEvents: ['choice_made'],
+        },
+      ],
+      affordances: {},
+      variablesToControl: ['posición de cada misión en el mapa'],
+      exclusions: [],
+      contrast: 'Orden elegido en otra sesión.',
     },
     {
       id: 'observatorio',
-      version: '0.1',
+      version: '0.2',
       title: 'Misión 01 · Observatorio',
       purpose: 'Clasificar señales en observado, declarado e inferido.',
       skill: 'clasificar_fuentes',
       opportunities: [
+        {
+          kind: 'eleccion_desafio',
+          description: 'Elegir jugar con la pista disponible o sin ella.',
+          exposureEvents: ['choice_offered'],
+          actionEvents: ['choice_made'],
+        },
         {
           kind: 'consigna',
           description: 'Consigna disponible antes de empezar.',
@@ -327,11 +406,17 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
     },
     {
       id: 'ciclo',
-      version: '0.1',
+      version: '0.2',
       title: 'Misión 02 · El ciclo',
       purpose: 'Ordenar las seis piezas del ciclo de evidencia.',
       skill: 'ciclo_dala',
       opportunities: [
+        {
+          kind: 'eleccion_desafio',
+          description: 'Elegir jugar con la pista disponible o sin ella.',
+          exposureEvents: ['choice_offered'],
+          actionEvents: ['choice_made'],
+        },
         {
           kind: 'eleccion_formato',
           description: 'Elegir cómo entrar al reto: mapa, historia o reglas, en orden alternado.',
@@ -373,11 +458,17 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
     },
     {
       id: 'camara',
-      version: '0.1',
+      version: '0.2',
       title: 'Misión 03 · Cámara de eco',
       purpose: 'Detectar la afirmación que dice más de lo que la evidencia sostiene.',
       skill: 'detectar_sobreinferencia',
       opportunities: [
+        {
+          kind: 'eleccion_desafio',
+          description: 'Elegir jugar con la pista disponible o sin ella.',
+          exposureEvents: ['choice_offered'],
+          actionEvents: ['choice_made'],
+        },
         {
           kind: 'eleccion_formato',
           description: 'Elegir cómo entrar al reto, con el orden de las opciones invertido respecto de la misión 2.',

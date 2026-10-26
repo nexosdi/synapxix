@@ -43,7 +43,7 @@ export class PulseSessionService {
       deviceClass: /mobile|android|iphone/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
       locale: navigator.language,
     });
-    this.bridge.startSession(this.sceneRef('portal'));
+    this.bridge.startSession(this.sceneRef('gustos'));
     this.sync();
     if (!this.flushTimer) this.flushTimer = setInterval(() => void this.flush(), 4000);
     // Interrupciones: contexto para interpretar, nunca rasgo.

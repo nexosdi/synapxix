@@ -6,6 +6,15 @@ import type { PulseReport, ReplayCheck, TraceResult } from '../services/pulse-ap
 export type ClaimVerdict = 'si' | 'en_parte' | 'no';
 
 const ORIGIN_LABEL: Record<string, string> = { observed: 'observado', reported: 'declarado' };
+const SHORT: Record<string, string> = {
+  conocimientos: 'Conocimientos',
+  pensamiento: 'Pensamiento',
+  autorregulacion: 'Autorregulación',
+  interaccion: 'Interacción',
+  intereses: 'Intereses',
+  digital_ia: 'IA',
+  contexto: 'Contexto',
+};
 const CONTEXT_LABEL: Record<string, string> = {
   marco: 'Marco',
   sesiones: 'Sesiones',
@@ -27,47 +36,90 @@ const CONTEXT_LABEL: Record<string, string> = {
   template: `
     <div class="retrato">
       <header class="retratoHero">
-        <p class="eyebrow">
-          <b>RETRATO TRAZABLE</b> · {{ report.snapshot.frameworkVersion }} · {{ report.snapshot.engineVersion }}
-        </p>
-        <h1>Esto no dice quién eres.<br /><em>Dice qué hiciste hoy, y con cuánta evidencia.</em></h1>
-        <p class="lead">
-          {{ heading }} Cada afirmación se apoya en decisiones concretas tomadas en la experiencia, con
-          su denominador: cuántas veces hubo oportunidad. Ninguna es un rasgo; todas se pueden recorrer
-          hasta los eventos.
-        </p>
-        <div class="facts">
-          @for (f of facts(); track f.label) {
-            <div><strong>{{ f.value }}</strong><span>{{ f.label }}</span></div>
-          }
-        </div>
-        <div class="replayBadge" [class.ok]="replay?.reproducible === true" [class.bad]="replay?.reproducible === false">
-          @if (replay?.reproducible === true) {
-            ✓ Reproducible: recalculado desde los {{ replay?.events }} eventos, mismo resultado.
-          } @else if (replay?.reproducible === false) {
-            ✗ El recálculo no coincide con la instantánea guardada. Revisar el motor.
-          } @else {
-            … Comprobando que el retrato se puede recalcular desde los eventos.
-          }
-        </div>
+        <p class="eyebrow"><b>TU MODELO DINÁMICO</b> · {{ report.snapshot.frameworkVersion }}</p>
+        <h1>{{ heading }}</h1>
+        <p class="lead">Lo que hiciste hoy, con su evidencia. Cambia cada vez que juegas.</p>
       </header>
 
-      @if (cycle(); as c) {
-        <section class="cycleStrip">
-          <div><small>RECOMENDACIÓN</small><b>{{ c.recommended }}</b></div>
-          <i>→</i>
-          <div><small>VEREDICTO</small><b>{{ c.verdict }}</b></div>
-          <i>→</i>
-          <div><small>SE APLICÓ</small><b>{{ c.assigned }}</b></div>
-          <i>→</i>
-          <div><small>CONTRASTE</small><b>{{ c.result }}</b></div>
-        </section>
-      }
+      <div class="modelLayout">
+        <div class="modelStar">
+          <svg viewBox="-78 -20 556 440" role="group" aria-label="Tu modelo por ámbitos">
+            @for (ring of [70, 112, 154]; track ring) {
+              <circle class="ring" cx="200" cy="200" [attr.r]="ring" />
+            }
+            @for (r of rays(); track r.id) {
+              <g
+                class="ray"
+                [class.selected]="selected() === r.id"
+                [class.empty]="!r.nodes.length"
+                tabindex="0"
+                role="button"
+                [attr.aria-label]="r.name + ': ' + r.nodes.length + (r.nodes.length === 1 ? ' afirmación' : ' afirmaciones')"
+                [attr.aria-pressed]="selected() === r.id"
+                (click)="select(r.id)"
+                (keydown.enter)="select(r.id)"
+                (keydown.space)="select(r.id); $event.preventDefault()"
+              >
+                <line class="hit" x1="200" y1="200" [attr.x2]="r.lx" [attr.y2]="r.ly" />
+                <line class="spoke" [attr.x1]="r.x0" [attr.y1]="r.y0" [attr.x2]="r.x1" [attr.y2]="r.y1" />
+                @for (n of r.nodes; track $index) {
+                  <circle class="node s-{{ n.status }}" [attr.cx]="n.x" [attr.cy]="n.y" r="9" />
+                }
+                <text [attr.x]="r.lx" [attr.y]="r.ly" [attr.text-anchor]="r.anchor" dominant-baseline="middle">{{ r.short }}</text>
+              </g>
+            }
+            <circle class="coreDisc" cx="200" cy="200" r="34" />
+            <text class="coreInitial" x="200" y="201" text-anchor="middle" dominant-baseline="middle">{{ initial() }}</text>
+          </svg>
+          <div class="legend">
+            <span><i class="key s-sin_oportunidad_suficiente"></i>falta evidencia</span>
+            <span><i class="key s-hipotesis_provisional"></i>hipótesis</span>
+            <span><i class="key s-respaldada_en_contexto"></i>respaldada</span>
+          </div>
+        </div>
 
-      @for (ambito of report.framework.ambitos; track ambito.id; let i = $index) {
+        <aside class="gustosPanel">
+          @if (interests(); as list) {
+            <small>LO QUE DIJISTE QUE TE TIENTA</small>
+            <ul class="interestList">
+              @for (it of list; track it.label) {
+                <li>
+                  <span>{{ it.label }}</span>
+                  <b class="ratio">
+                    @for (d of [1, 2, 3]; track d) {
+                      <i [class.on]="d <= it.n"></i>
+                    }
+                  </b>
+                </li>
+              }
+            </ul>
+          }
+          @for (c of highlights(); track c.key) {
+            <p class="highlight"><span class="origin">{{ origins(c) }}</span>{{ c.claim }}</p>
+          }
+          @if (cycle(); as c) {
+            <div class="cycleMini">
+              <small>LA IA PROPUSO</small>
+              <b>{{ c.recommended }}</b>
+              <span>{{ c.verdict }} · se aplicó {{ c.assigned }} · {{ c.result }}</span>
+            </div>
+          }
+          <div class="replayBadge" [class.ok]="replay?.reproducible === true" [class.bad]="replay?.reproducible === false">
+            @if (replay?.reproducible === true) {
+              ✓ Recalculado desde {{ replay?.events }} eventos: idéntico
+            } @else if (replay?.reproducible === false) {
+              ✗ El recálculo no coincide
+            } @else {
+              … comprobando el recálculo
+            }
+          </div>
+        </aside>
+      </div>
+
+      @for (ambito of shown(); track ambito.id) {
         <section class="ambito">
           <header class="ambitoHead">
-            <small>ÁMBITO {{ pad(i + 1) }}</small>
+            <small>ÁMBITO {{ pad(ambitoIndex(ambito.id) + 1) }}</small>
             <h2>{{ ambito.name }}</h2>
             <p>{{ ambito.question }}</p>
           </header>
@@ -190,12 +242,15 @@ export class RetratoComponent {
   @Input({ required: true }) report!: PulseReport;
   @Input() replay: ReplayCheck | null = null;
   @Input() heading = '';
+  @Input() name = '';
   @Input() reviewable = false;
   @Input() reviewed: Record<string, ClaimVerdict> = {};
   @Input({ required: true }) traceLoader!: (claimKey: string) => Promise<TraceResult>;
   @Output() review = new EventEmitter<{ claimKey: string; verdict: ClaimVerdict }>();
 
   readonly trace = signal<TraceResult | null>(null);
+  /** Ámbito abierto en el detalle; por defecto, el primero con evidencia. */
+  private readonly picked = signal<string | null>(null);
   readonly traceLoading = signal(false);
   readonly verdicts: Array<{ id: ClaimVerdict; label: string }> = [
     { id: 'si', label: 'Sí' },
@@ -203,23 +258,77 @@ export class RetratoComponent {
     { id: 'no', label: 'No' },
   ];
 
+  selected() {
+    const claims = this.claimsBy();
+    return this.picked() ?? this.report.framework.ambitos.find((a) => claims.has(a.id))?.id ?? 'conocimientos';
+  }
+
+  select(id: string) {
+    this.picked.set(id);
+  }
+
+  shown() {
+    return this.report.framework.ambitos.filter((a) => a.id === this.selected());
+  }
+
+  ambitoIndex(id: string) {
+    return this.report.framework.ambitos.findIndex((a) => a.id === id);
+  }
+
+  initial() {
+    return (this.name || this.report.member.name || '·').trim().charAt(0).toUpperCase();
+  }
+
+  /** Geometría de la estrella: un rayo por ámbito, un nodo por afirmación. */
+  rays() {
+    const claims = this.claimsBy();
+    const ambitos = this.report.framework.ambitos;
+    return ambitos.map((a, i) => {
+      const angle = ((-90 + (i * 360) / ambitos.length) * Math.PI) / 180;
+      const at = (r: number) => ({ x: 200 + r * Math.cos(angle), y: 200 + r * Math.sin(angle) });
+      const list = claims.get(a.id) ?? [];
+      const nodes = list.map((c, j) => ({ ...at(70 + j * 28), status: c.evidenceStatus }));
+      const [p0, p1, pl] = [at(40), at(Math.max(70, 70 + (list.length - 1) * 28)), at(186)];
+      const cos = Math.cos(angle);
+      return {
+        id: a.id,
+        name: a.name,
+        short: SHORT[a.id] ?? a.name,
+        nodes,
+        x0: p0.x,
+        y0: p0.y,
+        x1: list.length ? p1.x : at(154).x,
+        y1: list.length ? p1.y : at(154).y,
+        lx: pl.x,
+        ly: pl.y,
+        anchor: Math.abs(cos) < 0.2 ? 'middle' : cos > 0 ? 'start' : 'end',
+      };
+    });
+  }
+
+  /** Familias de intereses declaradas, de la más elegida a la menos. */
+  interests() {
+    const c = this.report.snapshot.claims.find((x) => x.key === 'intereses_declarados');
+    const ranking = String(c?.observation.detail['ranking'] ?? '');
+    if (!ranking) return null;
+    return ranking.split(',').map((r) => {
+      const [label, n] = r.split(':');
+      return { label, n: Number(n) };
+    });
+  }
+
+  /** Lo que más dice de sus preferencias en acción. */
+  highlights() {
+    const keys = ['coherencia_declarado_observado', 'busqueda_de_desafio', 'exploracion_voluntaria'];
+    return this.report.snapshot.claims.filter((c) => keys.includes(c.key) && c.observation.denominator > 0);
+  }
+
   claimsBy() {
     const map = new Map<string, DalaClaim[]>();
     for (const c of this.report.snapshot.claims) {
       map.set(c.ambito, [...(map.get(c.ambito) ?? []), c]);
     }
     return map;
-  }
-
-  facts() {
-    const snap = this.report.snapshot;
-    const ctx = snap.context;
-    return [
-      { value: String(ctx['eventos'] ?? snap.eventRange.count), label: 'eventos' },
-      { value: String(snap.claims.filter((c) => c.observation.denominator > 0).length), label: 'afirmaciones con evidencia' },
-      { value: `${snap.coverage.filter((a) => a.observed).length} / ${snap.coverage.length}`, label: 'ámbitos con oportunidad' },
-      { value: String(ctx['minutos'] ?? '—'), label: 'minutos' },
-    ];
   }
 
   contextFacts() {

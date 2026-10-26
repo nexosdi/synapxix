@@ -2,9 +2,11 @@ import { Component, HostListener, OnDestroy, computed, inject, signal } from '@a
 import { PULSO_WEB_FRAMEWORK } from '@nexosdi.synapxix/dala/framework';
 import { PulseSessionService } from './services/pulse-session.service';
 import { UiService } from './services/ui.service';
+import { IntroComponent } from './scenes/intro.component';
 import { EntryComponent } from './scenes/entry.component';
-import { VisionComponent } from './scenes/vision.component';
-import { PortalComponent } from './scenes/portal.component';
+import { DalaIntroComponent } from './scenes/dala-intro.component';
+import { GustosComponent } from './scenes/gustos.component';
+import { MapaComponent } from './scenes/mapa.component';
 import { MissionCategorizeComponent } from './scenes/mission-categorize.component';
 import { MissionTimelineComponent } from './scenes/mission-timeline.component';
 import { MissionIntruderComponent } from './scenes/mission-intruder.component';
@@ -12,10 +14,31 @@ import { ShadowComponent, type AssignedStep } from './scenes/shadow.component';
 import { ContrastComponent } from './scenes/contrast.component';
 import { ResultComponent } from './scenes/result.component';
 import { InvestigacionComponent } from './scenes/investigacion.component';
+import type { MissionScreen } from './content';
 import { SCENE_OF_SCREEN } from './scene-observation';
 
-const SCREENS = ['entry', 'vision', 'portal', 'categorize', 'timeline', 'intruder', 'shadow', 'contrast', 'result'] as const;
+const SCREENS = [
+  'intro',
+  'entry',
+  'dala',
+  'gustos',
+  'mapa',
+  'categorize',
+  'timeline',
+  'intruder',
+  'shadow',
+  'contrast',
+  'result',
+] as const;
 type Screen = (typeof SCREENS)[number];
+
+/** Los cuatro actos: Synapxix → D.A.L.A. → el juego → tu modelo. */
+const ACTS = [
+  { roman: 'I', label: 'Synapxix', screens: ['intro', 'entry'] },
+  { roman: 'II', label: 'D.A.L.A.', screens: ['dala'] },
+  { roman: 'III', label: 'El juego', screens: ['gustos', 'mapa', 'categorize', 'timeline', 'intruder', 'shadow', 'contrast'] },
+  { roman: 'IV', label: 'Tu modelo', screens: ['result'] },
+];
 
 /**
  * Primer Pulso · piloto D.A.L.A. (marco pulso-web@0.1) — cáscara.
@@ -27,9 +50,11 @@ type Screen = (typeof SCREENS)[number];
   selector: 'synapxix-root',
   standalone: true,
   imports: [
+    IntroComponent,
     EntryComponent,
-    VisionComponent,
-    PortalComponent,
+    DalaIntroComponent,
+    GustosComponent,
+    MapaComponent,
     MissionCategorizeComponent,
     MissionTimelineComponent,
     MissionIntruderComponent,
@@ -49,35 +74,53 @@ type Screen = (typeof SCREENS)[number];
           <button class="sound" (click)="toggleSound()" aria-label="Activar o silenciar sonido">
             {{ ui.soundOn() ? '♪' : '×' }}
           </button>
-          <div class="status">
-            <i class="dot" [class.live]="screen() !== 'entry'"></i>
-            <span>{{ statusText() }}</span>
-          </div>
+          @if (session.emittedCount() > 0) {
+            <div class="status">
+              <i class="dot live"></i>
+              <span>{{ session.emittedCount() }} SEÑALES</span>
+            </div>
+          }
         </div>
       </header>
-      <div class="progress"><i [style.width.%]="progress()"></i></div>
+      @if (!research) {
+        <nav class="acts" aria-label="Actos de la experiencia">
+          @for (a of acts; track a.roman; let i = $index) {
+            <span [class.on]="i <= actIndex()" [class.now]="i === actIndex()" [attr.aria-current]="i === actIndex() ? 'step' : null">
+              <b>{{ a.roman }}</b>{{ a.label }}
+            </span>
+          }
+        </nav>
+      }
 
       @if (research) {
         <section class="screen"><synapxix-investigacion /></section>
       } @else {
       @switch (screen()) {
+        @case ('intro') {
+          <section class="screen"><synapxix-intro (done)="go('entry')" /></section>
+        }
         @case ('entry') {
-          <section class="screen"><synapxix-entry (done)="go('vision')" /></section>
+          <section class="screen"><synapxix-entry (done)="go('dala')" /></section>
         }
-        @case ('vision') {
-          <section class="screen"><synapxix-vision (done)="go('portal')" /></section>
+        @case ('dala') {
+          <section class="screen"><synapxix-dala-intro (done)="go('gustos')" /></section>
         }
-        @case ('portal') {
-          <section class="screen"><synapxix-portal (observe)="session.observe($event)" (done)="go('categorize')" /></section>
+        @case ('gustos') {
+          <section class="screen"><synapxix-gustos (observe)="session.observe($event)" (done)="go('mapa')" /></section>
+        }
+        @case ('mapa') {
+          <section class="screen">
+            <synapxix-mapa [completed]="completed()" (observe)="session.observe($event)" (chosen)="go($event)" (finish)="go('shadow')" />
+          </section>
         }
         @case ('categorize') {
-          <section class="screen"><synapxix-mission-categorize (observe)="session.observe($event)" (done)="go('timeline')" /></section>
+          <section class="screen"><synapxix-mission-categorize (observe)="session.observe($event)" (done)="complete('categorize')" /></section>
         }
         @case ('timeline') {
-          <section class="screen"><synapxix-mission-timeline (observe)="session.observe($event)" (done)="go('intruder')" /></section>
+          <section class="screen"><synapxix-mission-timeline (observe)="session.observe($event)" (done)="complete('timeline')" /></section>
         }
         @case ('intruder') {
-          <section class="screen"><synapxix-mission-intruder (observe)="session.observe($event)" (done)="go('shadow')" /></section>
+          <section class="screen"><synapxix-mission-intruder (observe)="session.observe($event)" (done)="complete('intruder')" /></section>
         }
         @case ('shadow') {
           <section class="screen"><synapxix-shadow (observe)="session.observe($event)" (done)="assigned.set($event); go('contrast')" /></section>
@@ -94,8 +137,8 @@ type Screen = (typeof SCREENS)[number];
       }
 
       <footer class="footer">
-        <span>PILOTO D.A.L.A. · MARCO {{ frameworkVersion }} · ADULTOS 21–36</span>
-        <span>ESCENA → OPORTUNIDAD → ACCIÓN → EVIDENCIA → AFIRMACIÓN → DECISIÓN → RESULTADO</span>
+        <span>SYNAPXIX · PRIMER PULSO</span>
+        <span>D.A.L.A. {{ frameworkVersion }}</span>
       </footer>
 
       @if (session.pendingEvents() > 0) {
@@ -138,18 +181,18 @@ export class AppComponent implements OnDestroy {
 
   readonly research = new URLSearchParams(location.search).has('investigacion');
   readonly frameworkVersion = PULSO_WEB_FRAMEWORK.version;
-  readonly screen = signal<Screen>('entry');
+  readonly screen = signal<Screen>('intro');
   readonly assigned = signal<AssignedStep | null>(null);
-  /** El puente arranca la sesión en el portal. */
-  private currentScene = 'portal';
-  readonly progress = computed(() => (SCREENS.indexOf(this.screen()) / (SCREENS.length - 1)) * 100);
-  readonly statusText = computed(() =>
-    this.screen() === 'entry'
-      ? 'NÚCLEO EN ESPERA'
-      : this.screen() === 'result'
-        ? `RETRATO · ${this.session.emittedCount()} SEÑALES`
-        : `NÚCLEO ACTIVO · ${this.session.emittedCount()} SEÑALES`,
-  );
+  readonly completed = signal<MissionScreen[]>([]);
+  readonly acts = ACTS;
+  readonly actIndex = computed(() => ACTS.findIndex((a) => a.screens.includes(this.screen())));
+  /** El puente arranca la sesión en la escena de gustos. */
+  private currentScene = 'gustos';
+
+  complete(mission: MissionScreen) {
+    this.completed.update((c) => (c.includes(mission) ? c : [...c, mission]));
+    this.go('mapa');
+  }
 
   go(next: Screen) {
     const scene = SCENE_OF_SCREEN[next];

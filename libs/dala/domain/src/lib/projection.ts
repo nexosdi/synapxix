@@ -21,7 +21,7 @@ import type {
 } from '@nexosdi.synapxix/dala/contracts';
 import type { ConstructSheet, DalaFramework, MethodRef } from '@nexosdi.synapxix/dala/framework';
 
-export const PROJECTION_ENGINE_VERSION = 'pulso-engine@0.1.3';
+export const PROJECTION_ENGINE_VERSION = 'pulso-engine@0.2.0';
 
 // ── 1. Orden canónico ──────────────────────────────────────────────────────
 
@@ -319,6 +319,49 @@ const METHODS: Record<MethodRef, (ctx: MethodContext) => Group[]> = {
     return [g];
   },
 
+  /** Preferencias declaradas en pares: la familia más elegida y la siguiente. */
+  'intereses@0.1': (ctx) => {
+    const g = newGroup();
+    const counts = new Map<string, { label: string; n: number; first: number }>();
+    for (const opp of ctx.opps.filter((o) => o.kind === 'preferencia')) {
+      const made = ofType(opp, 'declaration_made').at(-1);
+      if (!made) continue;
+      g.denominator += 1;
+      g.scenes.add(opp.scene);
+      g.refs.push(made.e.eventId);
+      const value = String(made.e.payload['value']);
+      const entry = counts.get(value) ?? { label: String(made.e.payload['label'] ?? value), n: 0, first: made.i };
+      entry.n += 1;
+      counts.set(value, entry);
+    }
+    // Empates: gana la familia elegida primero (determinista).
+    const ranked = [...counts.values()].sort((a, b) => b.n - a.n || a.first - b.first);
+    if (ranked[0]) {
+      g.numerator = ranked[0].n;
+      g.detail['top'] = ranked[0].label;
+    }
+    if (ranked[1]) {
+      g.detail['second'] = ranked[1].label;
+      g.detail['segunda'] = ranked[1].n;
+    }
+    if (ranked.length > 0) g.detail['ranking'] = ranked.map((r) => `${r.label}:${r.n}`).join(',');
+    return [g];
+  },
+
+  /** Elección de jugar sin pista cuando se ofrece el modo. */
+  'desafio@0.1': (ctx) => {
+    const g = newGroup();
+    for (const opp of ctx.opps.filter((o) => o.kind === 'eleccion_desafio')) {
+      const made = first(opp, 'choice_made');
+      if (!made) continue;
+      g.denominator += 1;
+      g.scenes.add(opp.scene);
+      g.refs.push(made.e.eventId);
+      if (made.e.payload['choice'] === 'sin_pista') g.numerator += 1;
+    }
+    return [g];
+  },
+
   /** Triangulación: preferencia declarada contra elecciones posteriores. */
   'coherencia@0.1': (ctx) => {
     const g = newGroup();
@@ -366,6 +409,12 @@ const METHODS: Record<MethodRef, (ctx: MethodContext) => Group[]> = {
 };
 
 // ── 4. Afirmaciones ────────────────────────────────────────────────────────
+
+/** Métodos que leen declaraciones: su afirmación viaja con ese origen. */
+const ORIGINS: Partial<Record<string, DalaClaim['origins']>> = {
+  'coherencia@0.1': ['reported', 'observed'],
+  'intereses@0.1': ['reported'],
+};
 
 const STATUS_TEXT: Record<DalaEvidenceStatus, string> = {
   sin_oportunidad_suficiente: 'sin oportunidad suficiente',
@@ -419,7 +468,10 @@ export function projectSubject(
   fw: DalaFramework,
   options: ProjectionOptions = {},
 ): DalaSnapshotV2 {
-  const canonical = orderEvents(events.filter((e) => e.subjectId === subjectId));
+  // Un retrato es relativo a un marco: eventos de otra versión no se mezclan.
+  const canonical = orderEvents(
+    events.filter((e) => e.subjectId === subjectId && e.context?.frameworkVersion === fw.version),
+  );
   const ordered: Ordered[] = canonical.map((e, i) => ({ e, i }));
   const ctx: MethodContext = { opps: buildOpportunities(ordered), ordered, fw };
   const previousByKey = new Map((options.previous ?? []).map((c) => [c.key, c]));
@@ -459,7 +511,7 @@ export function projectSubject(
         evidenceStatus: status,
         reviewStatus: reviewStatusFor(key, ordered),
         calibratedProbability: null,
-        origins: sheet.method === 'coherencia@0.1' ? ['reported', 'observed'] : ['observed'],
+        origins: ORIGINS[sheet.method] ?? ['observed'],
         evidenceRefs: [...new Set(g.refs)],
         methodRef: sheet.method,
         alternatives: sheet.alternatives,

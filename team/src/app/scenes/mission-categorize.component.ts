@@ -1,8 +1,9 @@
-import { Component, EventEmitter, OnInit, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
 import { MISSION1_BUCKETS, MISSION1_CARDS, MISSION1_HINT, MISSION1_INSTRUCTIONS } from '../content';
 import type { SceneObservation } from '../scene-observation';
 import { PulseSessionService } from '../services/pulse-session.service';
 import { UiService } from '../services/ui.service';
+import { MissionPrepComponent, type Prep } from './mission-prep.component';
 
 const SCENE = 'observatorio';
 const CONSIGNA = { id: `${SCENE}:consigna`, kind: 'consigna' };
@@ -18,6 +19,7 @@ type Phase = 'answering' | 'failed' | 'solved';
 @Component({
   selector: 'synapxix-mission-categorize',
   standalone: true,
+  imports: [MissionPrepComponent],
   template: `
     <div class="mission">
       <aside class="rail">
@@ -29,15 +31,18 @@ type Phase = 'answering' | 'failed' | 'solved';
       </aside>
 
       <div class="game">
+        @if (!prep()) {
+          <synapxix-mission-prep scene="observatorio" (observe)="observe.emit($event)" (begin)="start($event)" />
+        } @else {
         <div class="gameHead">
           <div>
-            <p class="eyebrow"><b>ESCENA</b> · OBSERVATORIO</p>
             <h2>¿Qué tipo de señal es?</h2>
-            <p>Clasifica cada tarjeta. Equivocarte no resta nada.</p>
           </div>
           <div class="gameTools">
             <button class="tool" (click)="openInstructions()">? Consigna</button>
-            <button class="tool" [disabled]="hinted() || phase() === 'solved' || finished()" (click)="hint()">✦ Pedir pista</button>
+            @if (withHint()) {
+              <button class="tool" [disabled]="hinted() || phase() === 'solved' || finished()" (click)="hint()">✦ Pedir pista</button>
+            }
           </div>
         </div>
 
@@ -75,7 +80,7 @@ type Phase = 'answering' | 'failed' | 'solved';
 
           @if (phase() === 'failed') {
             <div class="feedback bad">
-              <b>Todavía no.</b>¿Ocurrió, lo dijo alguien o es una interpretación? Puedes reintentar o seguir con la próxima.
+              <b>Todavía no.</b>¿Ocurrió, lo dijo alguien o es una suposición?
               <div class="feedbackActions">
                 <button class="btn ghost" (click)="skip()">Omitir esta tarjeta →</button>
               </div>
@@ -100,13 +105,14 @@ type Phase = 'answering' | 'failed' | 'solved';
             <small>OBSERVATORIO COMPLETO</small>
             <p>{{ summary() }}</p>
           </div>
-          <button class="btn primary" style="margin-top: 14px" (click)="done.emit()">ACTIVAR SIGUIENTE NODO →</button>
+          <button class="btn primary" style="margin-top: 14px" (click)="done.emit()">VOLVER AL MAPA →</button>
+        }
         }
       </div>
     </div>
   `,
 })
-export class MissionCategorizeComponent implements OnInit {
+export class MissionCategorizeComponent {
   readonly session = inject(PulseSessionService);
   private readonly ui = inject(UiService);
 
@@ -125,7 +131,14 @@ export class MissionCategorizeComponent implements OnInit {
   private attempt = 0;
   private skipped = 0;
 
-  ngOnInit() {
+  readonly prep = signal<Prep | null>(null);
+
+  withHint() {
+    return this.prep()?.mode === 'con_pista';
+  }
+
+  start(prep: Prep) {
+    this.prep.set(prep);
     this.observe.emit({ type: 'instruction_presented', opportunity: CONSIGNA });
     this.present();
   }
@@ -140,7 +153,7 @@ export class MissionCategorizeComponent implements OnInit {
 
   summary() {
     const solved = this.cards.length - this.skipped;
-    return `${solved} de ${this.cards.length} tarjetas clasificadas. Lo que hiciste en cada una ya es evidencia.`;
+    return `${solved} de ${this.cards.length} señales separadas.`;
   }
 
   private opp() {
@@ -155,7 +168,7 @@ export class MissionCategorizeComponent implements OnInit {
     this.whyOpen.set(false);
     this.observe.emit({ type: 'task_presented', opportunity });
     this.observe.emit({ type: 'options_presented', opportunity, payload: { options: this.buckets.map((b) => b.id) } });
-    this.observe.emit({ type: 'support_available', opportunity, payload: { support: 'pista' } });
+    if (this.withHint()) this.observe.emit({ type: 'support_available', opportunity, payload: { support: 'pista' } });
   }
 
   openInstructions() {
@@ -164,7 +177,7 @@ export class MissionCategorizeComponent implements OnInit {
   }
 
   hint() {
-    if (this.hinted() || this.phase() === 'solved' || this.finished()) return;
+    if (!this.withHint() || this.hinted() || this.phase() === 'solved' || this.finished()) return;
     this.hinted.set(true);
     const opportunity = this.opp();
     this.observe.emit({ type: 'hint_requested', opportunity, payload: { level: 1 } });

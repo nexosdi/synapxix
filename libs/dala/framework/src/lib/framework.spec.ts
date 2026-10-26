@@ -1,7 +1,7 @@
 import { PULSO_WEB_FRAMEWORK } from './pulso-web.framework';
 import { validateFramework } from './validate';
 
-describe('marco pulso-web@0.1', () => {
+describe('marco pulso-web@0.2', () => {
   it('es íntegro: referencias, versiones, alternativas y contrastes', () => {
     expect(validateFramework(PULSO_WEB_FRAMEWORK)).toEqual([]);
   });

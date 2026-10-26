@@ -18,7 +18,9 @@ import { randomUUID } from 'crypto';
 const BASE = process.argv[2] ?? `http://localhost:${process.env.SYNAPXIX_API_PORT || process.env.PORT || 3001}`;
 const API = `${BASE}/api/team/v1`;
 const ADMIN_CODE = process.env.TEAM_ADMIN_CODE;
-const FRAMEWORK = 'pulso-web@0.1';
+const FRAMEWORK = 'pulso-web@0.2';
+/** Versión de cada escena en el marco 0.2 (las demás siguen en 0.1). */
+const SCENE_VERSION = { gustos: '0.2', mapa: '0.2', observatorio: '0.2', ciclo: '0.2', camara: '0.2' };
 
 if (!ADMIN_CODE) {
   console.error('Falta TEAM_ADMIN_CODE en el entorno.');
@@ -63,7 +65,7 @@ const get = (path, label, headers = auth) => fetch(`${API}${path}`, { headers })
 // ── 2. Constructor de eventos v2 (lo que hace DalaBridge en la app) ────────
 const sessionId = randomUUID();
 let seq = 0;
-let scene = 'portal';
+let scene = 'gustos';
 const make = (type, opp, payload = {}, origin = 'observed', overrides = {}) => {
   seq += 1;
   return {
@@ -75,8 +77,8 @@ const make = (type, opp, payload = {}, origin = 'observed', overrides = {}) => {
     sequence: seq,
     eventType: type,
     origin,
-    source: { applicationId: 'smoke', instrumentId: scene, instrumentVersion: '0.1' },
-    scene: { id: scene, version: '0.1' },
+    source: { applicationId: 'smoke', instrumentId: scene, instrumentVersion: SCENE_VERSION[scene] ?? '0.1' },
+    scene: { id: scene, version: SCENE_VERSION[scene] ?? '0.1' },
     ...(opp ? { opportunity: { id: opp[0], kind: opp[1] } } : {}),
     context: { frameworkVersion: FRAMEWORK, deviceClass: 'desktop' },
     payload,
@@ -99,10 +101,22 @@ const send = async (events, label) => post('/events/batch', { events }, label);
 
 // ── 3. Las tres misiones ───────────────────────────────────────────────────
 const m = [make('session_started', null, {}, 'system')];
-m.push(make('options_presented', ['portal:puerta', 'declaracion'], { options: ['visual', 'story', 'logic'] }));
-m.push(make('declaration_made', ['portal:puerta', 'declaracion'], { field: 'puerta', value: 'visual', label: 'Ver el sistema' }, 'reported'));
+m.push(make('options_presented', ['gustos:puerta', 'declaracion'], { options: ['visual', 'story', 'logic'] }));
+m.push(make('declaration_made', ['gustos:puerta', 'declaracion'], { field: 'puerta', value: 'visual', label: 'Verlo en un mapa' }, 'reported'));
+// Seis pares de gustos: analizar ×3, crear ×2, acompañar ×1.
+['analizar', 'crear', 'analizar', 'analizar', 'crear', 'acompanar'].forEach((value, k) => {
+  const labels = { analizar: 'Analizar', crear: 'Crear', acompanar: 'Acompañar' };
+  const pair = [`gustos:par-${k + 1}`, 'preferencia'];
+  m.push(make('options_presented', pair, { options: ['a', 'b'] }));
+  m.push(make('declaration_made', pair, { field: 'interes', value, label: labels[value] }, 'reported'));
+});
+enter('mapa', m);
+m.push(make('choice_offered', ['mapa:ruta-1', 'eleccion_ruta'], { options: ['observatorio', 'ciclo', 'camara'] }));
+m.push(make('choice_made', ['mapa:ruta-1', 'eleccion_ruta'], { choice: 'observatorio' }));
 
 enter('observatorio', m);
+m.push(make('choice_offered', ['observatorio:modo', 'eleccion_desafio'], { options: ['con_pista', 'sin_pista'] }));
+m.push(make('choice_made', ['observatorio:modo', 'eleccion_desafio'], { choice: 'con_pista' }));
 m.push(make('instruction_presented', ['observatorio:consigna', 'consigna']));
 let o = task(m, 's1');
 m.push(make('response_submitted', o, { correct: true, attempt: 1 }), make('task_completed', o));
@@ -114,13 +128,16 @@ o = task(m, 's3');
 m.push(make('response_submitted', o, { correct: false, attempt: 1 }), make('task_skipped', o));
 
 enter('ciclo', m);
+m.push(make('choice_offered', ['ciclo:modo', 'eleccion_desafio'], { options: ['con_pista', 'sin_pista'] }));
+m.push(make('choice_made', ['ciclo:modo', 'eleccion_desafio'], { choice: 'sin_pista' }));
 m.push(make('choice_offered', ['ciclo:formato', 'eleccion_formato'], { options: ['mapa', 'historia', 'reglas'] }), make('choice_made', ['ciclo:formato', 'eleccion_formato'], { choice: 'mapa' }));
 m.push(make('instruction_presented', ['ciclo:consigna', 'consigna']));
-o = task(m, 'secuencia');
+o = task(m, 'secuencia', false);
 m.push(make('action_performed', o, { action: 'place', item: 'Evidencia' }), make('response_submitted', o, { correct: false, attempt: 1 }));
 m.push(make('strategy_changed', o, { from: 'adelante', to: 'atras' }), make('response_submitted', o, { correct: true, attempt: 2 }), make('task_completed', o));
 
 const batch1 = await send(m, 'ingesta de las misiones');
+if (!batch1.every((r) => r.status === 'accepted')) console.error(batch1.filter((r) => r.status !== 'accepted').slice(0, 3));
 assert(batch1.length === m.length && batch1.every((r) => r.status === 'accepted'), `${m.length} eventos v2 aceptados`);
 const again = await send(m, 'reenvío idempotente');
 assert(again.every((r) => r.status === 'duplicate'), 'reenvío del mismo lote: todo duplicado, nada se cuenta dos veces');
@@ -140,7 +157,13 @@ const nd = (report, key) => {
 const r1 = await get('/me/report', 'retrato inicial');
 assert(r1.snapshot.frameworkVersion === FRAMEWORK, `instantánea con marco ${FRAMEWORK} y motor ${r1.snapshot.engineVersion}`);
 assert(nd(r1, 'desempeno_independiente:clasificar_fuentes') === '1/3', 'clasificar fuentes: 1 de 3 sin ayuda');
-assert(nd(r1, 'busqueda_de_ayuda') === '1/3', 'ayuda tras intentar: 1 de 3 tareas con dificultad y pista');
+assert(nd(r1, 'busqueda_de_ayuda') === '1/2', 'ayuda tras intentar: 1 de 2 tareas con dificultad y pista (el ciclo fue sin red)');
+assert(nd(r1, 'intereses_declarados') === '3/6', 'gustos declarados: «Analizar» 3 de 6 pares');
+assert(nd(r1, 'busqueda_de_desafio') === '1/2', 'eligió jugar sin red en 1 de 2 misiones');
+assert(
+  r1.snapshot.claims.find((c) => c.key === 'intereses_declarados')?.origins.join() === 'reported',
+  'los gustos viajan como declaración',
+);
 assert(nd(r1, 'cambio_de_estrategia') === '1/1', 'cambio de enfoque tras fallo: 1 de 1');
 assert(nd(r1, 'coherencia_declarado_observado') === '1/1', 'coherencia declarado/observado: 1 de 1');
 assert(r1.snapshot.claims.every((c) => c.calibratedProbability === null), 'ninguna afirmación trae probabilidad');

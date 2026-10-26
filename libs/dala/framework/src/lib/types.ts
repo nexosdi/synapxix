@@ -26,7 +26,10 @@ export type OpportunityKind =
   | 'exploracion'
   | 'eleccion_formato'
   | 'recomendacion_ia'
-  | 'revision_afirmacion';
+  | 'revision_afirmacion'
+  | 'preferencia'
+  | 'eleccion_ruta'
+  | 'eleccion_desafio';
 
 /**
  * Métodos de estimación versionados (§8 "Métodos según la pregunta"). La
@@ -43,7 +46,9 @@ export type MethodRef =
   | 'revision_previa@0.1'
   | 'exploracion@0.1'
   | 'coherencia@0.1'
-  | 'revision_ia@0.1';
+  | 'revision_ia@0.1'
+  | 'intereses@0.1'
+  | 'desafio@0.1';
 
 /** Requisitos para cada estado de evidencia. Provisionales: se calibran. */
 export interface Sufficiency {

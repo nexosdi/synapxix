@@ -53,12 +53,30 @@ function makeTrace(sessionId = 'ses-1', startAt = '2026-10-26T15:00:00Z', seqSta
 /** El guion completo de la traza dorada. */
 function goldenTrace() {
   const { ev, task, events } = makeTrace();
-  ev('session_started', 'portal');
-  ev('options_presented', 'portal', ['portal:puerta', 'declaracion'], { options: ['visual', 'story', 'logic'] });
-  ev('declaration_made', 'portal', ['portal:puerta', 'declaracion'], { field: 'puerta', value: 'visual', label: 'Ver el sistema' }, 'reported');
+  ev('session_started', 'gustos');
+  ev('options_presented', 'gustos', ['gustos:puerta', 'declaracion'], { options: ['visual', 'story', 'logic'] });
+  ev('declaration_made', 'gustos', ['gustos:puerta', 'declaracion'], { field: 'puerta', value: 'visual', label: 'Ver el sistema' }, 'reported');
+  // Seis pares: crear ×3, analizar, construir, acompañar ×1.
+  const picks: Array<[string, string]> = [
+    ['crear', 'Crear'],
+    ['analizar', 'Analizar'],
+    ['crear', 'Crear'],
+    ['construir', 'Construir'],
+    ['crear', 'Crear'],
+    ['acompanar', 'Acompañar'],
+  ];
+  picks.forEach(([value, label], k) => {
+    const pair: [string, string] = [`gustos:par-${k + 1}`, 'preferencia'];
+    ev('options_presented', 'gustos', pair, { options: ['a', 'b'] });
+    ev('declaration_made', 'gustos', pair, { field: 'interes', value, label }, 'reported');
+  });
+  ev('choice_offered', 'mapa', ['mapa:ruta-1', 'eleccion_ruta'], { options: ['observatorio', 'ciclo', 'camara'] });
+  ev('choice_made', 'mapa', ['mapa:ruta-1', 'eleccion_ruta'], { choice: 'observatorio' });
 
   // Misión 1: consigna antes de actuar; c1 bien; c2 error→pista→bien; c3 error→omitir.
   ev('scene_started', 'observatorio');
+  ev('choice_offered', 'observatorio', ['observatorio:modo', 'eleccion_desafio'], { options: ['con_pista', 'sin_pista'] });
+  ev('choice_made', 'observatorio', ['observatorio:modo', 'eleccion_desafio'], { choice: 'con_pista' });
   ev('instruction_presented', 'observatorio', ['observatorio:consigna', 'consigna']);
   ev('instructions_opened', 'observatorio', ['observatorio:consigna', 'consigna']);
   let o = task('observatorio', 'c1');
@@ -79,6 +97,7 @@ function goldenTrace() {
   ev('scene_completed', 'observatorio');
 
   // Misión 2: elige "mapa" (coherente); sin consigna; deshace; falla; cambia de enfoque; acierta.
+  ev('choice_made', 'ciclo', ['ciclo:modo', 'eleccion_desafio'], { choice: 'con_pista' });
   ev('choice_offered', 'ciclo', ['ciclo:formato', 'eleccion_formato'], { options: ['mapa', 'historia', 'reglas'] });
   ev('choice_made', 'ciclo', ['ciclo:formato', 'eleccion_formato'], { choice: 'mapa' });
   ev('instruction_presented', 'ciclo', ['ciclo:consigna', 'consigna']);
@@ -93,10 +112,11 @@ function goldenTrace() {
   ev('task_completed', 'ciclo', o);
 
   // Misión 3: elige "historia" (no coherente); cambia la selección; acierta; abre la consigna después.
+  ev('choice_made', 'camara', ['camara:modo', 'eleccion_desafio'], { choice: 'sin_pista' });
   ev('choice_offered', 'camara', ['camara:formato', 'eleccion_formato'], { options: ['reglas', 'historia', 'mapa'] });
   ev('choice_made', 'camara', ['camara:formato', 'eleccion_formato'], { choice: 'historia' });
   ev('instruction_presented', 'camara', ['camara:consigna', 'consigna']);
-  o = task('camara', 'eco-1');
+  o = task('camara', 'eco-1', false);
   ev('action_performed', 'camara', o, { action: 'select', item: 1 });
   ev('answer_revised', 'camara', o, { action: 'select', item: 2 });
   ev('response_submitted', 'camara', o, { correct: true, attempt: 1 });
@@ -137,6 +157,20 @@ describe('proyección · traza dorada', () => {
     expect(nd(snap, 'exploracion_voluntaria')).toEqual([1, 2]);
     expect(nd(snap, 'coherencia_declarado_observado')).toEqual([1, 2]);
     expect(nd(snap, 'colaboracion_critica_ia')).toEqual([1, 1]);
+    expect(nd(snap, 'intereses_declarados')).toEqual([3, 6]);
+    expect(nd(snap, 'busqueda_de_desafio')).toEqual([1, 3]);
+  });
+
+  it('lee los gustos como declaración, con la familia más elegida y la siguiente', () => {
+    const c = byKey(snap).get('intereses_declarados');
+    expect(c?.claim).toBe('Entre 6 pares de actividades, eligió «Crear» 3 veces. Le siguió «Analizar».');
+    expect(c?.origins).toEqual(['reported']);
+    expect(c?.observation.detail['ranking']).toBe('Crear:3,Analizar:1,Construir:1,Acompañar:1');
+  });
+
+  it('ignora eventos de otra versión del marco', () => {
+    const foreign = events.map((e) => ({ ...e, eventId: `x-${e.eventId}`, sessionId: 'otra', context: { ...e.context, frameworkVersion: 'pulso-web@0.1' } }));
+    expect(projectSubject(SUBJECT, [...events, ...foreign], PULSO_WEB_FRAMEWORK).claims).toEqual(snap.claims);
   });
 
   it('redacta afirmaciones con denominador, sin etiquetas y sin probabilidad', () => {
@@ -178,7 +212,7 @@ describe('proyección · traza dorada', () => {
 
   it('trata la misma tarea en otra sesión como otra oportunidad', () => {
     const s2 = makeTrace('ses-2', '2026-10-27T15:00:00Z');
-    s2.ev('session_started', 'portal');
+    s2.ev('session_started', 'gustos');
     s2.ev('instruction_presented', 'observatorio', ['observatorio:consigna', 'consigna']);
     const o = s2.task('observatorio', 'c1');
     s2.ev('response_submitted', 'observatorio', o, { correct: true, attempt: 1 });
@@ -192,7 +226,7 @@ describe('proyección · traza dorada', () => {
 
   it('ordena por sesión y secuencia aunque las sesiones lleguen al revés', () => {
     const s2 = makeTrace('ses-2', '2026-10-27T15:00:00Z');
-    s2.ev('session_started', 'portal');
+    s2.ev('session_started', 'gustos');
     const ordered = orderEvents([...s2.events, ...events]);
     expect(ordered.at(0)?.sessionId).toBe('ses-1');
     expect(ordered.at(-1)?.sessionId).toBe('ses-2');

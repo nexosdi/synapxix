@@ -18,16 +18,13 @@ import { UiService } from '../services/ui.service';
   template: `
     <div class="entry">
       <div class="entryCopy">
-        <p class="eyebrow"><b>PROTOCOLO 01</b> · PRIMER PULSO</p>
+        <p class="eyebrow"><b>PRIMER PULSO</b></p>
         <h1>No venimos a encajar.<br /><em>Venimos a construir.</em></h1>
-        <p class="lead">
-          Entra al núcleo de Synapxix. Tus decisiones activarán una arquitectura que aprende a
-          comprender sin convertir personas en etiquetas.
-        </p>
+        <p class="lead">Desde aquí, cada decisión tuya construye tu modelo.</p>
         <div class="microGrid">
           <div><strong>08</strong><span>minutos</span></div>
           <div><strong>03</strong><span>misiones</span></div>
-          <div><strong>01</strong><span>retrato trazable</span></div>
+          <div><strong>01</strong><span>modelo tuyo</span></div>
         </div>
       </div>
 

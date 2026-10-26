@@ -3,7 +3,7 @@ import { FORMAT_INTROS, FORMAT_LABELS, MISSION3_INSTRUCTIONS, MISSION3_ROUNDS, t
 import type { SceneObservation } from '../scene-observation';
 import { PulseSessionService } from '../services/pulse-session.service';
 import { UiService } from '../services/ui.service';
-import { FormatChoiceComponent } from './format-choice.component';
+import { MissionPrepComponent, type Prep } from './mission-prep.component';
 
 const SCENE = 'camara';
 const CONSIGNA = { id: `${SCENE}:consigna`, kind: 'consigna' };
@@ -18,7 +18,7 @@ type Phase = 'answering' | 'failed' | 'solved';
 @Component({
   selector: 'synapxix-mission-intruder',
   standalone: true,
-  imports: [FormatChoiceComponent],
+  imports: [MissionPrepComponent],
   template: `
     <div class="mission">
       <aside class="rail">
@@ -31,22 +31,18 @@ type Phase = 'answering' | 'failed' | 'solved';
 
       <div class="game">
         @if (!format()) {
-          <synapxix-format-choice
-            scene="camara"
-            title="Encuentra la frase que dice demasiado."
-            (observe)="observe.emit($event)"
-            (chosen)="start($event)"
-          />
+          <synapxix-mission-prep scene="camara" (observe)="observe.emit($event)" (begin)="start($event)" />
         } @else if (!finished()) {
           <div class="gameHead">
             <div>
-              <p class="eyebrow"><b>ESCENA</b> · CÁMARA DE ECO</p>
               <h2>Encuentra la frase que dice demasiado.</h2>
               <p class="formatIntro"><b>{{ formatLabel() }}</b>{{ intro() }}</p>
             </div>
             <div class="gameTools">
               <button class="tool" (click)="openInstructions()">? Consigna</button>
-              <button class="tool" [disabled]="hinted() || phase() === 'solved'" (click)="hint()">✦ Descartar una</button>
+              @if (withHint) {
+                <button class="tool" [disabled]="hinted() || phase() === 'solved'" (click)="hint()">✦ Descartar una</button>
+              }
             </div>
           </div>
 
@@ -74,7 +70,7 @@ type Phase = 'answering' | 'failed' | 'solved';
 
           @if (phase() === 'failed') {
             <div class="feedback bad">
-              <b>Esa frase mantiene el alcance.</b>Busca la que convierte una conducta puntual en identidad permanente.
+              <b>Esa frase cuida el alcance.</b>Busca la que convierte un momento en identidad.
               <div class="feedbackActions">
                 <button class="btn ghost" (click)="skip()">Omitir esta ronda →</button>
               </div>
@@ -97,9 +93,9 @@ type Phase = 'answering' | 'failed' | 'solved';
         } @else {
           <div class="promptCard">
             <small>CÁMARA COMPLETA</small>
-            <p>Leíste afirmaciones como las que este sistema podría escribir sobre ti. A continuación verás la primera que escribió.</p>
+            <p>Detectaste frases que dicen demasiado.</p>
           </div>
-          <button class="btn primary" style="margin-top: 14px" (click)="done.emit()">ABRIR SHADOW MODE →</button>
+          <button class="btn primary" style="margin-top: 14px" (click)="done.emit()">VOLVER AL MAPA →</button>
         }
       </div>
     </div>
@@ -142,8 +138,11 @@ export class MissionIntruderComponent {
     return f ? FORMAT_INTROS.camara[f] : '';
   }
 
-  start(format: FormatId) {
-    this.format.set(format);
+  withHint = true;
+
+  start(prep: Prep) {
+    this.withHint = prep.mode === 'con_pista';
+    this.format.set(prep.format);
     this.observe.emit({ type: 'instruction_presented', opportunity: CONSIGNA });
     this.present();
   }
@@ -166,7 +165,7 @@ export class MissionIntruderComponent {
       opportunity,
       payload: { options: this.round().claims.map((_, i) => i + 1) },
     });
-    this.observe.emit({ type: 'support_available', opportunity, payload: { support: 'descartar' } });
+    if (this.withHint) this.observe.emit({ type: 'support_available', opportunity, payload: { support: 'descartar' } });
   }
 
   select(index: number) {
@@ -186,7 +185,7 @@ export class MissionIntruderComponent {
   }
 
   hint() {
-    if (this.hinted() || this.phase() === 'solved') return;
+    if (!this.withHint || this.hinted() || this.phase() === 'solved') return;
     this.hinted.set(true);
     const opportunity = this.opp();
     this.observe.emit({ type: 'hint_requested', opportunity, payload: { level: 1 } });

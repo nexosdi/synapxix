@@ -8,7 +8,23 @@
  * Equivocarse no resta, la ayuda es digna y nada se interpreta en vivo.
  */
 
-// ── Entrada ───────────────────────────────────────────────────────────────
+// ── Acto I · Synapxix ─────────────────────────────────────────────────────
+// Fuente: Manual de Marca v2 (origen del nombre, misión, visión, por qué).
+// Se muestra, no se explica: cada pantalla es una interacción y una frase.
+
+/** "Cuando el cerebro encuentra algo inesperado…" — un punto por paso. */
+export const NAME_BEATS = ['Algo inesperado', 'Atención', 'Patrón', 'Significado', 'Conexión'];
+
+export const UNIQUE_PARTS = [
+  { id: 'talentos', label: 'Talentos', color: '#ffd93d' },
+  { id: 'intereses', label: 'Intereses', color: '#9be564' },
+  { id: 'formas', label: 'Formas de aprender', color: '#a6e6ff' },
+];
+
+export const PURPOSE = {
+  mission: 'Revolucionar la educación con experiencias interactivas que unen inteligencia artificial y la magia del juego.',
+  vision: 'Que cada niño desarrolle su máximo potencial, con experiencias que respeten su individualidad.',
+};
 
 export const AREAS = [
   'Diseño y narrativa',
@@ -18,25 +34,82 @@ export const AREAS = [
   'Comunidad y operaciones',
 ];
 
-export const VISION = {
-  headline: 'La IA no debería decidir quién eres.',
-  lead: 'Debería aprender cómo acompañarte, declarar qué sabe, reconocer qué no sabe y demostrar si su ayuda funcionó.',
-  quote:
-    'Cada lectura que veas al final se podrá recorrer hasta las decisiones que la sostienen. Nada se afirma sin evidencia.',
-};
+// ── Acto II · D.A.L.A. ────────────────────────────────────────────────────
+// Un caso mínimo recorre la cadena real: evento → evidencia → lectura →
+// decisión → resultado.
 
-export const PORTALS = [
-  { id: 'visual' as const, icon: '◈', label: 'Ver el sistema', copy: 'Mapas, relaciones y patrones visibles.' },
-  { id: 'story' as const, icon: '✦', label: 'Vivir una historia', copy: 'Propósito, tensión y consecuencia.' },
-  { id: 'logic' as const, icon: '⌘', label: 'Entender la arquitectura', copy: 'Objetos, reglas y trazabilidad.' },
+export const DALA_STEPS: Array<{ id: string; label: string; text: string; dots?: boolean[]; alt?: string }> = [
+  { id: 'evento', label: 'Evento', text: 'Ana pidió una pista después de intentar.' },
+  { id: 'evidencia', label: 'Evidencia', text: 'Pasó 1 de 2 veces que tuvo dificultad y la pista estaba ahí.', dots: [true, false] },
+  {
+    id: 'lectura',
+    label: 'Lectura',
+    text: 'Pide ayuda cuando la necesita.',
+    alt: 'O la pista estaba demasiado a la vista.',
+  },
+  { id: 'decision', label: 'Decisión', text: 'Practicar con apoyo.', alt: 'Una persona la aprueba.' },
+  { id: 'resultado', label: 'Resultado', text: 'Resolvió la siguiente sola. Ahora son 2 de 3.', dots: [true, false, true] },
 ];
 
-export const CYCLE_PANEL = [
-  '01 · EVENTO — qué ocurrió y qué estaba disponible',
-  '02 · EVIDENCIA — qué puede sostener, con su denominador',
-  '03 · AFIRMACIÓN — hipótesis + alternativas',
-  '04 · DECISIÓN — apoyo limitado y revisable',
-  '05 · RESULTADO — qué pasó después',
+export const DALA_RULES = ['Nada sin evidencia', 'Nunca una etiqueta', 'Siempre revisable'];
+
+// ── Acto III · Gustos ─────────────────────────────────────────────────────
+
+/** Cómo prefiere entender algo nuevo: se contrasta con los formatos que elige. */
+export const PUERTAS = [
+  { id: 'visual' as const, icon: '◈', label: 'Verlo en un mapa' },
+  { id: 'story' as const, icon: '✦', label: 'Que me lo cuenten' },
+  { id: 'logic' as const, icon: '⌘', label: 'Conocer las reglas' },
+];
+
+export const INTEREST_FAMILIES: Record<string, string> = {
+  crear: 'Crear',
+  analizar: 'Analizar',
+  acompanar: 'Acompañar',
+  construir: 'Construir',
+};
+
+/** Seis pares: cada familia aparece tres veces y cambia de lado. */
+export const INTEREST_PAIRS: Array<[{ family: string; text: string }, { family: string; text: string }]> = [
+  [
+    { family: 'crear', text: 'Diseñar el mundo de un videojuego' },
+    { family: 'analizar', text: 'Descubrir el patrón escondido en mil partidas' },
+  ],
+  [
+    { family: 'acompanar', text: 'Ayudar a una docente a entender a su grupo' },
+    { family: 'construir', text: 'Programar la pieza que lo hace posible' },
+  ],
+  [
+    { family: 'acompanar', text: 'Escuchar a un niño explicar cómo juega' },
+    { family: 'crear', text: 'Inventar un personaje que enseñe' },
+  ],
+  [
+    { family: 'construir', text: 'Armar un prototipo en una tarde' },
+    { family: 'analizar', text: 'Probar con evidencia si una idea funciona' },
+  ],
+  [
+    { family: 'crear', text: 'Escribir la historia de una misión' },
+    { family: 'construir', text: 'Hacer que funcione en cualquier pantalla' },
+  ],
+  [
+    { family: 'analizar', text: 'Leer el mapa de cómo aprende un grupo' },
+    { family: 'acompanar', text: 'Conversar con las familias sobre lo que vimos' },
+  ],
+];
+
+// ── Acto III · Mapa y modos ───────────────────────────────────────────────
+
+export type MissionScreen = 'categorize' | 'timeline' | 'intruder';
+
+export const MISSIONS: Array<{ screen: MissionScreen; scene: string; icon: string; name: string; goal: string }> = [
+  { screen: 'categorize', scene: 'observatorio', icon: '◉', name: 'Observatorio', goal: 'Separar lo que pasó de lo que se dijo y lo que se supone.' },
+  { screen: 'timeline', scene: 'ciclo', icon: '⟳', name: 'El ciclo', goal: 'Ordenar cómo aprende el sistema.' },
+  { screen: 'intruder', scene: 'camara', icon: '◇', name: 'Cámara de eco', goal: 'Encontrar la frase que dice demasiado.' },
+];
+
+export const MODES = [
+  { id: 'con_pista' as const, icon: '✦', label: 'Con red', copy: 'La pista está disponible.' },
+  { id: 'sin_pista' as const, icon: '◆', label: 'Sin red', copy: 'Solo tú.' },
 ];
 
 // ── Misión 1 — Observatorio ───────────────────────────────────────────────
@@ -127,9 +200,9 @@ export const CONTRAST_CARD: SignalCard = {
 export type FormatId = 'mapa' | 'historia' | 'reglas';
 
 export const FORMAT_LABELS: Record<FormatId, { icon: string; label: string; copy: string }> = {
-  mapa: { icon: '◈', label: 'Ver el mapa', copy: 'Piezas y relaciones, de un vistazo.' },
-  historia: { icon: '✦', label: 'Escuchar la historia', copy: 'Una situación con consecuencias.' },
-  reglas: { icon: '⌘', label: 'Leer las reglas', copy: 'Los principios, en dos líneas.' },
+  mapa: { icon: '◈', label: 'Mapa', copy: 'Piezas y relaciones.' },
+  historia: { icon: '✦', label: 'Historia', copy: 'Una situación.' },
+  reglas: { icon: '⌘', label: 'Reglas', copy: 'Dos principios.' },
 };
 
 export const FORMAT_ORDER: Record<'ciclo' | 'camara', FormatId[]> = {
@@ -153,7 +226,7 @@ export const FORMAT_INTROS: Record<'ciclo' | 'camara', Record<FormatId, string>>
 
 // ── Misión 2 — Ciclo ──────────────────────────────────────────────────────
 
-export const CYCLE_STEPS = ['Evidencia', 'Estado', 'Decisión', 'Intervención', 'Outcome', 'Actualización'];
+export const CYCLE_STEPS = ['Evidencia', 'Estado', 'Decisión', 'Intervención', 'Resultado', 'Actualización'];
 
 export const MISSION2_HINT =
   'La adaptación no es el final: el sistema necesita observar el efecto antes de actualizar el estado.';
