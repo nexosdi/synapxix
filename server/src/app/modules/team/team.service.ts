@@ -144,6 +144,13 @@ export class TeamService {
 
     // Cada entrada vuelve a preguntar: la última aceptación es la vigente.
     await this.repository.saveConsent(member.member_id, record);
+    // Edad y carrera quedan en lo declarado: la ficha del equipo las muestra.
+    const prior = (member.declared_json ?? {}) as DeclaredProfile;
+    await this.repository.saveDeclared(member.member_id, {
+      ...prior,
+      edad: age,
+      ...(input.area ? { area: input.area.slice(0, 120) } : {}),
+    } as object);
 
     const { subjectId } = await this.dala.resolveSubject(member.member_id);
     return {
@@ -464,8 +471,9 @@ export class TeamService {
         ...this.publicMember(m),
         inviteCode: m.invite_code,
         email: m.email,
+        createdAt: m.created_at,
         declared: shared
-          ? { area: declared.area, portal: declared.portal, perfil: declared.perfil }
+          ? { area: declared.area, edad: declared.edad, portal: declared.portal, perfil: declared.perfil }
           : 'la persona decidió no compartirlo',
       };
     });

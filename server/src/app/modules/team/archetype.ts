@@ -27,6 +27,8 @@ export interface DeclaredProfile {
   area?: string;
   /** Banda etaria declarada (el año exacto no se conserva). */
   ageBand?: string;
+  /** Edad declarada en la inscripción (libre, entero positivo). */
+  edad?: number;
   workRhythm?: 'prototype' | 'align' | 'hybrid';
   feedbackMode?: 'direct' | 'questions' | 'context';
   /** "¿Esta lectura te representa?" — revisión humana del propio estado. */

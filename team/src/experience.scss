@@ -2361,6 +2361,75 @@ synapxix-gracias {
   }
 }
 
+.ficha {
+  margin: 0 0 28px;
+  padding: 24px 28px;
+  border: 1px solid var(--sx-border);
+  border-radius: var(--sx-radius-lg);
+  background: var(--sx-white);
+  box-shadow: var(--sx-shadow-sm);
+
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  h2 {
+    margin: 0 0 4px;
+    font-size: clamp(26px, 3vw, 34px);
+    color: var(--sx-blue-deep);
+  }
+
+  .adminDocs {
+    margin: 8px 0 0;
+
+    span {
+      font-size: 15px;
+      color: var(--px-text-soft);
+    }
+  }
+}
+
+.fichaGrid {
+  margin: 0 0 14px;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--sx-border);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px 20px;
+
+  div.wide {
+    grid-column: 1 / -1;
+  }
+
+  dt {
+    font: 700 12px var(--px-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--px-text-dim);
+  }
+
+  dd {
+    margin: 2px 0 0;
+    font-size: 16px;
+    font-weight: var(--sx-weight-bold);
+    color: var(--sx-blue-deep);
+  }
+}
+
+.adminList > .btn {
+  margin: 0 0 10px;
+}
+
+.memberRow small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
 .adminDocs {
   display: flex;
   flex-wrap: wrap;

@@ -127,8 +127,10 @@ export interface MemberRow {
   roleLabel: string | null;
   status: string;
   email: string | null;
+  joinedAt: string | null;
   completedAt: string | null;
-  declared: { area?: string; portal?: string; perfil?: Perfil } | string;
+  createdAt?: string;
+  declared: { area?: string; edad?: number; portal?: string; perfil?: Perfil } | string;
 }
 
 /** Cliente de la API del Primer Pulso. El token vive en PulseSessionService. */
