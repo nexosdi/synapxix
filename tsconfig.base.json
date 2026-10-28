@@ -20,6 +20,7 @@
         "libs/dala/instrumentation/src/index.ts"
       ],
       "@nexosdi.synapxix/dala/domain": ["libs/dala/domain/src/index.ts"],
+      "@nexosdi.synapxix/dala/framework": ["libs/dala/framework/src/index.ts"],
       "@nexosdi.synapxix/game-engine/core": [
         "libs/game-engine/core/src/index.ts"
       ],

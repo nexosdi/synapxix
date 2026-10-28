@@ -1,0 +1,15 @@
+node_modules
+dist
+tmp
+.nx
+.git
+.angular
+.vercel
+*.md
+sprint
+docs
+keycloak
+keycloak-theme
+web-game/.angular
+admin-frontend/.angular
+team/.angular

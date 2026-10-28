@@ -10,3 +10,5 @@ export * from './lib/evidence';
 export * from './lib/state';
 export * from './lib/decision';
 export * from './lib/instrument';
+export * from './lib/event-v2';
+export * from './lib/claim';

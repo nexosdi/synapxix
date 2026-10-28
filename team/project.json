@@ -1,0 +1,82 @@
+{
+  "name": "team",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "synapxix",
+  "sourceRoot": "team/src",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/team",
+        "browser": "team/src/main.ts",
+        "polyfills": ["zone.js"],
+        "tsConfig": "team/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "team/public"
+          }
+        ],
+        "styles": ["team/src/styles.scss"]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "600kb",
+              "maximumError": "1.2mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "12kb",
+              "maximumError": "24kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@angular/build:dev-server",
+      "options": {
+        "buildTarget": "team:build:development",
+        "port": 4400,
+        "proxyConfig": "team/proxy.conf.js"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "team:build:production"
+        },
+        "development": {
+          "buildTarget": "team:build:development",
+          "port": 4400
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "serve-static": {
+      "continuous": true,
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "team:build",
+        "staticFilePath": "dist/team/browser",
+        "spa": true
+      }
+    }
+  }
+}
