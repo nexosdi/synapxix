@@ -201,6 +201,13 @@ export class PulseApiService {
     return this.get(`${API}/admin/members`, code);
   }
 
+  /** Retira a una persona con todos sus datos (D.A.L.A., CV, enlaces y ficha). */
+  async adminRemoveMember(code: string, memberId: string): Promise<{ removed: boolean; events: number }> {
+    const response = await fetch(`${API}/admin/members/${memberId}`, { method: 'DELETE', headers: { 'X-Team-Admin-Code': code } });
+    if (!response.ok) throw new Error(`request_failed_${response.status}`);
+    return response.json();
+  }
+
   adminReport(code: string, memberId: string): Promise<PulseReport> {
     return this.get(`${API}/admin/members/${memberId}/report`, code);
   }

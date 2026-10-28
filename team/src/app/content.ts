@@ -115,8 +115,13 @@ export const EN_UNA_FRASE = {
   next: 'Ahora que conocés Synapxix, te damos la bienvenida al equipo.',
 };
 
-/** Qué estudia: la mayoría del grupo viene de sistemas, matemática o carrera docente. */
-export const AREAS = ['Sistemas / Informática', 'Matemática', 'Carrera docente', 'Otra carrera'];
+export const AREAS = [
+  'Diseño y narrativa',
+  'Pedagogía e investigación',
+  'Tecnología y datos',
+  'Producto y estrategia',
+  'Comunidad y operaciones',
+];
 
 export const CV_HEADS_UP = 'Tené a mano tu CV: al final te vamos a pedir que lo subas (es opcional).';
 

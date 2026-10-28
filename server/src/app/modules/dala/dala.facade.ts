@@ -105,6 +105,11 @@ export class DalaFacade {
     return this.repository.resolveSubject(userId).then((subjectId) => ({ subjectId }));
   }
 
+  /** Retiro de datos a pedido: borra todo lo de la persona en D.A.L.A. */
+  forgetSubject(userId: string) {
+    return this.repository.forgetSubject(userId);
+  }
+
   /**
    * Fase 4 — Decisión en shadow mode: congela un snapshot del estado, aplica
    * la política determinista y persiste el DecisionRecord con sus razones.

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import type { DalaBehaviorEvent, DalaEventV2 } from '@nexosdi.synapxix/dala/contracts';
@@ -146,6 +146,12 @@ export class TeamController {
   }
 
   // ── Vista de investigación ──────────────────────────────────────────────
+
+  @UseGuards(TeamAdminGuard)
+  @Delete('admin/members/:memberId')
+  removeMember(@Param('memberId') memberId: string) {
+    return this.service.removeMember(memberId);
+  }
 
   @UseGuards(TeamAdminGuard)
   @Get('admin/members/:memberId/report')

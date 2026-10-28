@@ -2421,6 +2421,17 @@ synapxix-gracias {
   }
 }
 
+.fichaTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  .danger {
+    color: var(--sx-danger, #c62828);
+    border-color: currentColor;
+  }
+}
+
 .adminList > .btn {
   margin: 0 0 10px;
 }

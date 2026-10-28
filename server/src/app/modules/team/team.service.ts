@@ -144,7 +144,7 @@ export class TeamService {
 
     // Cada entrada vuelve a preguntar: la última aceptación es la vigente.
     await this.repository.saveConsent(member.member_id, record);
-    // Edad y carrera quedan en lo declarado: la ficha del equipo las muestra.
+    // Edad y área quedan en lo declarado: la ficha del equipo las muestra.
     const prior = (member.declared_json ?? {}) as DeclaredProfile;
     await this.repository.saveDeclared(member.member_id, {
       ...prior,
@@ -235,6 +235,18 @@ export class TeamService {
     };
     const saved = await this.repository.saveDocuments(auth.sub, docs, consent);
     return { saved: saved.length, cv: docs.some((d) => d.kind === 'cv'), links: docs.filter((d) => d.kind === 'link').length };
+  }
+
+  /**
+   * Retirar a una participante: primero su registro D.A.L.A. (eventos y todo
+   * lo derivado), después su CV, enlaces y ficha. Para pruebas y para cumplir
+   * un pedido de retiro de datos.
+   */
+  async removeMember(memberId: string) {
+    const { events } = await this.dala.forgetSubject(memberId);
+    const removed = await this.repository.deleteMember(memberId);
+    if (!removed) throw new NotFoundException('unknown_member');
+    return { removed: true, events };
   }
 
   async adminDocuments(memberId: string) {

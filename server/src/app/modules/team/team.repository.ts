@@ -113,6 +113,15 @@ export class TeamRepository {
     );
   }
 
+  /** Retiro: CV, enlaces y la ficha de la persona. */
+  async deleteMember(memberId: string) {
+    const [, member] = await this.prisma.$transaction([
+      this.prisma.teamDocument.deleteMany({ where: { member_id: memberId } }),
+      this.prisma.teamMember.deleteMany({ where: { member_id: memberId } }),
+    ]);
+    return member.count;
+  }
+
   /** Sin el contenido: la lista solo describe qué se entregó. */
   listDocuments(memberId: string) {
     return this.prisma.teamDocument.findMany({

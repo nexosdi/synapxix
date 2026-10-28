@@ -200,6 +200,27 @@ export class DalaRepository {
   // ── Fases 3–5: seudónimos, snapshots, decisiones, outcomes, trazas ──────
 
   /** Resuelve (o crea) el subject_id seudónimo de un usuario. Vive en auth. */
+  /**
+   * Retiro de una persona: borra su registro D.A.L.A. completo (eventos,
+   * observaciones, estimaciones, instantáneas, decisiones y resultados) y su
+   * mapeo seudónimo, en una sola transacción. No deja nada huérfano.
+   */
+  async forgetSubject(userId: string): Promise<{ events: number }> {
+    const map = await this.prisma.dalaSubjectMap.findUnique({ where: { user_id: userId } });
+    if (!map) return { events: 0 };
+    const where = { subject_id: map.subject_id };
+    const [, , , , , events] = await this.prisma.$transaction([
+      this.prisma.dalaOutcome.deleteMany({ where }),
+      this.prisma.dalaDecisionRecord.deleteMany({ where }),
+      this.prisma.dalaHumanStateSnapshot.deleteMany({ where }),
+      this.prisma.dalaConstructEstimate.deleteMany({ where }),
+      this.prisma.dalaEvidenceObservation.deleteMany({ where }),
+      this.prisma.dalaBehaviorEvent.deleteMany({ where }),
+      this.prisma.dalaSubjectMap.delete({ where: { user_id: userId } }),
+    ]);
+    return { events: events.count };
+  }
+
   async resolveSubject(userId: string): Promise<string> {
     const row = await this.prisma.dalaSubjectMap.upsert({
       where: { user_id: userId },

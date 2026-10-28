@@ -19,7 +19,7 @@ const STATUS: Record<string, string> = { invited: 'invitada', joined: 'en curso'
 /**
  * Vista de investigación (?investigacion). Código de administración →
  * participantes (con tabla descargable para el equipo) → la ficha de la
- * persona (contacto, carrera, charla, perfil de trabajo, CV y enlaces) y,
+ * persona (contacto, área, charla, perfil de trabajo, CV y enlaces) y,
  * debajo, el mismo retrato que ve ella, con su traza, comprobación de
  * recálculo y exportación seudónima. Solo lectura.
  */
@@ -71,12 +71,17 @@ const STATUS: Record<string, string> = { invited: 'invitada', joined: 'en curso'
                       <a class="linkBtn" [href]="'mailto:' + m.email">{{ m.email }}</a>
                     }
                   </div>
-                  @if (report()) {
-                    <button class="btn secondary" (click)="export_()">EXPORTAR PARA INVESTIGACIÓN</button>
-                  }
+                  <div class="fichaTools">
+                    @if (report()) {
+                      <button class="btn secondary" (click)="export_()">EXPORTAR PARA INVESTIGACIÓN</button>
+                    }
+                    <button class="btn ghost danger" [disabled]="removing()" (click)="remove(m)">
+                      {{ removing() ? 'RETIRANDO…' : 'RETIRAR PARTICIPANTE' }}
+                    </button>
+                  </div>
                 </header>
                 <dl class="fichaGrid">
-                  <div><dt>Carrera</dt><dd>{{ area(m) }}</dd></div>
+                  <div><dt>Área</dt><dd>{{ area(m) }}</dd></div>
                   <div><dt>Edad</dt><dd>{{ declared(m)?.edad ?? '—' }}</dd></div>
                   <div><dt>Se inscribió</dt><dd>{{ date(m.createdAt ?? m.joinedAt) }}</dd></div>
                   <div><dt>Completó</dt><dd>{{ date(m.completedAt) }}</dd></div>
@@ -131,6 +136,7 @@ export class InvestigacionComponent {
   readonly replay = signal<ReplayCheck | null>(null);
   readonly documents = signal<ProfileDocument[]>([]);
   readonly loading = signal(false);
+  readonly removing = signal(false);
   readonly error = signal('');
 
   readonly traceLoader = (claimKey: string) => this.api.adminTrace(this.code, this.selectedId()!, claimKey);
@@ -191,6 +197,27 @@ export class InvestigacionComponent {
     }
   }
 
+  /**
+   * Retiro definitivo: borra sus eventos, su informe, su CV, sus enlaces y
+   * su ficha. Para pruebas y para cumplir un pedido de retiro de datos.
+   */
+  async remove(m: MemberRow) {
+    const who = m.name ?? m.email ?? 'esta persona';
+    if (!confirm(`¿Retirar a ${who}? Se borran para siempre sus respuestas, su informe, su CV y su ficha.`)) return;
+    this.removing.set(true);
+    try {
+      await this.api.adminRemoveMember(this.code, m.memberId);
+      this.members.update((list) => (list ?? []).filter((x) => x.memberId !== m.memberId));
+      this.selectedId.set(null);
+      this.report.set(null);
+      this.documents.set([]);
+    } catch {
+      alert('No pudimos retirarla. Probá de nuevo.');
+    } finally {
+      this.removing.set(false);
+    }
+  }
+
   async downloadDoc(d: ProfileDocument) {
     const id = this.selectedId();
     if (!id) return;
@@ -206,7 +233,7 @@ export class InvestigacionComponent {
   /** Una fila por persona, lista para abrir en Excel o Google Sheets. */
   downloadTable() {
     const header = [
-      'Nombre', 'Email', 'Carrera', 'Edad', 'Estado', 'Se inscribió', 'Completó', 'Charla: día', 'Charla: horario',
+      'Nombre', 'Email', 'Área', 'Edad', 'Estado', 'Se inscribió', 'Completó', 'Charla: día', 'Charla: horario',
       'Superpoderes', 'Quiere aprender', 'Lo que más la mueve', ...WORK_FIELDS.map((f) => f[1]),
     ];
     const rows = (this.members() ?? []).map((m) => {

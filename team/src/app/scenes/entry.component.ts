@@ -48,7 +48,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             <input [(ngModel)]="age" name="age" type="number" min="1" step="1" required placeholder="Años" [disabled]="joining()" />
           </label>
           <label class="field">
-            ¿Qué estudiás?
+            Área
             <select [(ngModel)]="area" name="area" [disabled]="joining()">
               <option value="" disabled>Elegí</option>
               @for (a of areas; track a) {
