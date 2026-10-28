@@ -18,6 +18,12 @@ export interface TeamTokenPayload {
   subjectId: string;
   name: string;
   scope: 'team-pulse';
+  /**
+   * Finalidad "investigación D.A.L.A." autorizada. Sin ella no se ingiere
+   * ningún evento analítico. Ausente en tokens anteriores a la v2 del
+   * consentimiento (que lo daban por aceptado al entrar).
+   */
+  research?: boolean;
 }
 
 export const TEAM_JWT_SECRET = () => {

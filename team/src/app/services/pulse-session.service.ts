@@ -4,6 +4,32 @@ import { PULSO_WEB_FRAMEWORK } from '@nexosdi.synapxix/dala/framework';
 import { DalaBridge, type Observation } from '@nexosdi.synapxix/dala/instrumentation';
 
 const API = '/api/team/v1';
+
+/**
+ * La estrella en construcción. Cada respuesta deja una marca: gemas por
+ * superpoder, cuentas por motivación y por situación de equipo, el borde
+ * por el desafío elegido, destellos por lo resuelto y el resto por cómo
+ * trabaja.
+ */
+export interface EstrellaState {
+  superpoderes: Array<{ id: string; family: string; label: string }>;
+  aprender: { id: string; family: string; label: string } | null;
+  motivaciones: string[];
+  desafio: { family: string; mode: string } | null;
+  logros: number;
+  equipo: string[];
+  trabajo: Record<string, string>;
+}
+
+export const emptyStar = (): EstrellaState => ({
+  superpoderes: [],
+  aprender: null,
+  motivaciones: [],
+  desafio: null,
+  logros: 0,
+  equipo: [],
+  trabajo: {},
+});
 const APPLICATION_ID = 'synapxix-pulso-web';
 
 /**
@@ -25,6 +51,10 @@ export class PulseSessionService {
   readonly emittedCount = signal(0);
   /** Observaciones rechazadas localmente por no cumplir el contrato. */
   readonly rejectedCount = signal(0);
+  /** Instantánea A: la primera, al terminar de aprender D.A.L.A. */
+  readonly snapshotA = signal<string | null>(null);
+  /** Lo que cuenta y hace en «Tu primera semana»: da forma a la estrella. */
+  readonly estrella = signal<EstrellaState>(emptyStar());
 
   private bridge: DalaBridge | null = null;
   private flushTimer: ReturnType<typeof setInterval> | null = null;
@@ -43,7 +73,8 @@ export class PulseSessionService {
       deviceClass: /mobile|android|iphone/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
       locale: navigator.language,
     });
-    this.bridge.startSession(this.sceneRef('gustos'));
+    // El registro empieza al aprender D.A.L.A.: nada de lo anterior se importa.
+    this.bridge.startSession(this.sceneRef('nucleo'));
     this.sync();
     if (!this.flushTimer) this.flushTimer = setInterval(() => void this.flush(), 4000);
     // Interrupciones: contexto para interpretar, nunca rasgo.

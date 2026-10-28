@@ -5,11 +5,17 @@
 
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
+
+  // El CV viaja en base64 (hasta 5 MB): solo esa ruta acepta cuerpos grandes.
+  app.use('/api/team/v1/me/cv', json({ limit: '8mb' }));
+  app.use(json({ limit: '100kb' }));
+  app.use(urlencoded({ extended: true, limit: '100kb' }));
   
   // Security headers (OWASP recommended)
   app.use(helmet());

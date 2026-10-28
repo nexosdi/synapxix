@@ -81,6 +81,51 @@ export class TeamRepository {
     });
   }
 
+  /** Consentimiento vigente: reemplaza al anterior (la versión va dentro). */
+  saveConsent(memberId: string, consent: object) {
+    return this.prisma.teamMember.update({
+      where: { member_id: memberId },
+      data: { consent_json: consent },
+    });
+  }
+
+  saveDocuments(
+    memberId: string,
+    docs: Array<{ kind: 'cv' | 'link'; filename?: string; mime?: string; size?: number; data?: Buffer; url?: string }>,
+    consent: object,
+  ) {
+    return this.prisma.$transaction(
+      docs.map((d) =>
+        this.prisma.teamDocument.create({
+          data: {
+            member_id: memberId,
+            kind: d.kind,
+            filename: d.filename ?? null,
+            mime: d.mime ?? null,
+            size: d.size ?? null,
+            data: d.data ? new Uint8Array(d.data) : null,
+            url: d.url ?? null,
+            consent_json: consent,
+          },
+          select: { document_id: true, kind: true },
+        }),
+      ),
+    );
+  }
+
+  /** Sin el contenido: la lista solo describe qué se entregó. */
+  listDocuments(memberId: string) {
+    return this.prisma.teamDocument.findMany({
+      where: { member_id: memberId },
+      orderBy: { created_at: 'desc' },
+      select: { document_id: true, kind: true, filename: true, mime: true, size: true, url: true, created_at: true },
+    });
+  }
+
+  findDocument(memberId: string, documentId: string) {
+    return this.prisma.teamDocument.findFirst({ where: { member_id: memberId, document_id: documentId } });
+  }
+
   markCompleted(memberId: string, archetype?: string) {
     return this.prisma.teamMember.update({
       where: { member_id: memberId },

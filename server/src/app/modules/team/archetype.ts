@@ -32,6 +32,18 @@ export interface DeclaredProfile {
   /** "¿Esta lectura te representa?" — revisión humana del propio estado. */
   stateReview?: 'yes' | 'partial' | 'no';
   shareConditions?: boolean;
+  /**
+   * Perfil de la primera semana (onboarding de equipo): superpoderes, lo que
+   * quiere aprender, la motivación que más eligió, cómo trabaja y cuándo
+   * prefiere la charla de inicio de 16 minutos. Declarado.
+   */
+  perfil?: {
+    superpoderes?: string[];
+    aprender?: string;
+    motivacion?: string;
+    trabajo?: Record<string, string>;
+    reunion?: { dia: string; horario: string };
+  };
 }
 
 export interface ConstructReading {

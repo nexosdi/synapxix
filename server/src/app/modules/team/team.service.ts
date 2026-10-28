@@ -16,8 +16,72 @@ import { TeamRepository } from './team.repository';
 import { TEAM_JWT_SECRET, TeamTokenPayload } from './team-auth.guard';
 import { ARCHETYPE_META, DeclaredProfile, TEAM_ARCHETYPES, TeamArchetype } from './archetype';
 
-/** Versión del consentimiento del Primer Pulso. El equipo lo acepta al entrar. */
-export const TEAM_CONSENT_SCOPE = 'team-primer-pulso-v1';
+/**
+ * Versión del consentimiento del Primer Pulso. v3 (revisión de la
+ * bienvenida, 28-oct): una sola autorización, obligatoria para entrar, que
+ * cubre operar la experiencia y el registro para D.A.L.A. Perfil visible y
+ * documentos con IA quedan sin autorizar hasta que se pidan por separado.
+ */
+export const TEAM_CONSENT_SCOPE = 'team-primer-pulso-v3';
+
+/** Lo que la persona acepta al continuar. */
+export interface ConsentChoice {
+  accepted?: boolean;
+}
+
+/** Registro versionado de lo autorizado. Retirar = guardar uno nuevo. */
+export interface ConsentRecord {
+  scopeId: string;
+  operation: true;
+  research: boolean;
+  profile: boolean;
+  documentsAi: boolean;
+  decidedAt: string;
+}
+
+/** CV y enlaces: autorización propia, distinta del registro para D.A.L.A. */
+export const TEAM_DOCUMENTS_SCOPE = 'team-perfil-profesional-v1';
+const CV_TYPES = new Set([
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/msword',
+]);
+const CV_MAX_BYTES = 5 * 1024 * 1024;
+
+export interface ProfileDocumentsInput {
+  consent?: boolean;
+  cv?: { filename?: string; mime?: string; base64?: string };
+  links?: string[];
+}
+
+/** Solo textos cortos y listas acotadas: el perfil es declarado, no un documento. */
+function sanitizePerfil(p: NonNullable<DeclaredProfile['perfil']>): NonNullable<DeclaredProfile['perfil']> {
+  const short = (v: unknown) => (typeof v === 'string' ? v.slice(0, 80) : undefined);
+  return {
+    ...(Array.isArray(p.superpoderes) ? { superpoderes: p.superpoderes.slice(0, 3).map((x) => String(x).slice(0, 40)) } : {}),
+    ...(short(p.aprender) ? { aprender: short(p.aprender) } : {}),
+    ...(short(p.motivacion) ? { motivacion: short(p.motivacion) } : {}),
+    ...(p.trabajo && typeof p.trabajo === 'object'
+      ? { trabajo: Object.fromEntries(Object.entries(p.trabajo).slice(0, 8).map(([k, v]) => [k.slice(0, 30), String(v).slice(0, 80)])) }
+      : {}),
+    ...(p.reunion && short(p.reunion.dia) && short(p.reunion.horario)
+      ? { reunion: { dia: short(p.reunion.dia)!.slice(0, 20), horario: short(p.reunion.horario)!.slice(0, 20) } }
+      : {}),
+  };
+}
+
+/** Sin aceptación no hay entrada: no existe un recorrido sin registro. */
+function consentRecord(choice: ConsentChoice | undefined): ConsentRecord {
+  if (choice?.accepted !== true) throw new BadRequestException('consent_required');
+  return {
+    scopeId: TEAM_CONSENT_SCOPE,
+    operation: true,
+    research: true,
+    profile: false,
+    documentsAi: false,
+    decidedAt: new Date().toISOString(),
+  };
+}
 
 /**
  * Primer Pulso — orquestación del onboarding del equipo sobre D.A.L.A.
@@ -36,26 +100,20 @@ export class TeamService {
 
   // ── Identidad ────────────────────────────────────────────────────────────
 
-  async join(inviteCode: string, name?: string, roleLabel?: string) {
+  async join(inviteCode: string, name?: string, roleLabel?: string, consent?: ConsentChoice) {
     const member = await this.repository.findByInviteCode(inviteCode?.trim()?.toUpperCase() ?? '');
     if (!member) throw new NotFoundException('unknown_invite_code');
 
+    const record = consentRecord(consent);
     const updated = await this.repository.markJoined(member.member_id, name, roleLabel);
+    await this.repository.saveConsent(member.member_id, record);
     // El seudónimo se resuelve igual que para cualquier usuario: mapeo en auth.
     const { subjectId } = await this.dala.resolveSubject(member.member_id);
 
-    const payload: TeamTokenPayload = {
-      sub: member.member_id,
-      subjectId,
-      name: updated.name ?? 'pulso',
-      scope: 'team-pulse',
-    };
-    const token = jwt.sign(payload, TEAM_JWT_SECRET(), { expiresIn: '24h' });
-
     return {
-      token,
+      token: this.sign(member.member_id, subjectId, updated.name, record),
       subjectId,
-      consent: { scopeId: TEAM_CONSENT_SCOPE, researchAllowed: true },
+      consent: { scopeId: record.scopeId, researchAllowed: record.research },
       member: this.publicMember(updated),
     };
   }
@@ -66,7 +124,7 @@ export class TeamService {
    * miembro y su seudónimo, y su modelo dinámico ACUMULA entre sesiones.
    * Se desactiva con TEAM_OPEN_REGISTRATION=0.
    */
-  async register(input: { name?: string; email?: string; age?: number; area?: string }) {
+  async register(input: { name?: string; email?: string; age?: number; area?: string; consent?: ConsentChoice }) {
     if (process.env['TEAM_OPEN_REGISTRATION'] === '0') {
       throw new ForbiddenException('open_registration_disabled');
     }
@@ -75,32 +133,37 @@ export class TeamService {
     const age = Number(input.age);
     if (name.length < 2) throw new BadRequestException('invalid_name');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new BadRequestException('invalid_email');
-    // Piloto adultos: fuera de rango no se procesa (regla del protocolo v0.2).
-    if (!Number.isInteger(age) || age < 21 || age > 36) {
-      throw new BadRequestException('age_out_of_pilot_range');
-    }
+    // Edad libre: solo se verifica que sea un número entero positivo.
+    if (!Number.isInteger(age) || age < 1) throw new BadRequestException('invalid_age');
+    const record = consentRecord(input.consent);
 
     const existing = await this.repository.findByEmail(email);
     const member = existing
       ? await this.repository.markJoined(existing.member_id, name, input.area)
       : await this.repository.createOpen({ name, email, roleLabel: input.area });
 
-    const { subjectId } = await this.dala.resolveSubject(member.member_id);
-    const payload: TeamTokenPayload = {
-      sub: member.member_id,
-      subjectId,
-      name: member.name ?? 'pulso',
-      scope: 'team-pulse',
-    };
-    const token = jwt.sign(payload, TEAM_JWT_SECRET(), { expiresIn: '24h' });
+    // Cada entrada vuelve a preguntar: la última aceptación es la vigente.
+    await this.repository.saveConsent(member.member_id, record);
 
+    const { subjectId } = await this.dala.resolveSubject(member.member_id);
     return {
-      token,
+      token: this.sign(member.member_id, subjectId, member.name, record),
       subjectId,
       returning: Boolean(existing),
-      consent: { scopeId: TEAM_CONSENT_SCOPE, researchAllowed: true },
+      consent: { scopeId: record.scopeId, researchAllowed: record.research },
       member: this.publicMember(member),
     };
+  }
+
+  private sign(memberId: string, subjectId: string, name: string | null, consent: ConsentRecord) {
+    const payload: TeamTokenPayload = {
+      sub: memberId,
+      subjectId,
+      name: name ?? 'pulso',
+      scope: 'team-pulse',
+      research: consent.research,
+    };
+    return jwt.sign(payload, TEAM_JWT_SECRET(), { expiresIn: '24h' });
   }
 
   async me(auth: TeamTokenPayload) {
@@ -118,6 +181,8 @@ export class TeamService {
    */
   async ingestBatch(auth: TeamTokenPayload, events: Array<DalaBehaviorEvent | DalaEventV2>) {
     if (!Array.isArray(events) || events.length === 0) return [];
+    // Sin la finalidad de investigación no existe registro analítico personal.
+    if (auth.research === false) throw new ForbiddenException('research_not_consented');
     if (events.length > 200) throw new BadRequestException('batch_too_large');
     for (const event of events) {
       if (event?.subjectId !== auth.subjectId) {
@@ -127,6 +192,61 @@ export class TeamService {
     const v2 = events.filter((e): e is DalaEventV2 => e.schemaVersion === DALA_EVENT_SCHEMA_V2);
     const v1 = events.filter((e): e is DalaBehaviorEvent => e.schemaVersion !== DALA_EVENT_SCHEMA_V2);
     return [...(await this.dala.ingestBatchV2(v2)), ...(await this.dala.ingestBatch(v1))];
+  }
+
+  // ── Perfil profesional: CV y enlaces (nunca entran a D.A.L.A.) ──────────
+
+  /**
+   * Guarda el CV (PDF o Word, hasta 5 MB) y enlaces profesionales con su
+   * autorización específica. No se analizan con IA ni se usan para evaluar.
+   */
+  async saveProfileDocuments(auth: TeamTokenPayload, input: ProfileDocumentsInput) {
+    if (input?.consent !== true) throw new BadRequestException('consent_required');
+    const docs: Array<{ kind: 'cv' | 'link'; filename?: string; mime?: string; size?: number; data?: Buffer; url?: string }> = [];
+
+    if (input.cv?.base64) {
+      const mime = input.cv.mime ?? '';
+      if (!CV_TYPES.has(mime)) throw new BadRequestException('unsupported_file_type');
+      const data = Buffer.from(input.cv.base64, 'base64');
+      if (data.length === 0 || data.length > CV_MAX_BYTES) throw new BadRequestException('file_too_large');
+      const filename = (input.cv.filename ?? 'cv').replace(/[^\w.\- áéíóúñÁÉÍÓÚÑ]/g, '_').slice(0, 200);
+      docs.push({ kind: 'cv', filename, mime, size: data.length, data });
+    }
+    for (const raw of (input.links ?? []).slice(0, 5)) {
+      const url = raw?.trim();
+      if (!url) continue;
+      if (!/^https?:\/\/\S+$/i.test(url) || url.length > 500) throw new BadRequestException('invalid_link');
+      docs.push({ kind: 'link', url });
+    }
+    if (!docs.length) throw new BadRequestException('nothing_to_save');
+
+    const consent = {
+      scopeId: TEAM_DOCUMENTS_SCOPE,
+      purpose: 'conocer el perfil profesional dentro del equipo',
+      aiAnalysis: false,
+      decidedAt: new Date().toISOString(),
+    };
+    const saved = await this.repository.saveDocuments(auth.sub, docs, consent);
+    return { saved: saved.length, cv: docs.some((d) => d.kind === 'cv'), links: docs.filter((d) => d.kind === 'link').length };
+  }
+
+  async adminDocuments(memberId: string) {
+    const docs = await this.repository.listDocuments(memberId);
+    return docs.map((d) => ({
+      documentId: d.document_id,
+      kind: d.kind,
+      filename: d.filename,
+      mime: d.mime,
+      size: d.size,
+      url: d.url,
+      createdAt: d.created_at,
+    }));
+  }
+
+  async adminDocument(memberId: string, documentId: string) {
+    const doc = await this.repository.findDocument(memberId, documentId);
+    if (!doc?.data) throw new NotFoundException('unknown_document');
+    return { filename: doc.filename ?? 'cv', mime: doc.mime ?? 'application/octet-stream', data: Buffer.from(doc.data) };
   }
 
   // ── Declarado (nunca se mezcla con evidencia conductual) ────────────────
@@ -148,6 +268,7 @@ export class TeamService {
       ...(declared.shareConditions !== undefined
         ? { shareConditions: declared.shareConditions !== false }
         : {}),
+      ...(declared.perfil !== undefined ? { perfil: sanitizePerfil({ ...prior.perfil, ...declared.perfil }) } : {}),
     };
     await this.repository.saveDeclared(auth.sub, clean as object);
     return { saved: true, declared: clean };
@@ -229,14 +350,20 @@ export class TeamService {
    * registro, lo declarado (separado de lo observado) y sus decisiones.
    * Las etiquetas de ámbitos y escenas vienen del marco versionado.
    */
-  async report(auth: TeamTokenPayload) {
-    return this.reportFor(auth.sub, auth.subjectId);
+  async report(auth: TeamTokenPayload, since?: string) {
+    return this.reportFor(auth.sub, auth.subjectId, since);
   }
 
-  private async reportFor(memberId: string, subjectId: string) {
+  /**
+   * @param since instantánea de referencia (la "A", tomada al terminar de
+   * aprender D.A.L.A.): el retrato la devuelve como `baseline` para mostrar
+   * qué cambió con las misiones. Solo se aceptan instantáneas del sujeto.
+   */
+  private async reportFor(memberId: string, subjectId: string, since?: string) {
     const member = await this.repository.findById(memberId);
     if (!member) throw new NotFoundException('unknown_member');
     const snapshot = await this.dala.snapshotV2(subjectId);
+    const baseline = since ? await this.dala.snapshotByIdV2(subjectId, since) : null;
     const decisions = await this.dala.decisionsFor(subjectId, 5);
     const outcomes = await Promise.all(decisions.map((d) => this.dala.outcomesFor(d.decision_id)));
     const fw = this.dala.framework;
@@ -245,6 +372,18 @@ export class TeamService {
       subjectId,
       declared: (member.declared_json ?? {}) as DeclaredProfile,
       snapshot,
+      baseline: baseline
+        ? {
+            snapshotId: baseline.snapshotId,
+            createdAt: baseline.createdAt,
+            claims: baseline.claims.map((c) => ({
+              key: c.key,
+              numerator: c.observation.numerator,
+              denominator: c.observation.denominator,
+              evidenceStatus: c.evidenceStatus,
+            })),
+          }
+        : null,
       framework: {
         version: fw.version,
         ambitos: fw.ambitos,
@@ -326,7 +465,7 @@ export class TeamService {
         inviteCode: m.invite_code,
         email: m.email,
         declared: shared
-          ? { area: declared.area, portal: declared.portal }
+          ? { area: declared.area, portal: declared.portal, perfil: declared.perfil }
           : 'la persona decidió no compartirlo',
       };
     });

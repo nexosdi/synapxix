@@ -7,12 +7,15 @@ export type { Observation as SceneObservation } from '@nexosdi.synapxix/dala/ins
 
 /** Escenas D.A.L.A. del piloto y su clave en el marco. */
 export const SCENE_OF_SCREEN: Record<string, string> = {
-  gustos: 'gustos',
-  mapa: 'mapa',
-  categorize: 'observatorio',
-  timeline: 'ciclo',
-  intruder: 'camara',
+  nucleo: 'nucleo',
+  caso: 'caso',
+  fuentes: 'fuentes',
+  instantanea: 'instantanea',
+  superpoderes: 'superpoderes',
+  motivaciones: 'motivaciones',
+  desafio: 'desafio',
+  equipo: 'equipo',
+  trabajo: 'trabajo',
   shadow: 'decision',
-  contrast: 'contraste',
   result: 'retrato',
 };

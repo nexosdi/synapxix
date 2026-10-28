@@ -4,44 +4,58 @@ import { PulseSessionService } from './services/pulse-session.service';
 import { UiService } from './services/ui.service';
 import { IntroComponent } from './scenes/intro.component';
 import { EntryComponent } from './scenes/entry.component';
-import { DalaIntroComponent } from './scenes/dala-intro.component';
-import { GustosComponent } from './scenes/gustos.component';
-import { MapaComponent } from './scenes/mapa.component';
-import { MissionCategorizeComponent } from './scenes/mission-categorize.component';
-import { MissionTimelineComponent } from './scenes/mission-timeline.component';
-import { MissionIntruderComponent } from './scenes/mission-intruder.component';
-import { ShadowComponent, type AssignedStep } from './scenes/shadow.component';
-import { ContrastComponent } from './scenes/contrast.component';
+import { NucleoComponent } from './scenes/nucleo.component';
+import { CasoComponent } from './scenes/caso.component';
+import { FuentesComponent } from './scenes/fuentes.component';
+import { InstantaneaComponent } from './scenes/instantanea.component';
+import { SemanaComponent } from './scenes/semana.component';
+import { SuperpoderesComponent } from './scenes/superpoderes.component';
+import { MotivacionesComponent } from './scenes/motivaciones.component';
+import { DesafioComponent, type DesafioChoice } from './scenes/desafio.component';
+import { RetoComponent } from './scenes/reto.component';
+import { EquipoComponent } from './scenes/equipo.component';
+import { TrabajoComponent } from './scenes/trabajo.component';
+import { CvComponent } from './scenes/cv.component';
+import { ShadowComponent } from './scenes/shadow.component';
 import { ResultComponent } from './scenes/result.component';
 import { InvestigacionComponent } from './scenes/investigacion.component';
-import type { MissionScreen } from './content';
+import { DESAFIOS, type DayId } from './content';
 import { SCENE_OF_SCREEN } from './scene-observation';
 
 const SCREENS = [
   'intro',
   'entry',
-  'dala',
-  'gustos',
-  'mapa',
-  'categorize',
-  'timeline',
-  'intruder',
+  'nucleo',
+  'caso',
+  'fuentes',
+  'instantanea',
+  'semana',
+  'superpoderes',
+  'motivaciones',
+  'desafio',
+  'reto',
+  'equipo',
+  'trabajo',
   'shadow',
-  'contrast',
+  'cv',
   'result',
 ] as const;
 type Screen = (typeof SCREENS)[number];
 
-/** Los cuatro actos: Synapxix → D.A.L.A. → el juego → tu modelo. */
+/**
+ * Synapxix → bienvenida → aprender D.A.L.A. → tu primera semana → tu
+ * modelo. El registro empieza en el acto III, tras el consentimiento.
+ */
 const ACTS = [
-  { roman: 'I', label: 'Synapxix', screens: ['intro', 'entry'] },
-  { roman: 'II', label: 'D.A.L.A.', screens: ['dala'] },
-  { roman: 'III', label: 'El juego', screens: ['gustos', 'mapa', 'categorize', 'timeline', 'intruder', 'shadow', 'contrast'] },
-  { roman: 'IV', label: 'Tu modelo', screens: ['result'] },
+  { roman: 'I', label: 'Synapxix', screens: ['intro'] },
+  { roman: 'II', label: 'Bienvenida', screens: ['entry'] },
+  { roman: 'III', label: 'D.A.L.A.', screens: ['nucleo', 'caso', 'fuentes', 'instantanea'] },
+  { roman: 'IV', label: 'Tu primera semana', screens: ['semana', 'superpoderes', 'motivaciones', 'desafio', 'reto', 'equipo', 'trabajo', 'shadow'] },
+  { roman: 'V', label: 'Tu modelo', screens: ['cv', 'result'] },
 ];
 
 /**
- * Primer Pulso · piloto D.A.L.A. (marco pulso-web@0.1) — cáscara.
+ * Primer Pulso · piloto D.A.L.A. (marco pulso-web@0.4) — cáscara.
  * Las escenas son puras: emiten observaciones. Solo esta cáscara conoce el
  * puente: lo conecta a cada escena y marca la entrada y salida de escena.
  * Con ?investigacion abre la vista del equipo investigador.
@@ -52,14 +66,19 @@ const ACTS = [
   imports: [
     IntroComponent,
     EntryComponent,
-    DalaIntroComponent,
-    GustosComponent,
-    MapaComponent,
-    MissionCategorizeComponent,
-    MissionTimelineComponent,
-    MissionIntruderComponent,
+    NucleoComponent,
+    CasoComponent,
+    FuentesComponent,
+    InstantaneaComponent,
+    SemanaComponent,
+    SuperpoderesComponent,
+    MotivacionesComponent,
+    DesafioComponent,
+    RetoComponent,
+    EquipoComponent,
+    TrabajoComponent,
+    CvComponent,
     ShadowComponent,
-    ContrastComponent,
     ResultComponent,
     InvestigacionComponent,
   ],
@@ -69,7 +88,7 @@ const ACTS = [
       <div class="orb b"></div>
 
       <header class="topbar">
-        <div class="brand"><img src="logo-light.png" alt="" /><span>Synapxix</span></div>
+        <div class="brand"><img src="logo-wordmark.png" alt="Synapxix" /></div>
         <div class="topright">
           <button class="sound" (click)="toggleSound()" aria-label="Activar o silenciar sonido">
             {{ ui.soundOn() ? '♪' : '×' }}
@@ -100,35 +119,48 @@ const ACTS = [
           <section class="screen"><synapxix-intro (done)="go('entry')" /></section>
         }
         @case ('entry') {
-          <section class="screen"><synapxix-entry (done)="go('dala')" /></section>
+          <section class="screen"><synapxix-entry (done)="go('nucleo')" /></section>
         }
-        @case ('dala') {
-          <section class="screen"><synapxix-dala-intro (done)="go('gustos')" /></section>
+        @case ('nucleo') {
+          <section class="screen"><synapxix-nucleo (observe)="session.observe($event)" (done)="go('caso')" /></section>
         }
-        @case ('gustos') {
-          <section class="screen"><synapxix-gustos (observe)="session.observe($event)" (done)="go('mapa')" /></section>
+        @case ('caso') {
+          <section class="screen"><synapxix-caso (observe)="session.observe($event)" (done)="go('fuentes')" /></section>
         }
-        @case ('mapa') {
-          <section class="screen">
-            <synapxix-mapa [completed]="completed()" (observe)="session.observe($event)" (chosen)="go($event)" (finish)="go('shadow')" />
-          </section>
+        @case ('fuentes') {
+          <section class="screen"><synapxix-fuentes (observe)="session.observe($event)" (done)="go('instantanea')" /></section>
         }
-        @case ('categorize') {
-          <section class="screen"><synapxix-mission-categorize (observe)="session.observe($event)" (done)="complete('categorize')" /></section>
+        @case ('instantanea') {
+          <section class="screen"><synapxix-instantanea (observe)="session.observe($event)" (done)="go('semana')" /></section>
         }
-        @case ('timeline') {
-          <section class="screen"><synapxix-mission-timeline (observe)="session.observe($event)" (done)="complete('timeline')" /></section>
+        @case ('semana') {
+          <section class="screen"><synapxix-semana [done]="completed()" (chosen)="go($event)" (finish)="go('shadow')" /></section>
         }
-        @case ('intruder') {
-          <section class="screen"><synapxix-mission-intruder (observe)="session.observe($event)" (done)="complete('intruder')" /></section>
+        @case ('superpoderes') {
+          <section class="screen"><synapxix-superpoderes (observe)="session.observe($event)" (done)="complete('superpoderes')" /></section>
+        }
+        @case ('motivaciones') {
+          <section class="screen"><synapxix-motivaciones (observe)="session.observe($event)" (done)="complete('motivaciones')" /></section>
+        }
+        @case ('desafio') {
+          <section class="screen"><synapxix-desafio (observe)="session.observe($event)" (begin)="startReto($event)" /></section>
+        }
+        @case ('reto') {
+          @if (reto(); as r) {
+            <section class="screen"><synapxix-reto [desafio]="r.id" [mode]="r.mode" (observe)="session.observe($event)" (done)="complete('desafio')" /></section>
+          }
+        }
+        @case ('equipo') {
+          <section class="screen"><synapxix-equipo (observe)="session.observe($event)" (done)="complete('equipo')" /></section>
+        }
+        @case ('trabajo') {
+          <section class="screen"><synapxix-trabajo (observe)="session.observe($event)" (done)="complete('trabajo')" /></section>
         }
         @case ('shadow') {
-          <section class="screen"><synapxix-shadow (observe)="session.observe($event)" (done)="assigned.set($event); go('contrast')" /></section>
+          <section class="screen"><synapxix-shadow (observe)="session.observe($event)" (done)="go('cv')" /></section>
         }
-        @case ('contrast') {
-          @if (assigned(); as step) {
-            <section class="screen"><synapxix-contrast [step]="step" (observe)="session.observe($event)" (done)="go('result')" /></section>
-          }
+        @case ('cv') {
+          <section class="screen"><synapxix-cv (done)="go('result')" /></section>
         }
         @case ('result') {
           <section class="screen"><synapxix-result (observe)="session.observe($event)" /></section>
@@ -160,7 +192,7 @@ const ACTS = [
               </ul>
             }
             @if (m.observes) {
-              <p class="observes"><b>QUÉ OBSERVA D.A.L.A. AQUÍ</b>{{ m.observes }}</p>
+              <p class="observes"><b>QUÉ OBSERVA D.A.L.A. ACÁ</b>{{ m.observes }}</p>
             }
             <div class="modalActions">
               <button class="btn secondary" (click)="ui.closeModal()">Cerrar</button>
@@ -182,20 +214,27 @@ export class AppComponent implements OnDestroy {
   readonly research = new URLSearchParams(location.search).has('investigacion');
   readonly frameworkVersion = PULSO_WEB_FRAMEWORK.version;
   readonly screen = signal<Screen>('intro');
-  readonly assigned = signal<AssignedStep | null>(null);
-  readonly completed = signal<MissionScreen[]>([]);
+  readonly reto = signal<DesafioChoice | null>(null);
+  readonly completed = signal<DayId[]>([]);
   readonly acts = ACTS;
   readonly actIndex = computed(() => ACTS.findIndex((a) => a.screens.includes(this.screen())));
-  /** El puente arranca la sesión en la escena de gustos. */
-  private currentScene = 'gustos';
+  /** El puente arranca la sesión en el núcleo, justo después del consentimiento. */
+  private currentScene = 'nucleo';
 
-  complete(mission: MissionScreen) {
-    this.completed.update((c) => (c.includes(mission) ? c : [...c, mission]));
-    this.go('mapa');
+
+  complete(day: DayId) {
+    this.completed.update((c) => (c.includes(day) ? c : [...c, day]));
+    this.go('semana');
   }
 
-  go(next: Screen) {
-    const scene = SCENE_OF_SCREEN[next];
+  /** El desafío elegido define la escena: cada uno es una habilidad distinta. */
+  startReto(choice: DesafioChoice) {
+    this.reto.set(choice);
+    this.go('reto', DESAFIOS.find((d) => d.id === choice.id)?.scene);
+  }
+
+  go(next: Screen, sceneOverride?: string) {
+    const scene = sceneOverride ?? SCENE_OF_SCREEN[next];
     if (scene && scene !== this.currentScene) {
       this.session.leaveScene();
       this.session.enterScene(scene);

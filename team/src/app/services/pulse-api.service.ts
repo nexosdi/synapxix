@@ -26,11 +26,35 @@ export interface FrameworkView {
   }>;
 }
 
+/** Una sola autorización, obligatoria para entrar. */
+export interface ConsentChoice {
+  accepted: boolean;
+}
+
+/** Afirmación de la instantánea A, reducida a lo que se compara. */
+export interface BaselineClaim {
+  key: string;
+  numerator: number;
+  denominator: number;
+  evidenceStatus: string;
+}
+
+/** Perfil de trabajo declarado en «Tu primera semana» (no es evidencia). */
+export interface Perfil {
+  superpoderes?: string[];
+  aprender?: string;
+  motivacion?: string;
+  trabajo?: Record<string, string>;
+  reunion?: { dia: string; horario: string };
+}
+
 export interface PulseReport {
   member: { memberId: string; name: string | null; roleLabel: string | null; status: string };
   subjectId: string;
-  declared: { area?: string; portal?: string };
+  declared: { area?: string; portal?: string; perfil?: Perfil };
   snapshot: DalaSnapshotV2 & { snapshotId: string; reused: boolean };
+  /** Instantánea A (al terminar de aprender D.A.L.A.), si se pidió con `since`. */
+  baseline?: { snapshotId: string; createdAt: string; claims: BaselineClaim[] } | null;
   framework: FrameworkView;
   decisions: Array<{
     decisionId: string;
@@ -87,6 +111,16 @@ export interface ReplayCheck {
   engineVersion?: string;
 }
 
+export interface ProfileDocument {
+  documentId: string;
+  kind: 'cv' | 'link';
+  filename: string | null;
+  mime: string | null;
+  size: number | null;
+  url: string | null;
+  createdAt: string;
+}
+
 export interface MemberRow {
   memberId: string;
   name: string | null;
@@ -94,7 +128,7 @@ export interface MemberRow {
   status: string;
   email: string | null;
   completedAt: string | null;
-  declared: { area?: string; portal?: string } | string;
+  declared: { area?: string; portal?: string; perfil?: Perfil } | string;
 }
 
 /** Cliente de la API del Primer Pulso. El token vive en PulseSessionService. */
@@ -102,16 +136,22 @@ export interface MemberRow {
 export class PulseApiService {
   private readonly session = inject(PulseSessionService);
 
-  join(inviteCode: string, name: string, roleLabel?: string): Promise<JoinResponse> {
-    return this.post(`${API}/join`, { inviteCode, name, roleLabel }, false);
+  join(inviteCode: string, name: string, roleLabel: string | undefined, consent: ConsentChoice): Promise<JoinResponse> {
+    return this.post(`${API}/join`, { inviteCode, name, roleLabel, consent }, false);
   }
 
   /** Inscripción abierta del onboarding web. Idempotente por email. */
-  register(input: { name: string; email: string; age: number; area: string }): Promise<JoinResponse & { returning: boolean }> {
+  register(input: {
+    name: string;
+    email: string;
+    age: number;
+    area: string;
+    consent: ConsentChoice;
+  }): Promise<JoinResponse & { returning: boolean }> {
     return this.post(`${API}/register`, input, false);
   }
 
-  saveDeclared(declared: { portal?: string; area?: string; ageBand?: string }) {
+  saveDeclared(declared: { portal?: string; area?: string; ageBand?: string; perfil?: Perfil }) {
     return this.post(`${API}/declared`, declared);
   }
 
@@ -127,8 +167,9 @@ export class PulseApiService {
     return this.post(`${API}/me/outcomes`, { decisionId, interventionId, metrics });
   }
 
-  report(): Promise<PulseReport> {
-    return this.get(`${API}/me/report`);
+  /** @param since instantánea A contra la que se muestra qué cambió. */
+  report(since?: string | null): Promise<PulseReport> {
+    return this.get(`${API}/me/report${since ? `?since=${encodeURIComponent(since)}` : ''}`);
   }
 
   traceClaim(claimKey: string): Promise<TraceResult> {
@@ -141,6 +182,11 @@ export class PulseApiService {
 
   exportOwn(): Promise<unknown> {
     return this.get(`${API}/me/export`);
+  }
+
+  /** CV (base64) y enlaces profesionales, con su autorización propia. */
+  saveCv(input: { consent: boolean; cv?: { filename: string; mime: string; base64: string }; links: string[] }) {
+    return this.post<{ saved: number; cv: boolean; links: number }>(`${API}/me/cv`, input);
   }
 
   complete(archetype?: string) {
@@ -159,6 +205,16 @@ export class PulseApiService {
 
   adminTrace(code: string, memberId: string, claimKey: string): Promise<TraceResult> {
     return this.get(`${API}/admin/members/${memberId}/claims/${encodeURIComponent(claimKey)}/trace`, code);
+  }
+
+  adminDocuments(code: string, memberId: string): Promise<ProfileDocument[]> {
+    return this.get(`${API}/admin/members/${memberId}/documents`, code);
+  }
+
+  async adminDocumentBlob(code: string, memberId: string, documentId: string): Promise<Blob> {
+    const response = await fetch(`${API}/admin/members/${memberId}/documents/${documentId}`, { headers: { 'X-Team-Admin-Code': code } });
+    if (!response.ok) throw new Error(`request_failed_${response.status}`);
+    return response.blob();
   }
 
   adminReplay(code: string, memberId: string): Promise<ReplayCheck> {

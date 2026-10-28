@@ -1,9 +1,9 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Req, UseGuards } from '@nestjs/common';
-import { Request } from 'express';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import type { DalaBehaviorEvent, DalaEventV2 } from '@nexosdi.synapxix/dala/contracts';
 import { TeamAdminGuard, TeamAuthGuard, TeamTokenPayload } from './team-auth.guard';
-import { TeamService } from './team.service';
+import { TeamService, type ConsentChoice, type ProfileDocumentsInput } from './team.service';
 import type { DeclaredProfile, TeamArchetype } from './archetype';
 
 type TeamRequest = Request & { teamMember: TeamTokenPayload };
@@ -19,8 +19,8 @@ export class TeamController {
   /** Entrada con link/código de invitación. */
   @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 20, ttl: 10000 } })
   @Post('join')
-  join(@Body() body: { inviteCode: string; name?: string; roleLabel?: string }) {
-    return this.service.join(body?.inviteCode, body?.name, body?.roleLabel);
+  join(@Body() body: { inviteCode: string; name?: string; roleLabel?: string; consent?: ConsentChoice }) {
+    return this.service.join(body?.inviteCode, body?.name, body?.roleLabel, body?.consent);
   }
 
   /**
@@ -29,7 +29,7 @@ export class TeamController {
    */
   @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 15, ttl: 10000 } })
   @Post('register')
-  register(@Body() body: { name?: string; email?: string; age?: number; area?: string }) {
+  register(@Body() body: { name?: string; email?: string; age?: number; area?: string; consent?: ConsentChoice }) {
     return this.service.register(body ?? {});
   }
 
@@ -111,8 +111,16 @@ export class TeamController {
   /** Retrato trazable: instantánea vigente + declarado + decisiones. */
   @UseGuards(TeamAuthGuard)
   @Get('me/report')
-  report(@Req() req: TeamRequest) {
-    return this.service.report(req.teamMember);
+  report(@Req() req: TeamRequest, @Query('since') since?: string) {
+    return this.service.report(req.teamMember, since);
+  }
+
+  /** CV y enlaces profesionales, con su propia autorización. */
+  @UseGuards(TeamAuthGuard)
+  @Throttle({ medium: { limit: 5, ttl: 60000 } })
+  @Post('me/cv')
+  saveCv(@Req() req: TeamRequest, @Body() body: ProfileDocumentsInput) {
+    return this.service.saveProfileDocuments(req.teamMember, body ?? {});
   }
 
   /** Estrella ilustrada con IA. Opcional: requiere GEMINI_API_KEY. */
@@ -155,6 +163,21 @@ export class TeamController {
   @Get('admin/members/:memberId/export')
   adminExport(@Param('memberId') memberId: string) {
     return this.service.adminExport(memberId);
+  }
+
+  @UseGuards(TeamAdminGuard)
+  @Get('admin/members/:memberId/documents')
+  adminDocuments(@Param('memberId') memberId: string) {
+    return this.service.adminDocuments(memberId);
+  }
+
+  @UseGuards(TeamAdminGuard)
+  @Get('admin/members/:memberId/documents/:documentId')
+  async adminDocument(@Param('memberId') memberId: string, @Param('documentId') documentId: string, @Res() res: Response) {
+    const doc = await this.service.adminDocument(memberId, documentId);
+    res.setHeader('Content-Type', doc.mime);
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(doc.filename)}"`);
+    res.send(doc.data);
   }
 
   @UseGuards(TeamAdminGuard)

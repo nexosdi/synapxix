@@ -80,3 +80,7 @@ data/
 postgres/
 data/
 .env
+
+# Documentos de trabajo internos (no van al repo público)
+docs/*.docx
+docs/*.pdf

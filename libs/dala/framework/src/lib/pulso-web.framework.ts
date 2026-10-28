@@ -1,17 +1,26 @@
 /**
- * Marco D.A.L.A. del piloto web "Primer Pulso" — versión pulso-web@0.2.
+ * Marco D.A.L.A. del piloto web "Primer Pulso" — versión pulso-web@0.4.
  *
- * 0.2: la escena de gustos reemplaza al portal (puerta + pares de
- * actividades), el mapa deja elegir el orden de las misiones y cada misión
- * ofrece jugar con o sin pista. Dos fichas nuevas: intereses declarados y
- * búsqueda de desafío.
+ * 0.4 (revisión del acto IV, 28-oct): el juego deja de enseñar D.A.L.A.
+ * (eso ya ocurre en el acto III) y pasa a conocer a la persona como un
+ * onboarding de equipo, «Tu primera semana en Synapxix»: superpoderes y lo
+ * que quiere aprender (declarado), motivaciones (declarado), un desafío de
+ * trabajo real elegido por ella (observado), situaciones de equipo
+ * (observado) y cómo trabaja (declarado, perfil). Salen las misiones
+ * Observatorio, El ciclo y Cámara de eco, el mapa y el contraste. Fichas
+ * nuevas: habilidades declaradas, motivaciones declaradas, estilo de
+ * colaboración y coherencia entre lo que dice que sabe hacer y el desafío
+ * que elige. La decisión de la IA sugiere por dónde empezar en el equipo.
+ *
+ * 0.3: el registro empieza al aprender D.A.L.A. (núcleo, caso, tarjetas e
+ * instantánea A). 0.2: gustos, mapa y modo con o sin pista.
  *
  * Primera aplicación ejecutable del Modelo Fundacional 0.1. Población:
  * adultos (equipo e investigadores) como banco de pruebas, antes de las
  * escenas infantiles. Todos los umbrales son provisionales y están marcados
  * `calibrated: false`: se fijan y evalúan en el protocolo de cada estudio.
  */
-import type { DalaFramework, Sufficiency } from './types';
+import type { DalaFramework, SceneSpec, Sufficiency } from './types';
 
 const DESCRIPTIVA = (provisional: number, supported: number, scenes: number): Sufficiency => ({
   provisional: { minOpportunities: provisional },
@@ -21,14 +30,58 @@ const DESCRIPTIVA = (provisional: number, supported: number, scenes: number): Su
 
 const TAREA_EXPOSICION = ['task_presented', 'options_presented', 'support_available'] as const;
 
+/** Un desafío de trabajo: consigna, una o dos tareas con apoyo y el porqué opcional. */
+function desafio(id: string, title: string, purpose: string, skill: string, strategy = false): SceneSpec {
+  return {
+    id,
+    version: '0.4',
+    title,
+    purpose,
+    skill,
+    opportunities: [
+      {
+        kind: 'consigna',
+        description: 'Consigna disponible antes de empezar.',
+        exposureEvents: ['instruction_presented'],
+        actionEvents: ['instructions_opened'],
+      },
+      {
+        kind: 'tarea',
+        description: 'Resolver con la pista disponible si eligió jugar con red; cambiar la respuesta antes de enviar; omitir tras un error.',
+        exposureEvents: [...TAREA_EXPOSICION],
+        actionEvents: [
+          'action_performed',
+          'answer_revised',
+          ...(strategy ? (['strategy_changed'] as const) : []),
+          'response_submitted',
+          'hint_requested',
+          'support_delivered',
+          'task_skipped',
+          'task_completed',
+        ],
+      },
+      {
+        kind: 'exploracion',
+        description: 'Explicación opcional tras resolver.',
+        exposureEvents: ['exploration_offered'],
+        actionEvents: ['exploration_opened'],
+      },
+    ],
+    affordances: { revisable: true, skipAfterError: true, ...(strategy ? { strategyOption: true } : {}) },
+    variablesToControl: ['orden inicial de las opciones', 'contenido de la pista'],
+    exclusions: ['interrupción declarada'],
+    contrast: 'Un desafío nuevo de la misma habilidad, en otra sesión.',
+  };
+}
+
 export const PULSO_WEB_FRAMEWORK: DalaFramework = {
-  version: 'pulso-web@0.2',
+  version: 'pulso-web@0.4',
 
   ambitos: [
     {
       id: 'conocimientos',
       name: 'Conocimientos y habilidades',
-      question: 'Qué comprende y puede hacer en una habilidad delimitada.',
+      question: 'Qué dice que sabe hacer y qué puede hacer en una habilidad delimitada.',
       withoutOpportunity: 'Tareas con rúbrica de la habilidad, con y sin apoyo.',
     },
     {
@@ -45,22 +98,21 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
     },
     {
       id: 'interaccion',
-      name: 'Interacción y respuesta socioemocional',
-      question: 'Cómo participa, comunica y afronta situaciones con otras personas.',
-      withoutOpportunity:
-        'Esta experiencia es individual. Se necesita una escena colaborativa con rúbrica de observación (§4).',
+      name: 'Trabajo en equipo',
+      question: 'Cómo actúa en situaciones de equipo y a quién recurre cuando no sabe cómo seguir.',
+      withoutOpportunity: 'Situaciones de trabajo simuladas con otras personas del equipo (§4).',
     },
     {
       id: 'intereses',
       name: 'Intereses, motivaciones y agencia',
-      question: 'Qué elige, qué explora y cuánto coincide lo que declara con lo que hace.',
+      question: 'Qué la mueve, qué elige y cuánto coincide lo que declara con lo que hace.',
       withoutOpportunity: 'Elecciones voluntarias entre alternativas comparables.',
     },
     {
       id: 'digital_ia',
       name: 'Competencias digitales y de IA',
-      question: 'Cómo evalúa y decide frente a una recomendación de un sistema de IA.',
-      withoutOpportunity: 'Recomendaciones del sistema que la persona pueda revisar y corregir.',
+      question: 'Cómo evalúa y decide frente a una propuesta de un sistema de IA.',
+      withoutOpportunity: 'Propuestas del sistema que la persona pueda revisar y corregir.',
     },
     {
       id: 'contexto',
@@ -72,8 +124,11 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
 
   skills: {
     clasificar_fuentes: 'distinguir lo observado, lo declarado y lo inferido',
-    ciclo_dala: 'reconstruir el ciclo de evidencia de D.A.L.A.',
     detectar_sobreinferencia: 'detectar una lectura que dice más de lo que la evidencia sostiene',
+    priorizar: 'ordenar los pasos para lanzar una funcionalidad',
+    depurar_codigo: 'encontrar el error en un fragmento de código',
+    analizar_informe: 'encontrar la conclusión que no se sostiene en un informe de datos',
+    comunicar_docentes: 'explicar algo técnico con claridad a una docente',
   },
 
   constructs: [
@@ -94,15 +149,38 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
         { when: 'omitidas', text: 'Omitió {detail.omitidas}.' },
       ],
       alternatives: [
-        'Familiaridad previa con el contenido de Synapxix',
+        'Familiaridad previa con el tema',
         'Pocas opciones por tarea favorecen acertar por descarte',
         'Claridad desigual entre tareas',
       ],
       nextCheck: 'Tareas nuevas de la misma habilidad, sin pista y en otra sesión.',
       limits: 'Describe desempeño en estas tareas. No mide inteligencia ni dominio fuera de la habilidad.',
       sufficiency: DESCRIPTIVA(1, 4, 2),
-      decisionsInformed: ['verificar_sin_apoyo', 'practicar_con_apoyo', 'recoger_evidencia'],
+      decisionsInformed: [],
       perSkill: true,
+    },
+    {
+      id: 'habilidades_declaradas',
+      version: '0.1',
+      ambito: 'conocimientos',
+      name: 'Superpoderes declarados',
+      question: '¿Qué dice que le sale natural y qué quiere aprender?',
+      operationalDefinition:
+        'Elección de tres habilidades entre doce (tres por familia: crear, analizar, acompañar y construir) y de una habilidad para aprender.',
+      opportunityKind: 'habilidad',
+      observables: ['habilidades ofrecidas', 'habilidades elegidas', 'habilidad para aprender'],
+      method: 'habilidades@0.1',
+      claimTemplate: 'Eligió como superpoderes {detail.lista}: la familia que más se repite es «{detail.top}» ({n} de {d}).',
+      claimExtras: [{ when: 'quiere_aprender', text: 'Quiere aprender: {detail.aprender}.' }],
+      alternatives: [
+        'Lo que hace a diario no siempre es lo que mejor le sale',
+        'Modestia o exceso de confianza al elegir',
+        'El nombre de una habilidad pudo resultar más atractivo que otro',
+      ],
+      nextCheck: 'Un desafío de cada familia, para contrastar lo declarado con lo que hace.',
+      limits: 'Es una declaración: no certifica competencias ni decide roles.',
+      sufficiency: DESCRIPTIVA(3, 6, 2),
+      decisionsInformed: ['linea_experiencias', 'linea_datos', 'linea_escuelas', 'linea_producto', 'rotacion'],
     },
     {
       id: 'busqueda_de_ayuda',
@@ -128,7 +206,7 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
       nextCheck: 'Tareas nuevas con apoyo comparable: si la ayuda llega a tiempo y si después resuelve sin ella.',
       limits: 'No atribuye un rasgo de dependencia ni de autonomía general.',
       sufficiency: DESCRIPTIVA(1, 3, 2),
-      decisionsInformed: ['practicar_con_apoyo', 'verificar_sin_apoyo'],
+      decisionsInformed: [],
     },
     {
       id: 'persistencia_tras_error',
@@ -151,7 +229,7 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
       nextCheck: 'Una tarea más difícil, con costo de tiempo real y la omisión igual de visible.',
       limits: 'No describe perseverancia como rasgo ni motivación general.',
       sufficiency: DESCRIPTIVA(1, 3, 2),
-      decisionsInformed: ['practicar_con_apoyo'],
+      decisionsInformed: [],
     },
     {
       id: 'consulta_de_consigna',
@@ -159,18 +237,18 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
       ambito: 'autorregulacion',
       name: 'Consulta de la consigna antes de actuar',
       question: '¿Verifica qué se le pide antes de empezar?',
-      operationalDefinition: 'Apertura de la consigna antes del primer envío de la misión.',
+      operationalDefinition: 'Apertura de la consigna antes del primer envío del desafío.',
       opportunityKind: 'consigna',
       observables: ['consigna disponible', 'apertura', 'momento respecto del primer envío'],
       method: 'consigna_previa@0.1',
-      claimTemplate: 'Consultó la consigna antes de actuar en {n} de {d} misiones.',
+      claimTemplate: 'Consultó la consigna antes de actuar en {n} de {d} desafíos.',
       claimExtras: [{ when: 'despues', text: 'La abrió después de empezar en {detail.despues}.' }],
       alternatives: [
         'La consigna en pantalla ya era suficiente',
         'Exploración de la interfaz',
         'Hábito de leer todo antes de empezar',
       ],
-      nextCheck: 'Misiones con consignas más ambiguas, para distinguir verificación de hábito.',
+      nextCheck: 'Desafíos con consignas más ambiguas, para distinguir verificación de hábito.',
       limits: 'No mide atención ni planificación general.',
       sufficiency: DESCRIPTIVA(1, 3, 3),
       decisionsInformed: [],
@@ -216,15 +294,16 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
     },
     {
       id: 'exploracion_voluntaria',
-      version: '0.1',
+      version: '0.2',
       ambito: 'intereses',
       name: 'Exploración voluntaria',
       question: '¿Abre lo opcional cuando se le ofrece?',
-      operationalDefinition: 'Apertura de una explicación opcional ofrecida después de resolver una tarea.',
+      operationalDefinition:
+        'Apertura de un contenido opcional cuando se ofrece: un componente del núcleo D.A.L.A. o la explicación posterior a una tarea.',
       opportunityKind: 'exploracion',
       observables: ['oferta visible', 'apertura'],
       method: 'exploracion@0.1',
-      claimTemplate: 'Abrió la explicación opcional en {n} de {d} ocasiones en que se le ofreció.',
+      claimTemplate: 'Abrió el contenido opcional en {n} de {d} ocasiones en que se le ofreció.',
       alternatives: [
         'Confirmar una respuesta dudosa',
         'Poco tiempo disponible para lo opcional',
@@ -236,26 +315,48 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
       decisionsInformed: [],
     },
     {
-      id: 'intereses_declarados',
+      id: 'motivaciones_declaradas',
       version: '0.1',
       ambito: 'intereses',
-      name: 'Intereses declarados',
-      question: '¿Qué tipo de actividad dice que le tienta más?',
+      name: 'Motivaciones declaradas',
+      question: '¿Qué la mueve más cuando tiene que elegir?',
       operationalDefinition:
-        'Elecciones rápidas entre pares de actividades comparables; cada familia aparece el mismo número de veces.',
-      opportunityKind: 'preferencia',
-      observables: ['par presentado', 'actividad elegida'],
-      method: 'intereses@0.1',
-      claimTemplate: 'Entre {d} pares de actividades, eligió «{detail.top}» {n} veces.',
+        'Seis elecciones entre pares de motivaciones (aprender, impacto, autonomía y equipo); cada una aparece tres veces y cambia de lado.',
+      opportunityKind: 'motivacion',
+      observables: ['par presentado', 'motivación elegida'],
+      method: 'motivaciones@0.1',
+      claimTemplate: 'En {d} elecciones entre motivaciones, eligió «{detail.top}» {n} veces.',
       claimExtras: [{ when: 'segunda', text: 'Le siguió «{detail.second}».' }],
       alternatives: [
-        'La redacción de una actividad pudo resultar más atractiva que la otra',
-        'Una preferencia de hoy, no un interés estable',
-        'Lo que se elige rápido no siempre es lo que se sostiene',
+        'La redacción de un par pudo inclinar la elección',
+        'Una preferencia de hoy, no una motivación estable',
+        'Lo deseable socialmente pesa al elegir',
       ],
-      nextCheck: 'Contrastar con qué contenido opcional elige y sostiene cuando puede elegir de verdad.',
-      limits: 'Es una declaración: no dice en qué es buena la persona ni qué rol le corresponde.',
-      sufficiency: DESCRIPTIVA(3, 12, 2),
+      nextCheck: 'Contrastar con lo que elige y sostiene en sus primeros proyectos reales.',
+      limits: 'Es una declaración: no ordena a las personas ni predice desempeño.',
+      sufficiency: DESCRIPTIVA(3, 6, 1),
+      decisionsInformed: [],
+    },
+    {
+      id: 'coherencia_habilidad',
+      version: '0.1',
+      ambito: 'intereses',
+      name: 'Coherencia entre lo que dice que sabe hacer y lo que elige',
+      question: '¿Elige poner a prueba lo que dijo que le sale natural?',
+      operationalDefinition:
+        'Elección de un desafío entre cuatro, contrastada con la familia de sus superpoderes declarados.',
+      opportunityKind: 'eleccion_tarea',
+      observables: ['superpoderes declarados', 'desafíos ofrecidos', 'desafío elegido'],
+      method: 'coherencia_habilidad@0.1',
+      claimTemplate: 'Eligió un desafío de una familia que declaró como fuerte en {n} de {d} elecciones.',
+      alternatives: [
+        'Ganas de probar algo distinto a lo de siempre',
+        'El nombre de un desafío pudo resultar más atractivo',
+        'Elegir lo conocido para ir sobre seguro',
+      ],
+      nextCheck: 'Más elecciones de desafío en sesiones distintas.',
+      limits: 'Una elección no demuestra dominio ni falta de él.',
+      sufficiency: DESCRIPTIVA(1, 3, 2),
       decisionsInformed: [],
     },
     {
@@ -264,11 +365,11 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
       ambito: 'intereses',
       name: 'Búsqueda de desafío',
       question: '¿Elige jugar sin red cuando puede elegir?',
-      operationalDefinition: 'Elección entre jugar una misión con la pista disponible o sin ella, antes de empezarla.',
+      operationalDefinition: 'Elección entre resolver un desafío con la pista disponible o sin ella, antes de empezarlo.',
       opportunityKind: 'eleccion_desafio',
       observables: ['modos ofrecidos', 'modo elegido'],
       method: 'desafio@0.1',
-      claimTemplate: 'Eligió jugar sin pista en {n} de {d} misiones en que pudo elegir.',
+      claimTemplate: 'Eligió jugar sin pista en {n} de {d} desafíos en que pudo elegir.',
       alternatives: [
         'Confianza en un tema que ya conocía',
         'Ganas de terminar más rápido',
@@ -280,44 +381,71 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
       decisionsInformed: [],
     },
     {
-      id: 'coherencia_declarado_observado',
+      id: 'estilo_colaboracion',
       version: '0.1',
-      ambito: 'intereses',
-      name: 'Coherencia entre lo declarado y lo elegido',
-      question: '¿Lo que dice preferir coincide con lo que elige después?',
+      ambito: 'interaccion',
+      name: 'Estilo de colaboración en situaciones de equipo',
+      question: '¿Cómo actúa cuando algo se complica en el equipo?',
       operationalDefinition:
-        'Elecciones de formato entre alternativas comparables, en orden alternado, contrastadas con la preferencia declarada.',
-      opportunityKind: 'eleccion_formato',
-      observables: ['preferencia declarada', 'alternativas y su orden', 'elección'],
-      method: 'coherencia@0.1',
-      claimTemplate: 'Declaró preferir «{declared}»; en {n} de {d} elecciones posteriores eligió ese mismo formato.',
+        'Elección entre cuatro formas de actuar (hablarlo de frente, ofrecer ayuda, ajustar el plan, sumar a alguien más) en situaciones de equipo simuladas.',
+      opportunityKind: 'situacion_equipo',
+      observables: ['situación', 'formas de actuar ofrecidas', 'forma elegida'],
+      method: 'estilo_equipo@0.1',
+      claimTemplate: 'En {d} situaciones de equipo, eligió «{detail.top}» {n} veces.',
+      claimExtras: [{ when: 'segunda', text: 'Le siguió «{detail.second}».' }],
       alternatives: [
-        'El orden de las opciones pudo influir',
-        'La novedad de probar otro formato',
-        'La declaración describía una preferencia general, no para esta tarea',
+        'En una simulación no hay costos ni vínculos reales',
+        'Lo que se elige en pantalla no siempre es lo que se hace',
+        'El personaje de la situación pudo influir',
       ],
-      nextCheck: 'Más elecciones con orden alternado y temas diferentes.',
-      limits: 'Una preferencia no demuestra que se aprenda mejor con ese formato.',
-      sufficiency: DESCRIPTIVA(1, 3, 2),
+      nextCheck: 'Observación de una situación real de equipo con una rúbrica acordada.',
+      limits: 'Describe elecciones en situaciones simuladas. No mide habilidades sociales ni liderazgo.',
+      sufficiency: DESCRIPTIVA(2, 4, 1),
+      decisionsInformed: [],
+    },
+    {
+      id: 'apoyo_en_personas',
+      version: '0.1',
+      ambito: 'interaccion',
+      name: 'Apoyo en personas del equipo',
+      question: '¿A quién recurre cuando no sabe cómo seguir?',
+      operationalDefinition:
+        'En situaciones de trabajo simuladas donde podía seguir sola, consultar a una persona del equipo o pedir un borrador a la IA, elección de apoyarse en una persona.',
+      opportunityKind: 'eleccion_apoyo',
+      observables: ['apoyos disponibles', 'apoyo elegido'],
+      method: 'colaboracion@0.1',
+      claimTemplate: 'Eligió apoyarse en una persona del equipo en {n} de {d} situaciones en que podía elegir.',
+      claimExtras: [
+        { when: 'ia', text: 'Recurrió al asistente de IA en {detail.ia}.' },
+        { when: 'solo', text: 'Siguió por su cuenta en {detail.solo}.' },
+      ],
+      alternatives: [
+        'En una simulación, consultar no tiene costo',
+        'Confianza previa con la persona del personaje',
+        'La urgencia de la situación pudo pesar más que la preferencia',
+      ],
+      nextCheck: 'Una situación real de trabajo en equipo, observada con una rúbrica de colaboración.',
+      limits: 'Describe elecciones en una simulación breve. No mide habilidades sociales ni trabajo en equipo real.',
+      sufficiency: DESCRIPTIVA(1, 3, 1),
       decisionsInformed: [],
     },
     {
       id: 'colaboracion_critica_ia',
       version: '0.1',
       ambito: 'digital_ia',
-      name: 'Revisión crítica de una recomendación de IA',
-      question: '¿Revisa el fundamento de una recomendación antes de decidir sobre ella?',
-      operationalDefinition: 'Apertura de las razones de la recomendación antes de emitir el veredicto.',
+      name: 'Revisión crítica de una propuesta de IA',
+      question: '¿Revisa el fundamento de una propuesta antes de decidir sobre ella?',
+      operationalDefinition: 'Apertura de las razones de la propuesta antes de emitir el veredicto.',
       opportunityKind: 'recomendacion_ia',
-      observables: ['recomendación presentada', 'apertura de razones', 'veredicto'],
+      observables: ['propuesta presentada', 'apertura de razones', 'veredicto'],
       method: 'revision_ia@0.1',
-      claimTemplate: 'Revisó las razones antes de decidir en {n} de {d} recomendaciones; su veredicto fue «{verdict}».',
+      claimTemplate: 'Revisó las razones antes de decidir en {n} de {d} propuestas; su último veredicto fue «{verdict}».',
       alternatives: [
         'Confianza o desconfianza general en la tecnología',
         'Lo visible en la tarjeta pudo bastar para decidir',
         'En una prueba, aprobar no tiene costo',
       ],
-      nextCheck: 'Recomendaciones con un error deliberado y detectable, para observar verificación.',
+      nextCheck: 'Propuestas con un error deliberado y detectable, para observar verificación.',
       limits: 'No describe alfabetización en IA en general.',
       sufficiency: DESCRIPTIVA(1, 3, 2),
       decisionsInformed: [],
@@ -326,164 +454,33 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
 
   scenes: [
     {
-      id: 'gustos',
-      version: '0.2',
-      title: 'Gustos',
-      purpose: 'Recoger preferencias declaradas: cómo prefiere entender algo nuevo y qué actividades le tientan.',
+      id: 'nucleo',
+      version: '0.3',
+      title: 'El núcleo D.A.L.A.',
+      purpose: 'Presentar los seis componentes del ciclo; abrir cada uno es opcional y en el orden que la persona quiera.',
       opportunities: [
-        {
-          kind: 'declaracion',
-          description: 'Elegir cómo prefiere entender algo nuevo: mapa, historia o reglas.',
-          exposureEvents: ['options_presented'],
-          actionEvents: ['declaration_made'],
-        },
-        {
-          kind: 'preferencia',
-          description: 'Seis pares de actividades; cada familia (crear, analizar, acompañar, construir) aparece tres veces.',
-          exposureEvents: ['options_presented'],
-          actionEvents: ['declaration_made'],
-        },
-      ],
-      affordances: {},
-      variablesToControl: ['orden de los pares', 'lado de cada actividad'],
-      exclusions: [],
-      contrast: 'Elecciones de formato y de ruta en las misiones.',
-    },
-    {
-      id: 'mapa',
-      version: '0.2',
-      title: 'El mapa del núcleo',
-      purpose: 'Dejar que la persona elija el orden de las misiones.',
-      opportunities: [
-        {
-          kind: 'eleccion_ruta',
-          description: 'Elegir la próxima misión entre las que faltan.',
-          exposureEvents: ['choice_offered'],
-          actionEvents: ['choice_made'],
-        },
-      ],
-      affordances: {},
-      variablesToControl: ['posición de cada misión en el mapa'],
-      exclusions: [],
-      contrast: 'Orden elegido en otra sesión.',
-    },
-    {
-      id: 'observatorio',
-      version: '0.2',
-      title: 'Misión 01 · Observatorio',
-      purpose: 'Clasificar señales en observado, declarado e inferido.',
-      skill: 'clasificar_fuentes',
-      opportunities: [
-        {
-          kind: 'eleccion_desafio',
-          description: 'Elegir jugar con la pista disponible o sin ella.',
-          exposureEvents: ['choice_offered'],
-          actionEvents: ['choice_made'],
-        },
-        {
-          kind: 'consigna',
-          description: 'Consigna disponible antes de empezar.',
-          exposureEvents: ['instruction_presented'],
-          actionEvents: ['instructions_opened'],
-        },
-        {
-          kind: 'tarea',
-          description: 'Una tarjeta para clasificar, con pista disponible y opción de omitir tras un error.',
-          exposureEvents: [...TAREA_EXPOSICION],
-          actionEvents: ['response_submitted', 'hint_requested', 'support_delivered', 'task_skipped', 'task_completed'],
-        },
         {
           kind: 'exploracion',
-          description: 'Explicación opcional del porqué tras resolver una tarjeta.',
+          description: 'Un componente del núcleo, ofrecido para abrir con su ejemplo.',
           exposureEvents: ['exploration_offered'],
           actionEvents: ['exploration_opened'],
         },
       ],
-      affordances: { skipAfterError: true },
-      variablesToControl: ['orden de las tarjetas', 'orden de las categorías', 'longitud de la tarjeta'],
-      exclusions: ['interrupción declarada', 'falla de captura que afecte la secuencia'],
-      contrast: 'Tarjeta nueva de la misma habilidad, sin la misma pista.',
+      affordances: {},
+      variablesToControl: ['posición de cada componente', 'texto y ejemplo de cada componente'],
+      exclusions: [],
+      contrast: 'Revisión del núcleo en otra sesión.',
     },
     {
-      id: 'ciclo',
-      version: '0.2',
-      title: 'Misión 02 · El ciclo',
-      purpose: 'Ordenar las seis piezas del ciclo de evidencia.',
-      skill: 'ciclo_dala',
-      opportunities: [
-        {
-          kind: 'eleccion_desafio',
-          description: 'Elegir jugar con la pista disponible o sin ella.',
-          exposureEvents: ['choice_offered'],
-          actionEvents: ['choice_made'],
-        },
-        {
-          kind: 'eleccion_formato',
-          description: 'Elegir cómo entrar al reto: mapa, historia o reglas, en orden alternado.',
-          exposureEvents: ['choice_offered'],
-          actionEvents: ['choice_made'],
-        },
-        {
-          kind: 'consigna',
-          description: 'Consigna disponible antes de empezar.',
-          exposureEvents: ['instruction_presented'],
-          actionEvents: ['instructions_opened'],
-        },
-        {
-          kind: 'tarea',
-          description: 'Construir la secuencia, deshacer, cambiar de enfoque, pedir pista, verificar u omitir.',
-          exposureEvents: [...TAREA_EXPOSICION],
-          actionEvents: [
-            'action_performed',
-            'answer_revised',
-            'strategy_changed',
-            'response_submitted',
-            'hint_requested',
-            'support_delivered',
-            'task_skipped',
-            'task_completed',
-          ],
-        },
-        {
-          kind: 'exploracion',
-          description: 'Explicación opcional al cerrar el ciclo.',
-          exposureEvents: ['exploration_offered'],
-          actionEvents: ['exploration_opened'],
-        },
-      ],
-      affordances: { strategyOption: true, revisable: true, skipAfterError: true },
-      variablesToControl: ['orden inicial de las piezas', 'contenido de la pista'],
-      exclusions: ['interrupción declarada'],
-      contrast: 'Otra secuencia de proceso con piezas nuevas.',
-    },
-    {
-      id: 'camara',
-      version: '0.2',
-      title: 'Misión 03 · Cámara de eco',
-      purpose: 'Detectar la afirmación que dice más de lo que la evidencia sostiene.',
+      id: 'caso',
+      version: '0.3',
+      title: 'Un caso, distintas lecturas',
+      purpose: 'Elegir la afirmación que se sostiene con los datos de un caso breve.',
       skill: 'detectar_sobreinferencia',
       opportunities: [
         {
-          kind: 'eleccion_desafio',
-          description: 'Elegir jugar con la pista disponible o sin ella.',
-          exposureEvents: ['choice_offered'],
-          actionEvents: ['choice_made'],
-        },
-        {
-          kind: 'eleccion_formato',
-          description: 'Elegir cómo entrar al reto, con el orden de las opciones invertido respecto de la misión 2.',
-          exposureEvents: ['choice_offered'],
-          actionEvents: ['choice_made'],
-        },
-        {
-          kind: 'consigna',
-          description: 'Consigna disponible antes de empezar.',
-          exposureEvents: ['instruction_presented'],
-          actionEvents: ['instructions_opened'],
-        },
-        {
           kind: 'tarea',
-          description: 'Seleccionar, cambiar la selección, pedir que se descarte una opción, verificar u omitir.',
+          description: 'Tres lecturas de un caso; se puede cambiar la elección antes de comprobar, pedir una pista u omitir tras un error.',
           exposureEvents: [...TAREA_EXPOSICION],
           actionEvents: [
             'action_performed',
@@ -497,52 +494,195 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
         },
         {
           kind: 'exploracion',
-          description: 'Explicación opcional tras detectar la afirmación.',
+          description: 'Explicación opcional tras resolver.',
           exposureEvents: ['exploration_offered'],
           actionEvents: ['exploration_opened'],
         },
       ],
       affordances: { revisable: true, skipAfterError: true },
-      variablesToControl: ['posición de la afirmación intrusa', 'longitud de las afirmaciones'],
+      variablesToControl: ['posición de la lectura respaldada'],
       exclusions: ['interrupción declarada'],
-      contrast: 'Ronda nueva con otra sobreinferencia.',
+      contrast: 'Una frase de la propia instantánea que dice demasiado.',
     },
     {
-      id: 'decision',
-      version: '0.1',
-      title: 'Cierre · Shadow mode',
-      purpose: 'Presentar una recomendación del sistema para que la persona la revise.',
-      opportunities: [
-        {
-          kind: 'recomendacion_ia',
-          description: 'Recomendación con alternativas; razones disponibles a un toque.',
-          exposureEvents: ['recommendation_presented'],
-          actionEvents: ['reasons_opened', 'recommendation_reviewed'],
-        },
-      ],
-      affordances: {},
-      variablesToControl: ['recomendación según el estado'],
-      exclusions: [],
-      contrast: 'Una recomendación con un error detectable.',
-    },
-    {
-      id: 'contraste',
-      version: '0.1',
-      title: 'Tarjeta de contraste',
-      purpose: 'Comprobar con una tarea nueva la hipótesis que motivó la decisión.',
+      id: 'fuentes',
+      version: '0.3',
+      title: '¿Evidencia o hipótesis?',
+      purpose: 'Clasificar tres tarjetas en dato observado, declaración o inferencia.',
       skill: 'clasificar_fuentes',
       opportunities: [
         {
           kind: 'tarea',
-          description: 'Tarjeta nueva, con o sin pista según el contenido asignado.',
+          description: 'Una tarjeta para clasificar, con aclaración disponible y opción de omitir tras un error.',
           exposureEvents: [...TAREA_EXPOSICION],
           actionEvents: ['response_submitted', 'hint_requested', 'support_delivered', 'task_skipped', 'task_completed'],
         },
       ],
       affordances: { skipAfterError: true },
-      variablesToControl: ['disponibilidad de la pista'],
+      variablesToControl: ['orden de las tarjetas', 'orden de las categorías'],
+      exclusions: ['interrupción declarada'],
+      contrast: 'Tarjetas nuevas de la misma habilidad en otra sesión.',
+    },
+    {
+      id: 'instantanea',
+      version: '0.3',
+      title: 'Tu primera instantánea',
+      purpose: 'Mostrar qué puede y qué no puede concluir el sistema después de aprender D.A.L.A.',
+      skill: 'detectar_sobreinferencia',
+      opportunities: [
+        {
+          kind: 'tarea',
+          description: 'Entre tres frases sobre la propia instantánea, encontrar la que dice más de lo que la evidencia permite.',
+          exposureEvents: [...TAREA_EXPOSICION],
+          actionEvents: ['action_performed', 'answer_revised', 'response_submitted', 'task_skipped', 'task_completed'],
+        },
+        {
+          kind: 'declaracion',
+          description: 'Declarar que la instantánea no dice quién es la persona.',
+          exposureEvents: [],
+          actionEvents: ['declaration_made'],
+        },
+      ],
+      affordances: { revisable: true, skipAfterError: true },
+      variablesToControl: ['posición de la frase exagerada'],
       exclusions: [],
-      contrast: 'Medición diferida en otra sesión.',
+      contrast: 'Retrato final: la misma lectura con la primera semana incluida.',
+    },
+    {
+      id: 'superpoderes',
+      version: '0.4',
+      title: 'Tus superpoderes',
+      purpose: 'Elegir tres habilidades que le salen naturales y una que quiere aprender.',
+      opportunities: [
+        {
+          kind: 'habilidad',
+          description: 'Doce habilidades, tres por familia; cada elección es una oportunidad.',
+          exposureEvents: ['options_presented'],
+          actionEvents: ['declaration_made'],
+        },
+        {
+          kind: 'declaracion',
+          description: 'Una habilidad que quiere aprender.',
+          exposureEvents: ['options_presented'],
+          actionEvents: ['declaration_made'],
+        },
+      ],
+      affordances: {},
+      variablesToControl: ['orden de las cartas'],
+      exclusions: [],
+      contrast: 'El desafío que elige poner a prueba.',
+    },
+    {
+      id: 'motivaciones',
+      version: '0.4',
+      title: 'Lo que te mueve',
+      purpose: 'Elegir entre pares de motivaciones para ver cuál pesa más.',
+      opportunities: [
+        {
+          kind: 'motivacion',
+          description: 'Seis pares; cada motivación aparece tres veces y cambia de lado.',
+          exposureEvents: ['options_presented'],
+          actionEvents: ['declaration_made'],
+        },
+      ],
+      affordances: {},
+      variablesToControl: ['orden de los pares', 'lado de cada motivación'],
+      exclusions: [],
+      contrast: 'Lo que elige y sostiene en sus primeros proyectos.',
+    },
+    {
+      id: 'desafio',
+      version: '0.4',
+      title: 'Un desafío a tu medida',
+      purpose: 'Elegir uno de cuatro desafíos de trabajo real y si jugarlo con o sin pista.',
+      opportunities: [
+        {
+          kind: 'eleccion_tarea',
+          description: 'Cuatro desafíos, uno por familia de habilidades.',
+          exposureEvents: ['choice_offered'],
+          actionEvents: ['choice_made'],
+        },
+        {
+          kind: 'eleccion_desafio',
+          description: 'Jugar con la pista disponible o sin ella.',
+          exposureEvents: ['choice_offered'],
+          actionEvents: ['choice_made'],
+        },
+      ],
+      affordances: {},
+      variablesToControl: ['orden de los desafíos'],
+      exclusions: [],
+      contrast: 'Otro desafío de la misma familia en otra sesión.',
+    },
+    desafio('desafio_priorizar', 'Desafío · Planificar una funcionalidad', 'Ordenar seis pasos para lanzar una función nueva.', 'priorizar', true),
+    desafio('desafio_codigo', 'Desafío · Encontrá el bug', 'Encontrar la línea con un error en una función, también en código propuesto por una IA.', 'depurar_codigo'),
+    desafio('desafio_informe', 'Desafío · El informe con un error', 'Encontrar la conclusión que no se sostiene en un informe de datos.', 'analizar_informe'),
+    desafio('desafio_mensaje', 'Desafío · Explicarlo en simple', 'Elegir la explicación clara, sin jerga ni promesas de más, para una docente.', 'comunicar_docentes'),
+    {
+      id: 'equipo',
+      version: '0.4',
+      title: 'Con el equipo',
+      purpose: 'Situaciones de equipo, momentos de pedir apoyo y una propuesta de la IA para revisar.',
+      opportunities: [
+        {
+          kind: 'situacion_equipo',
+          description: 'Una situación de equipo con cuatro formas de actuar, sin respuesta correcta.',
+          exposureEvents: ['choice_offered'],
+          actionEvents: ['choice_made'],
+        },
+        {
+          kind: 'eleccion_apoyo',
+          description: 'Seguir por su cuenta, consultar a una persona del equipo, pedir ayuda a la IA o dejarlo para después.',
+          exposureEvents: ['choice_offered'],
+          actionEvents: ['choice_made'],
+        },
+        {
+          kind: 'recomendacion_ia',
+          description: 'Un resumen de la IA con razones a un toque; usarlo, corregirlo o descartarlo.',
+          exposureEvents: ['recommendation_presented'],
+          actionEvents: ['reasons_opened', 'recommendation_reviewed'],
+        },
+      ],
+      affordances: {},
+      variablesToControl: ['orden de las situaciones', 'orden de las formas de actuar', 'error deliberado en el resumen de la IA'],
+      exclusions: [],
+      contrast: 'Una situación real de trabajo en equipo.',
+    },
+    {
+      id: 'trabajo',
+      version: '0.4',
+      title: 'Cómo trabajás',
+      purpose: 'Declarar forma de trabajar, horario, canal, tipo de devolución, ritmo y reacción cuando algo no sale.',
+      opportunities: [
+        {
+          kind: 'declaracion',
+          description: 'Seis preguntas de forma de trabajo; perfil, no evidencia.',
+          exposureEvents: ['options_presented'],
+          actionEvents: ['declaration_made'],
+        },
+      ],
+      affordances: {},
+      variablesToControl: [],
+      exclusions: [],
+      contrast: 'Acuerdos de trabajo revisados con su equipo al mes.',
+    },
+    {
+      id: 'decision',
+      version: '0.4',
+      title: 'La IA propone por dónde empezar',
+      purpose: 'Sugerir una línea del laboratorio para empezar; la persona aprueba, elige otra o la rechaza.',
+      opportunities: [
+        {
+          kind: 'recomendacion_ia',
+          description: 'Sugerencia con alternativas; razones disponibles a un toque.',
+          exposureEvents: ['recommendation_presented'],
+          actionEvents: ['reasons_opened', 'recommendation_reviewed'],
+        },
+      ],
+      affordances: {},
+      variablesToControl: ['sugerencia según la instantánea'],
+      exclusions: [],
+      contrast: 'Revisión con la persona al mes: ¿la línea le resultó?',
     },
     {
       id: 'retrato',
@@ -564,33 +704,53 @@ export const PULSO_WEB_FRAMEWORK: DalaFramework = {
     },
   ],
 
+  /**
+   * Por dónde empezar en el equipo. Es una sugerencia que la persona revisa,
+   * nunca una asignación de rol ni una evaluación.
+   */
   decisions: [
     {
-      id: 'verificar_sin_apoyo',
-      label: 'Verificar sin apoyo',
-      purpose: 'Comprobar si el desempeño se sostiene sin pista en una tarea nueva.',
-      content: { scene: 'contraste', hintAvailable: false },
-      verification: 'Tarjeta nueva resuelta al primer intento sin pista.',
-      expectedOutcome: { metric: 'independiente', description: 'Resuelve la tarjeta nueva sin ayuda.' },
+      id: 'linea_experiencias',
+      label: 'Narrativa y diseño de experiencias',
+      purpose: 'Empezar diseñando cómo se vive una misión: historia, personajes y ritmo.',
+      content: { scene: 'decision', hintAvailable: false },
+      verification: 'Se revisa con la persona al mes: ¿la línea le resultó?',
+      expectedOutcome: { metric: 'aceptada', description: 'La persona acepta empezar por esta línea o elige otra.' },
     },
     {
-      id: 'practicar_con_apoyo',
-      label: 'Practicar con apoyo',
-      purpose: 'Ofrecer una tarea nueva con la pista disponible para observar si el apoyo ayuda.',
-      content: { scene: 'contraste', hintAvailable: true },
-      verification: 'Tarjeta nueva resuelta, registrando si usó la pista y cuándo.',
-      expectedOutcome: { metric: 'resuelta', description: 'Resuelve la tarjeta, con o sin pista.' },
+      id: 'linea_datos',
+      label: 'Datos y modelo D.A.L.A.',
+      purpose: 'Empezar con los datos del piloto: qué observamos y qué se puede afirmar.',
+      content: { scene: 'decision', hintAvailable: false },
+      verification: 'Se revisa con la persona al mes: ¿la línea le resultó?',
+      expectedOutcome: { metric: 'aceptada', description: 'La persona acepta empezar por esta línea o elige otra.' },
     },
     {
-      id: 'recoger_evidencia',
-      label: 'Recoger más evidencia',
-      purpose: 'Sin evidencia suficiente, sumar una oportunidad estándar antes de decidir.',
-      content: { scene: 'contraste', hintAvailable: true },
-      verification: 'Una oportunidad válida más en la habilidad.',
-      expectedOutcome: { metric: 'oportunidad_valida', description: 'Se registra una oportunidad válida más.' },
+      id: 'linea_escuelas',
+      label: 'Escuelas y comunidad',
+      purpose: 'Empezar acompañando a las docentes del piloto y traduciendo lo que vemos.',
+      content: { scene: 'decision', hintAvailable: false },
+      verification: 'Se revisa con la persona al mes: ¿la línea le resultó?',
+      expectedOutcome: { metric: 'aceptada', description: 'La persona acepta empezar por esta línea o elige otra.' },
+    },
+    {
+      id: 'linea_producto',
+      label: 'Tecnología y producto',
+      purpose: 'Empezar construyendo y probando piezas de la plataforma.',
+      content: { scene: 'decision', hintAvailable: false },
+      verification: 'Se revisa con la persona al mes: ¿la línea le resultó?',
+      expectedOutcome: { metric: 'aceptada', description: 'La persona acepta empezar por esta línea o elige otra.' },
+    },
+    {
+      id: 'rotacion',
+      label: 'Rotar por las líneas el primer mes',
+      purpose: 'Conocer todas las líneas antes de elegir por dónde seguir.',
+      content: { scene: 'decision', hintAvailable: false },
+      verification: 'Se revisa con la persona al mes: ¿qué línea le interesó más?',
+      expectedOutcome: { metric: 'aceptada', description: 'La persona acepta rotar o elige una línea.' },
     },
   ],
 
-  declaredToChoice: { visual: 'mapa', story: 'historia', logic: 'reglas' },
-  baselineDecision: 'recoger_evidencia',
+  declaredToChoice: {},
+  baselineDecision: 'rotacion',
 };

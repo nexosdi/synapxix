@@ -1,7 +1,7 @@
 import { PULSO_WEB_FRAMEWORK } from './pulso-web.framework';
 import { validateFramework } from './validate';
 
-describe('marco pulso-web@0.2', () => {
+describe('marco pulso-web@0.4', () => {
   it('es íntegro: referencias, versiones, alternativas y contrastes', () => {
     expect(validateFramework(PULSO_WEB_FRAMEWORK)).toEqual([]);
   });
@@ -34,5 +34,18 @@ describe('marco pulso-web@0.2', () => {
     const errors = validateFramework(roto);
     expect(errors.some((e) => e.includes('ámbito inexistente'))).toBe(true);
     expect(errors.some((e) => e.includes('sin explicaciones alternativas'))).toBe(true);
+  });
+});
+
+describe('escenas 06–09 del documento de trabajo', () => {
+  it('toda escena con tareas declara la habilidad que ejercita', () => {
+    for (const scene of PULSO_WEB_FRAMEWORK.scenes) {
+      if (scene.opportunities.some((o) => o.kind === 'tarea')) expect(scene.skill).toBeDefined();
+    }
+  });
+
+  it('el registro empieza en el núcleo, antes de la primera semana', () => {
+    const ids = PULSO_WEB_FRAMEWORK.scenes.map((s) => s.id);
+    expect(ids.slice(0, 5)).toEqual(['nucleo', 'caso', 'fuentes', 'instantanea', 'superpoderes']);
   });
 });

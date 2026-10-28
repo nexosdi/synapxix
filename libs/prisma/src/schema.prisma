@@ -500,6 +500,8 @@ model TeamMember {
   status       String    @default("invited") @db.VarChar(20) // invited | joined | completed
   /// Preferencias DECLARADAS (ritmo, feedback, entrada, compartir). No inferidas.
   declared_json Json?
+  /// Consentimiento por finalidad, versionado (operación, investigación, perfil, documentos con IA).
+  consent_json Json?
   /// Arquetipo elegido para la Estrella. Vista narrativa opcional (spec: jamás motor).
   archetype    String?   @db.VarChar(40)
   joined_at    DateTime?
@@ -509,5 +511,25 @@ model TeamMember {
 
   @@index([status])
   @@map("team_member")
+  @@schema("core")
+}
+
+/// Documentos profesionales que la persona decide compartir (CV y enlaces).
+/// Separados de los eventos D.A.L.A.: nunca entran al motor ni a la IA.
+model TeamDocument {
+  document_id  String   @id @default(uuid()) @db.Uuid
+  member_id    String   @db.Uuid
+  kind         String   @db.VarChar(20) // cv | link
+  filename     String?  @db.VarChar(200)
+  mime         String?  @db.VarChar(120)
+  size         Int?
+  data         Bytes?
+  url          String?  @db.VarChar(500)
+  /// Autorización específica con la que se entregó (versión, finalidad, fecha).
+  consent_json Json
+  created_at   DateTime @default(now())
+
+  @@index([member_id])
+  @@map("team_document")
   @@schema("core")
 }

@@ -271,6 +271,13 @@ export class DalaFacade {
     return { ...snapshot, reused: false };
   }
 
+  /** Una instantánea guardada del propio sujeto (p. ej. la "A" del recorrido). */
+  async snapshotByIdV2(subjectId: string, snapshotId: string) {
+    const rows = await this.repository.snapshotsV2(subjectId, PROJECTION_ENGINE_VERSION, 200);
+    const row = rows.find((r) => r.snapshot_id === snapshotId);
+    return row ? { ...(row.state_json as unknown as DalaSnapshotV2), snapshotId: row.snapshot_id } : null;
+  }
+
   /**
    * Comprueba que la última instantánea se reproduce idéntica desde el
    * registro (puerta G1): mismos eventos y misma instantánea previa.

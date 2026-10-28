@@ -21,7 +21,7 @@ import type {
 } from '@nexosdi.synapxix/dala/contracts';
 import type { ConstructSheet, DalaFramework, MethodRef } from '@nexosdi.synapxix/dala/framework';
 
-export const PROJECTION_ENGINE_VERSION = 'pulso-engine@0.2.0';
+export const PROJECTION_ENGINE_VERSION = 'pulso-engine@0.4.0';
 
 // ── 1. Orden canónico ──────────────────────────────────────────────────────
 
@@ -141,6 +141,38 @@ const sceneAffords = (fw: DalaFramework, sceneId: string, affordance: 'strategyO
   fw.scenes.find((s) => s.id === sceneId)?.affordances[affordance] === true;
 
 const tasks = (ctx: MethodContext) => ctx.opps.filter((o) => o.kind === 'tarea');
+
+/**
+ * Ranking de elecciones entre opciones comparables: cuántas veces ganó la
+ * más elegida (numerador) sobre las elecciones hechas (denominador), con la
+ * segunda y el ranking completo como detalle. Empates: la elegida primero.
+ */
+function rank(ctx: MethodContext, kind: string, eventType: string): Group {
+  const g = newGroup();
+  const counts = new Map<string, { label: string; n: number; first: number }>();
+  for (const opp of ctx.opps.filter((o) => o.kind === kind)) {
+    const made = ofType(opp, eventType).at(-1);
+    if (!made) continue;
+    g.denominator += 1;
+    g.scenes.add(opp.scene);
+    g.refs.push(made.e.eventId);
+    const value = String(made.e.payload['value'] ?? made.e.payload['choice']);
+    const entry = counts.get(value) ?? { label: String(made.e.payload['label'] ?? value), n: 0, first: made.i };
+    entry.n += 1;
+    counts.set(value, entry);
+  }
+  const ranked = [...counts.values()].sort((a, b) => b.n - a.n || a.first - b.first);
+  if (ranked[0]) {
+    g.numerator = ranked[0].n;
+    g.detail['top'] = ranked[0].label;
+  }
+  if (ranked[1]) {
+    g.detail['second'] = ranked[1].label;
+    g.detail['segunda'] = ranked[1].n;
+  }
+  if (ranked.length > 0) g.detail['ranking'] = ranked.map((r) => `${r.label}:${r.n}`).join(',');
+  return g;
+}
 
 const METHODS: Record<MethodRef, (ctx: MethodContext) => Group[]> = {
   /** Primer envío correcto sin pista previa, por habilidad. */
@@ -319,32 +351,51 @@ const METHODS: Record<MethodRef, (ctx: MethodContext) => Group[]> = {
     return [g];
   },
 
-  /** Preferencias declaradas en pares: la familia más elegida y la siguiente. */
-  'intereses@0.1': (ctx) => {
+  /** Superpoderes: tres habilidades elegidas, por familia, y la que quiere aprender. */
+  'habilidades@0.1': (ctx) => {
+    const g = rank(ctx, 'habilidad', 'declaration_made');
+    const picks = ctx.opps
+      .filter((o) => o.kind === 'habilidad')
+      .map((o) => ofType(o, 'declaration_made').at(-1))
+      .filter((o): o is Ordered => !!o);
+    if (picks.length) g.detail['lista'] = picks.map((o) => `«${String(o.e.payload['skill'] ?? o.e.payload['label'])}»`).join(', ');
+    const learn = ctx.ordered.filter((o) => o.e.eventType === 'declaration_made' && o.e.payload['field'] === 'aprender').at(-1);
+    if (learn) {
+      g.detail['aprender'] = `«${String(learn.e.payload['label'] ?? learn.e.payload['value'])}»`;
+      g.detail['quiere_aprender'] = 1;
+      g.refs.push(learn.e.eventId);
+    }
+    return [g];
+  },
+
+  /** Motivaciones en pares: la más elegida y la siguiente. */
+  'motivaciones@0.1': (ctx) => [rank(ctx, 'motivacion', 'declaration_made')],
+
+  /** Situaciones de equipo: la forma de actuar más elegida (observada). */
+  'estilo_equipo@0.1': (ctx) => [rank(ctx, 'situacion_equipo', 'choice_made')],
+
+  /** ¿El desafío elegido es de una familia que declaró como fuerte? */
+  'coherencia_habilidad@0.1': (ctx) => {
     const g = newGroup();
-    const counts = new Map<string, { label: string; n: number; first: number }>();
-    for (const opp of ctx.opps.filter((o) => o.kind === 'preferencia')) {
-      const made = ofType(opp, 'declaration_made').at(-1);
+    const declared = ctx.ordered.filter(
+      (o) => o.e.eventType === 'declaration_made' && o.e.opportunity?.kind === 'habilidad',
+    );
+    const families = new Set(declared.map((o) => String(o.e.payload['value'])));
+    const choices = ctx.opps.filter((o) => o.kind === 'eleccion_tarea');
+    if (!declared.length) {
+      g.excluded = choices.length;
+      return [g];
+    }
+    declared.forEach((o) => g.refs.push(o.e.eventId));
+    for (const opp of choices) {
+      const made = first(opp, 'choice_made');
       if (!made) continue;
       g.denominator += 1;
       g.scenes.add(opp.scene);
       g.refs.push(made.e.eventId);
-      const value = String(made.e.payload['value']);
-      const entry = counts.get(value) ?? { label: String(made.e.payload['label'] ?? value), n: 0, first: made.i };
-      entry.n += 1;
-      counts.set(value, entry);
+      const fams = made.e.payload['families'];
+      if (Array.isArray(fams) && fams.some((f) => families.has(String(f)))) g.numerator += 1;
     }
-    // Empates: gana la familia elegida primero (determinista).
-    const ranked = [...counts.values()].sort((a, b) => b.n - a.n || a.first - b.first);
-    if (ranked[0]) {
-      g.numerator = ranked[0].n;
-      g.detail['top'] = ranked[0].label;
-    }
-    if (ranked[1]) {
-      g.detail['second'] = ranked[1].label;
-      g.detail['segunda'] = ranked[1].n;
-    }
-    if (ranked.length > 0) g.detail['ranking'] = ranked.map((r) => `${r.label}:${r.n}`).join(',');
     return [g];
   },
 
@@ -362,28 +413,19 @@ const METHODS: Record<MethodRef, (ctx: MethodContext) => Group[]> = {
     return [g];
   },
 
-  /** Triangulación: preferencia declarada contra elecciones posteriores. */
-  'coherencia@0.1': (ctx) => {
+  /** A quién recurre: persona del equipo, asistente de IA o por su cuenta. */
+  'colaboracion@0.1': (ctx) => {
     const g = newGroup();
-    const declaration = ctx.ordered
-      .filter((o) => o.e.eventType === 'declaration_made' && o.e.payload['field'] === 'puerta')
-      .at(-1);
-    const choices = ctx.opps.filter((o) => o.kind === 'eleccion_formato');
-    if (!declaration) {
-      g.excluded = choices.length;
-      return [g];
-    }
-    const declared = String(declaration.e.payload['value']);
-    const expected = ctx.fw.declaredToChoice[declared];
-    g.detail['declared'] = String(declaration.e.payload['label'] ?? declared);
-    g.refs.push(declaration.e.eventId);
-    for (const opp of choices) {
+    for (const opp of ctx.opps.filter((o) => o.kind === 'eleccion_apoyo')) {
       const made = first(opp, 'choice_made');
       if (!made) continue;
       g.denominator += 1;
       g.scenes.add(opp.scene);
       g.refs.push(made.e.eventId);
-      if (made.e.payload['choice'] === expected) g.numerator += 1;
+      const choice = made.e.payload['choice'];
+      if (choice === 'persona') g.numerator += 1;
+      else if (choice === 'ia') bump(g, 'ia');
+      else if (choice === 'solo') bump(g, 'solo');
     }
     return [g];
   },
@@ -412,8 +454,9 @@ const METHODS: Record<MethodRef, (ctx: MethodContext) => Group[]> = {
 
 /** Métodos que leen declaraciones: su afirmación viaja con ese origen. */
 const ORIGINS: Partial<Record<string, DalaClaim['origins']>> = {
-  'coherencia@0.1': ['reported', 'observed'],
-  'intereses@0.1': ['reported'],
+  'habilidades@0.1': ['reported'],
+  'motivaciones@0.1': ['reported'],
+  'coherencia_habilidad@0.1': ['reported', 'observed'],
 };
 
 const STATUS_TEXT: Record<DalaEvidenceStatus, string> = {
@@ -586,45 +629,46 @@ export interface DecisionProposal {
   content: { scene: string; hintAvailable: boolean };
 }
 
+/** Familia de superpoderes → línea del laboratorio por la que empezar. */
+const LINE_OF_FAMILY: Record<string, string> = {
+  Crear: 'linea_experiencias',
+  Analizar: 'linea_datos',
+  Acompañar: 'linea_escuelas',
+  Construir: 'linea_producto',
+};
+
 /**
- * Elige del catálogo una experiencia admisible (§12). Reglas explícitas y
- * revisables; la recomendación queda en shadow mode hasta el veredicto.
+ * Sugiere por dónde empezar en el equipo (§12): la línea de la familia que
+ * más se repite en sus superpoderes, con lo observado y lo declarado como
+ * razones. Sin tres superpoderes, rotar el primer mes. Reglas explícitas y
+ * revisables; la sugerencia queda en shadow mode hasta el veredicto.
  */
 export function decideNext(snapshot: DalaSnapshotV2, fw: DalaFramework): DecisionProposal {
-  const target = snapshot.claims.find((c) => c.key === 'desempeno_independiente:clasificar_fuentes');
-  const help = snapshot.claims.find((c) => c.key === 'busqueda_de_ayuda');
-  const obs = target?.observation;
+  const byKey = new Map(snapshot.claims.map((c) => [c.key, c]));
+  const skills = byKey.get('habilidades_declaradas');
   const reasons: DecisionProposal['reasons'] = [];
 
-  let selected: string;
-  if (!obs || obs.denominator < 3) {
-    selected = 'recoger_evidencia';
+  let selected = fw.baselineDecision;
+  if (!skills || skills.observation.denominator < 3) {
     reasons.push({
       type: 'evidencia_insuficiente',
-      referenceId: target?.key ?? 'desempeno_independiente',
-      explanation: `Hay ${obs?.denominator ?? 0} oportunidades válidas; se necesitan al menos 3 para decidir sobre apoyos.`,
-    });
-  } else if (obs.numerator / obs.denominator >= 2 / 3) {
-    selected = 'verificar_sin_apoyo';
-    reasons.push({
-      type: 'desempeno_independiente_alto',
-      referenceId: target?.key ?? '',
-      explanation: `Resolvió sin ayuda ${obs.numerator} de ${obs.denominator}: conviene comprobar si se sostiene sin pista.`,
+      referenceId: skills?.key ?? 'habilidades_declaradas',
+      explanation: `Hay ${skills?.observation.denominator ?? 0} superpoderes declarados; con menos de 3 conviene conocer todas las líneas.`,
     });
   } else {
-    selected = 'practicar_con_apoyo';
-    reasons.push({
-      type: 'desempeno_independiente_parcial',
-      referenceId: target?.key ?? '',
-      explanation: `Resolvió sin ayuda ${obs.numerator} de ${obs.denominator}: conviene una tarea nueva con la pista disponible.`,
-    });
+    const top = String(skills.observation.detail['top'] ?? '');
+    selected = LINE_OF_FAMILY[top] ?? fw.baselineDecision;
+    reasons.push({ type: 'superpoderes', referenceId: skills.key, explanation: skills.claim });
   }
-  if (help && help.observation.denominator > 0) {
-    reasons.push({
-      type: 'contexto_de_ayuda',
-      referenceId: help.key,
-      explanation: help.claim,
-    });
+  const supporting = [
+    ...snapshot.claims.filter(
+      (c) => c.key.startsWith('desempeno_independiente:') && c.scope.scenes.some((sc) => sc.startsWith('desafio_')),
+    ),
+    byKey.get('motivaciones_declaradas'),
+    byKey.get('estilo_colaboracion'),
+  ];
+  for (const c of supporting) {
+    if (c && c.observation.denominator > 0) reasons.push({ type: 'contexto', referenceId: c.key, explanation: c.claim });
   }
 
   const option = fw.decisions.find((d) => d.id === selected) ?? fw.decisions[0];
@@ -637,13 +681,11 @@ export function decideNext(snapshot: DalaSnapshotV2, fw: DalaFramework): Decisio
         id: d.id,
         label: d.label,
         whyNot:
-          option.id === 'recoger_evidencia'
-            ? 'Todavía falta evidencia para decidir sobre apoyos.'
-            : d.id === 'recoger_evidencia'
-              ? 'Ya hay evidencia suficiente para una decisión sobre apoyos.'
-              : d.id === 'verificar_sin_apoyo'
-                ? 'El desempeño independiente observado no alcanza para retirar la pista.'
-                : 'El desempeño observado no sugiere que haga falta la pista.',
+          option.id === fw.baselineDecision
+            ? 'Todavía falta saber qué te sale natural para sugerir una línea.'
+            : d.id === fw.baselineDecision
+              ? 'Ya hay superpoderes declarados para sugerir una línea.'
+              : 'Tus superpoderes apuntan más a otra línea.',
       })),
     reasons,
     expectedOutcome: option.expectedOutcome,
