@@ -3,6 +3,25 @@ import { History, InteractiveContent } from './models/history.model';
 // Remarks: this file contains a example history, this must come from a server, only for development purposes.
 export const contentMap: InteractiveContent[] = [
   {
+    id: 'memory-match-animals-1',
+    gameType: 'memory-match',
+    gameInput: {
+      prompt: 'Encuentra todos los pares de animales',
+      columns: 4,
+      locale: 'es-AR',
+      cards: [
+        { id: 'c1a', pairId: 'p1', label: '🐶' },
+        { id: 'c1b', pairId: 'p1', label: '🐶' },
+        { id: 'c2a', pairId: 'p2', label: '🐱' },
+        { id: 'c2b', pairId: 'p2', label: '🐱' },
+        { id: 'c3a', pairId: 'p3', label: '🐸' },
+        { id: 'c3b', pairId: 'p3', label: '🐸' },
+        { id: 'c4a', pairId: 'p4', label: '🦁' },
+        { id: 'c4b', pairId: 'p4', label: '🦁' },
+      ],
+    },
+  },
+  {
     "id": "odd-01",
     "gameType": "intruder",
     "gameInput": {
@@ -268,7 +287,37 @@ export const contentMap: InteractiveContent[] = [
       }
     ]
   }
-}
+  },
+  {
+    "id": "wa-01",
+    "gameType": "word-association",
+    "gameInput": {
+      "prompt": "Select words related to",
+      "baseWord": "OCEAN",
+      "locale": "en",
+      "options": [
+        { "id": "1", "word": "Water", "isRelated": true },
+        { "id": "2", "word": "Fish", "isRelated": true },
+        { "id": "3", "word": "Car", "isRelated": false },
+        { "id": "4", "word": "Boat", "isRelated": true },
+        { "id": "5", "word": "Fire", "isRelated": false }
+      ]
+    }
+  },
+  {
+    id: 'pr-01',
+    gameType: 'pattern-recognition',
+    gameInput: {
+      prompt: '¿Qué elemento sigue en el patrón?',
+      locale: 'es-AR',
+      sequence: ['🔵', '🟢', '🔵', '🟢', '?'],
+      options: [
+        { id: 'opt-1', content: '🔵', isCorrect: true },
+        { id: 'opt-2', content: '🟢', isCorrect: false },
+        { id: 'opt-3', content: '🔴', isCorrect: false },
+      ],
+    },
+  },
 ];
 
 export const HISTORY_MOCK: History = {

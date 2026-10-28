@@ -18,6 +18,7 @@ import {
   GlobalEvaluativeAverageDto,
 } from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { TeacherAccessGuard } from '../auth/teacher-access.guard';
 import { Request } from 'express';
 import { KeycloakJwtPayload } from '../auth/jwt.strategy';
 import { PrismaService } from '@nexosdi.synapxix/prisma';
@@ -30,7 +31,7 @@ import { PrismaService } from '@nexosdi.synapxix/prisma';
  */
 @ApiTags('Analytics')
 @Controller('analytics')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, TeacherAccessGuard)
 export class AnalyticsController {
   constructor(
     private readonly analyticsService: AnalyticsService,
@@ -69,21 +70,8 @@ export class AnalyticsController {
   @Get('individual-average/:userId')
   async getIndividualCognitiveAverage(
     @Param('userId') userId: string,
-    @Req() req: Request & { user: KeycloakJwtPayload },
   ): Promise<IndividualCognitiveAverageDto> {
-    const requestingUser = req.user;
-    const user = await this.prisma.app_user.findUnique({
-      where: { user_id: requestingUser.sub },
-    });
 
-    const isOwnData = requestingUser.sub === userId;
-    const isTeacherOrAdmin = user && ['teacher', 'admin'].includes(user.role);
-
-    if (!isOwnData && !isTeacherOrAdmin) {
-      throw new UnauthorizedException(
-        'You are not authorized to access this resource.',
-      );
-    }
     return this.analyticsService.getIndividualCognitiveAverage(userId);
   }
 
@@ -107,21 +95,8 @@ export class AnalyticsController {
   @Get('student-progress/:studentId')
   async getStudentProgress(
     @Param('studentId') studentId: string,
-    @Req() req: Request & { user: KeycloakJwtPayload },
   ): Promise<StudentProgressDto> {
-    const requestingUser = req.user;
-    const user = await this.prisma.app_user.findUnique({
-      where: { user_id: requestingUser.sub },
-    });
 
-    const isOwnData = requestingUser.sub === studentId;
-    const isTeacherOrAdmin = user && ['teacher', 'admin'].includes(user.role);
-
-    if (!isOwnData && !isTeacherOrAdmin) {
-      throw new UnauthorizedException(
-        'You are not authorized to access this resource.',
-      );
-    }
     return this.analyticsService.getStudentProgress(studentId);
   }
 

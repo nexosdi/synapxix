@@ -13,6 +13,7 @@ import {
   DestroyRef,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { KeycloakService } from 'keycloak-angular';
 import { resolveGameLoader } from '../game-registry';
 import { HistoryService } from '../services/history.service';
 import { GameSessionService } from '../services/game-session.service';
@@ -174,6 +175,7 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly http = inject(HttpClient);
+  private readonly keycloak = inject(KeycloakService, { optional: true });
 
   // Default base URL for API, normally injected or from environment
   private readonly apiUrl = '/api/game-session';
@@ -187,6 +189,8 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
   private pendingRenderId: string | null = null;
   /** Subscription to the active SSE stream for cleanup */
   private streamSubscription: Subscription | null = null;
+  /** Abort callback for the active SSE fetch — called on cleanup to cancel the HTTP request */
+  private streamAbort: (() => void) | null = null;
 
   private readonly sseStream = inject(SseStreamService);
   private readonly destroyRef = inject(DestroyRef);
@@ -230,9 +234,7 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
     // Only render when we expect fresh loads (not during feedback or answering)
     if (this.flowService.isLoading() || this.flowService.isAdvancing() || this.flowService.isIdle()) {
       // Prevent double calls for the same content during async loading
-      const currentRenderedId = this.currentComponentRef?.instance?.content
-        ? (this.currentComponentRef.instance.content as any).id
-        : undefined;
+      const currentRenderedId = (this.currentComponentRef?.instance?.content as InteractiveContent | undefined)?.id;
         
       if (currentRenderedId !== content.id && this.pendingRenderId !== content.id) {
         this.pendingRenderId = content.id;
@@ -278,23 +280,25 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
       const totalGames = historyContext?.contentMap.length || 0;
       const category = historyContext?.category;
 
-      // Auth0 / user logic: We use null for now until we define Auth0 / Keycloak 
-      const userId: string | null = null;
-      
-      // Enviamos la petición al backend para iniciar sesión.
-      // Cuando tengamos el session ID real, actualizamos el modelo.
-      this.http.post<{sessionId: string}>(`${this.apiUrl}/start`, { 
-        historyId, 
-        category, 
-        userId 
+      // Read the real authenticated user ID from the Keycloak token (sub claim).
+      // The Bearer token is automatically added to this request by KeycloakBearerInterceptor,
+      // but we also send userId explicitly in the body so the backend can bind the session.
+      const userId: string = this.getAuthenticatedUserId();
+
+      // Send request to backend to start a real session.
+      // The backend validates the Bearer token and binds the session to the authenticated user.
+      this.http.post<{sessionId: string}>(`${this.apiUrl}/start`, {
+        historyId,
+        category,
+        userId,
       }).subscribe({
         next: (res) => {
-          // Usamos el ID devuelto por el backend para mantener la sincronización exacta
-          this.sessionService.startSession(historyId, userId ?? '', totalGames, category, res.sessionId);
+          // Use the backend-generated session ID to keep frontend and backend in sync.
+          this.sessionService.startSession(historyId, userId, totalGames, category, res.sessionId);
         },
         error: (err) => {
           console.warn('Backend session start failed, continuing with local session', err);
-          this.sessionService.startSession(historyId, userId ?? '', totalGames, category);
+          this.sessionService.startSession(historyId, userId, totalGames, category);
         }
       });
     }
@@ -435,6 +439,7 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
       `${this.researchApiUrl}/process/stream`,
       payload,
     );
+    this.streamAbort = abort;
 
     // Transition ANSWERING → FEEDBACK once (the timer-based transition
     // in GameFlowService is bypassed because we drive it manually)
@@ -471,9 +476,32 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
    * Prevents memory leaks when the user navigates away mid-stream.
    */
   private cleanupStream(): void {
+    if (this.streamAbort) {
+      this.streamAbort();
+      this.streamAbort = null;
+    }
     if (this.streamSubscription) {
       this.streamSubscription.unsubscribe();
       this.streamSubscription = null;
+    }
+  }
+
+  /**
+   * Retrieves the authenticated user's ID (the `sub` claim) from the Keycloak token.
+   *
+   * The `sub` claim is the canonical user identifier shared between the frontend
+   * and the backend. The backend extracts it from the Bearer token via JwtStrategy;
+   * we mirror it here so the session body is consistent with what the server sees.
+   *
+   * Falls back to an empty string when Keycloak is unavailable (e.g., DISABLE_AUTH=true
+   * in dev — the backend mock guard provides a fixed sub from its side).
+   */
+  private getAuthenticatedUserId(): string {
+    try {
+      const tokenParsed = this.keycloak?.getKeycloakInstance()?.tokenParsed;
+      return tokenParsed?.['sub'] ?? '';
+    } catch {
+      return '';
     }
   }
 
@@ -483,4 +511,4 @@ export class GameRunnerComponent implements OnInit, OnDestroy {
     this.feedbackResult.set(null); // Prevent stale state leaking to next game
     this.flowService.advanceNext();
   }
-}
+}

@@ -89,7 +89,7 @@ export class SoundMatchGameComponent implements OnDestroy, BaseGameComponent {
   readonly viewModel = computed(() => {
     try {
       return toSoundMatchModel(this.content());
-    } catch (e) {
+    } catch {
       return null;
     }
   });

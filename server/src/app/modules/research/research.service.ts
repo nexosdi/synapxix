@@ -85,11 +85,31 @@ export class ResearchService {
 
   private getSimplifiedContext(type: string, input: any): string {
     const contextMap: Record<string, () => string> = {
-      'fill-in-the-blanks': () => `Sentence: ${input.sentence}. Blanks: ${input.blanks?.length || 0}`,
-      'speak-about-photo': () => `Prompt: ${input.prompt}. Keywords: ${input.targetKeywords?.join(', ')}`,
-      'listen-type': () => `Audio: ${input.audioUrl}. Expected: ${input.answer}`,
-      'read-aloud': () => `Text: ${input.text}. Min Score: ${input.scoring?.minPronScore}%`,
-      'avatar': () => `Legend: ${input.legend}. Options: ${input.options?.length}`,
+      'fill-in-the-blanks': () =>
+        `Sentence: ${input.sentence}. User answers: ${input.answers?.join(
+          ', ',
+        )}`,
+      'speak-about-photo': () =>
+        `Prompt: ${input.prompt}. Keywords: ${input.targetKeywords?.join(
+          ', ',
+        )}`,
+      'listen-type': () =>
+        `Audio: ${input.audioUrl}. Expected: ${input.answer}`,
+      'read-aloud': () =>
+        `Text: ${input.text}. Min Score: ${input.scoring?.minPronScore}%`,
+      avatar: () => `Legend: ${input.legend}. Options: ${input.options?.length}`,
+      'balance-master': () => `Balance the object.`,
+      categorization: () =>
+        `Categorize item '${input.item}' into one of the available categories.`,
+      intruder: () =>
+        `Find the intruder from the following items: ${input.items?.join(
+          ', ',
+        )}`,
+      'neural-link': () => `Connect the neurons.`,
+      'read-select': () => `Read and select the correct option.`,
+      'sound-match': () => `Match the sounds.`,
+      spotlight: () => `Find the object in the spotlight.`,
+      'timeline-order': () => `Order the events on the timeline.`,
     };
     return contextMap[type]?.() || 'General learning activity';
   }

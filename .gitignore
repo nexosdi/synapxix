@@ -80,6 +80,9 @@ data/
 postgres/
 data/
 .env
+.atl/.skill-registry.cache.json
+.gitignore
+.atl/skill-registry.md
 
 # Documentos de trabajo internos (no van al repo público)
 docs/*.docx

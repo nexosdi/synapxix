@@ -3,6 +3,7 @@ import { PrismaService } from '@nexosdi.synapxix/prisma';
 import { DalaController } from './dala.controller';
 import { DalaFacade } from './dala.facade';
 import { DalaRepository } from './dala.repository';
+import { ConsentModule } from '../../consent/consent.module';
 
 /**
  * Bounded context D.A.L.A.™ dentro del backend Synapxix.
@@ -13,6 +14,7 @@ import { DalaRepository } from './dala.repository';
  * conocer el interior del motor.
  */
 @Module({
+  imports: [ConsentModule],
   controllers: [DalaController],
   providers: [DalaFacade, DalaRepository, PrismaService],
   exports: [DalaFacade],

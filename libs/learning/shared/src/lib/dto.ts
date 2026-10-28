@@ -1,43 +1,94 @@
-// internal service event, if the user does not exist create it, idempotent check
-export interface CreateUserDto {
-  userId: string;
-  name: string;
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsArray } from 'class-validator';
+
+export class CreateUserDto {
+  @IsString()
+  @IsOptional()
+  userId?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @IsArray()
+  @IsOptional()
   embedding?: number[];
 }
 
-// user operations
-export interface CreateTopicDto {
-  userId: string;
-  topicId: string;
-  topicContent: string;
+export class CreateTopicDto {
+  @IsString()
+  @IsOptional()
+  userId?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  topicId!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  topicContent!: string;
+
+  @IsArray()
+  @IsOptional()
   topicVec?: number[];
+
+  @IsNumber()
+  @IsOptional()
   initialWeight?: number;
 }
 
-export interface ReinforceTopicDto {
-  userId: string;
-  topicId: string;
-  delta: number;
+export class ReinforceTopicDto {
+  @IsString()
+  @IsOptional()
+  userId?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  topicId!: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  delta!: number;
 }
 
-export interface SetPreferencesDto {
-  userId: string;
-  prefKeys: string[];
+export class SetPreferencesDto {
+  @IsString()
+  @IsOptional()
+  userId?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotEmpty()
+  prefKeys!: string[];
+
+  @IsNumber()
+  @IsOptional()
   initWeight?: number;
 }
 
-export interface InitMethodDto {
-  userId: string;
-  methodKey: string;
+export class InitMethodDto {
+  @IsString()
+  @IsOptional()
+  userId?: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'El methodKey es obligatorio' })
+  methodKey!: string;
+
+  @IsNumber()
+  @IsOptional()
   initWeight?: number;
 }
 
-export interface MethodFeedbackDto {
-  userId: string;
-  methodKey: string;
-  delta: number;
-}
+export class MethodFeedbackDto {
+  @IsString()
+  @IsOptional()
+  userId?: string;
 
-export interface RefreshEmbeddingDto {
-  userId: string;
+  @IsString()
+  @IsNotEmpty()
+  methodKey!: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  delta!: number;
 }

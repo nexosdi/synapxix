@@ -10,9 +10,12 @@ export * from './lib/services/history.service';
 export * from './lib/services/game-session.service';
 export * from './lib/services/game-flow.service';
 export * from './lib/services/sse-stream.service';
+export * from './lib/services/economy-dispatcher';
+export * from './lib/services/http-economy-dispatcher';
 export * from './lib/services/history-route.resolver';
 export * from './lib/services/history-data-provider';
 export * from './lib/services/mock-history-data-provider';
+export * from './lib/services/real-history-data-provider';
 export * from './lib/history-mock';
 
 // Game-specific models
@@ -26,5 +29,9 @@ export * from './lib/game-types/neural-link-game/neural-link-game.model';
 export * from './lib/game-types/read-aloud-game/read-aloud-game.model';
 export * from './lib/game-types/read-select-game/read-select-game.model';
 export * from './lib/game-types/sound-match/sound-match.model';
+export * from './lib/game-types/memory-match/memory-match.model';
+export * from './lib/game-types/word-association/word-association.model';
+export * from './lib/game-types/pattern-recognition/pattern-recognition.model';
 export * from './lib/game-types/speak-about-photo-game/speak-about-photo-game.model';
 export * from './lib/game-types/spotlight-game/spotlight-game.model';
+export * from './lib/game-types/timeline-order-game/timeline-order-game.model';

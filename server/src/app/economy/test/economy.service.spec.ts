@@ -3,6 +3,7 @@ import { EconomyService } from '../economy.service';
 import { EconomyRepository } from '../economy.repository';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 describe('EconomyService', () => {
   let service: EconomyService;
@@ -12,12 +13,20 @@ describe('EconomyService', () => {
     findTransactionBySessionId: jest.fn(),
     createRewardTransaction: jest.fn(),
     getBalance: jest.fn(),
+    findActiveStoreItem: jest.fn(),
+    findUserInventoryItem: jest.fn(),
+    createPurchaseTransaction: jest.fn(),
+    findAllActiveItems: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EconomyService,
+        {
+          provide: NotificationsService,
+          useValue: { create: jest.fn().mockResolvedValue(true) },
+        },
         { provide: EconomyRepository, useValue: mockRepository },
       ],
     }).compile();

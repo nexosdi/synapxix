@@ -32,10 +32,10 @@ const DEFAULT_RETRY_OPTIONS: RetryOptions = {
  * @param error - The caught error (may be any shape)
  * @returns The numeric HTTP status, or `undefined` if not found
  */
-function getErrorStatus(error: unknown): number | undefined {
+function getErrorStatus(error: unknown): number | string | undefined {
   if (error && typeof error === 'object') {
-    const err = error as any;
-    return err.status ?? err.httpStatusCode ?? err.code;
+    const err = error as Record<string, unknown>;
+    return (err.status ?? err.httpStatusCode ?? err.statusCode ?? err.code) as number | string | undefined;
   }
   return undefined;
 }
@@ -52,8 +52,10 @@ function getErrorStatus(error: unknown): number | undefined {
  */
 function getRetryAfterMs(error: unknown): number | undefined {
   if (error && typeof error === 'object') {
-    const err = error as any;
-    const retryAfter = err.retryAfter ?? err.headers?.['retry-after'];
+    const err = error as Record<string, unknown>;
+    const retryAfter = (err.retryAfter ?? (err.headers as Record<string, unknown>)?.[
+      'retry-after'
+    ]) as number | string | undefined;
     if (retryAfter !== undefined) {
       const seconds = Number(retryAfter);
       if (!isNaN(seconds) && seconds > 0) {
@@ -105,8 +107,9 @@ export async function withRetry<T>(
     } catch (error: unknown) {
       lastError = error;
       const status = getErrorStatus(error);
+      const isNetworkError = typeof status === 'string' && ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'ECONNREFUSED'].includes(status);
       const isRetryable =
-        status !== undefined && config.retryableStatuses.includes(status);
+        isNetworkError || (typeof status === 'number' && config.retryableStatuses.includes(status));
 
       // --- Non-retryable error: fail immediately ---
       if (!isRetryable) {

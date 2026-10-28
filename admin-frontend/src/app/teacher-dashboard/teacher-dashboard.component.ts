@@ -7,7 +7,7 @@ import {
   inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import {
@@ -24,6 +24,7 @@ import {
   Filler,
 } from 'chart.js';
 import { AnalyticsService } from '../core/services/analytics.service';
+import { AdminService } from '../core/services/admin.service';
 import {
   CohortStats,
   StudentSummary,
@@ -44,12 +45,13 @@ type SortDir   = 'asc' | 'desc';
 @Component({
   selector: 'app-teacher-dashboard',
   standalone: true,
-  imports: [CommonModule, BaseChartDirective],
+  imports: [CommonModule, BaseChartDirective, RouterModule],
   templateUrl: './teacher-dashboard.component.html',
   styleUrls: ['./teacher-dashboard.component.css'],
 })
 export class TeacherDashboardComponent implements OnInit, OnDestroy {
   private readonly analytics = inject(AnalyticsService);
+  private readonly adminService = inject(AdminService);
   private readonly router    = inject(Router);
 
   // ── Loading / error per section ───────────────────────────────────────────
@@ -324,5 +326,9 @@ export class TeacherDashboardComponent implements OnInit, OnDestroy {
 
   logout(): void {
     this.router.navigate(['/login']);
+  }
+
+  downloadCsv(): void {
+    this.adminService.downloadStudentsCsv();
   }
 }

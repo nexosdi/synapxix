@@ -23,6 +23,17 @@ export class GameSessionRepository {
     });
   }
 
+  async getSessionWithAttempts(sessionId: string) {
+    return this.prisma.gameSession.findUnique({
+      where: { session_id: sessionId },
+      include: {
+        attempts: {
+          orderBy: { created_at: 'asc' },
+        },
+      },
+    });
+  }
+
   /**
    * Sesiones de un usuario con sus intentos, de la más reciente a la más antigua.
    * Es la fuente del reporte por usuario: `game_attempt` ya guarda qué juego se
@@ -60,6 +71,15 @@ export class GameSessionRepository {
         status: 'completed',
         finished_at: new Date()
       }
+    });
+  }
+
+  async getLastNCompletedSessions(userId: string, n: number) {
+    return this.prisma.gameSession.findMany({
+      where: { user_id: userId, status: 'completed' },
+      orderBy: { finished_at: 'desc' },
+      take: n,
+      include: { attempts: true },
     });
   }
 }

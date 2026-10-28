@@ -1,4 +1,4 @@
-import { Component, computed, input, output, signal, OnInit } from '@angular/core';
+import { Component, computed, input, output, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AnyGameResult } from '../../models/game-result.model';
 import { BaseGameComponent } from '../../components/base-game.component';
@@ -7,6 +7,7 @@ import {
   toCategorizationGameModel, 
   SortableItem 
 } from './categorization-game.model';
+import { DalaInstrumentationService } from '../../services/dala.service';
 
 @Component({
   selector: 'lib-categorization-game',
@@ -59,6 +60,7 @@ import {
       <div class="grid grid-cols-2 gap-10">
         @for (cat of view.categories; track cat.id) {
           <div 
+            [attr.id]="cat.id"
             (dragover)="onDragOver($event)"
             (dragleave)="onDragLeave()"
             (drop)="onDrop($event, cat.id)"
@@ -103,6 +105,9 @@ export class CategorizationGameComponent implements OnInit, BaseGameComponent {
   readonly disabled = input<boolean>(false);
   readonly viewModel = computed(() => toCategorizationGameModel(this.content()));
 
+  private readonly dala = inject(DalaInstrumentationService);
+  private readonly dalaAdapter = this.dala.createAdapter('categorization', '1.0.0');
+
   remainingItems = signal<SortableItem[]>([]);
   totalCount = signal(0);
   feedbackState = signal<'idle' | 'success' | 'error'>('idle');
@@ -115,6 +120,12 @@ export class CategorizationGameComponent implements OnInit, BaseGameComponent {
     const items = [...this.viewModel().items].sort(() => Math.random() - 0.5);
     this.remainingItems.set(items);
     this.totalCount.set(items.length);
+    
+    this.dalaAdapter.mapInteraction({
+      kind: 'task_shown',
+      taskId: 'cat-task',
+      difficulty: items.length
+    });
   }
 
   readonly feedbackConfig = computed(() => ({
@@ -122,10 +133,15 @@ export class CategorizationGameComponent implements OnInit, BaseGameComponent {
     error: { title: '¡CASI!', icon: '🧐', class: 'bg-brand-500 border-brand-700' }
   }[this.feedbackState() as 'success' | 'error'] || { title: '', icon: '', class: '' }));
 
-  // --- LÓGICA DE DRAG & DROP VANILLA ---
-
   onDragStart(event: DragEvent, item: SortableItem) {
     if (this.disabled()) return;
+    
+    this.dalaAdapter.mapInteraction({
+      kind: 'item_action',
+      taskId: 'cat-task',
+      detail: { item: item.text, categoryId: item.categoryId }
+    });
+
     if (event.dataTransfer) {
       event.dataTransfer.setData('text/plain', item.categoryId);
       event.dataTransfer.effectAllowed = 'move';
@@ -133,10 +149,11 @@ export class CategorizationGameComponent implements OnInit, BaseGameComponent {
   }
 
   onDragOver(event: DragEvent) {
-    event.preventDefault(); // Necesario para permitir el Drop
-    // Aquí detectamos sobre qué categoría estamos
+    event.preventDefault();
+    if (this.disabled()) return;
+
     const target = event.currentTarget as HTMLElement;
-    this.isHovering.set(target.id || 'hovering'); 
+    this.isHovering.set(target.id || null);
   }
 
   onDragLeave() {
@@ -146,13 +163,28 @@ export class CategorizationGameComponent implements OnInit, BaseGameComponent {
   onDrop(event: DragEvent, categoryId: string) {
     event.preventDefault();
     this.isHovering.set(null);
-    
+    if (this.disabled()) return;
+
     const correctCatId = event.dataTransfer?.getData('text/plain');
 
     if (correctCatId === categoryId) {
       this.remainingItems.update(list => list.slice(1));
+      
+      this.dalaAdapter.mapInteraction({
+        kind: 'answer',
+        taskId: 'cat-task',
+        correct: true,
+        attempt: 1
+      });
+
       if (this.remainingItems().length === 0) {
         this.feedbackState.set('success');
+        
+        this.dalaAdapter.mapInteraction({
+          kind: 'complete',
+          taskId: 'cat-task'
+        });
+
         this.answerSubmitted.emit({
           gameType: 'categorization',
           answer: { categoryMapping: {} },
@@ -163,6 +195,14 @@ export class CategorizationGameComponent implements OnInit, BaseGameComponent {
       }
     } else {
       this.feedbackState.set('error');
+      
+      this.dalaAdapter.mapInteraction({
+        kind: 'answer',
+        taskId: 'cat-task',
+        correct: false,
+        attempt: 1
+      });
+
       setTimeout(() => this.feedbackState.set('idle'), 1500);
     }
   }

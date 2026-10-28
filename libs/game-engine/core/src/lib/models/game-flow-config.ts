@@ -19,3 +19,14 @@ export const DEFAULT_FLOW_CONFIG: GameFlowConfig = {
   answerToFeedbackDelayMs: 800,
   feedbackAutoAdvanceMs: 0,
 };
+
+/**
+ * Factory to create a GameFlowConfig with default values and optional overrides.
+ */
+export function createGameFlowConfig(overrides?: Partial<GameFlowConfig>): GameFlowConfig {
+  return {
+    ...DEFAULT_FLOW_CONFIG,
+    ...overrides,
+  };
+}
+

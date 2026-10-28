@@ -37,6 +37,28 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'teacher/dala-review',
+    canActivate: [roleGuard],
+    loadComponent: () =>
+      import('./teacher-dashboard/dala-review/dala-review.component').then(
+        (m) => m.DalaReviewComponent
+      ),
+  },
+  {
+    path: 'admin/users',
+    loadComponent: () =>
+      import('./dashboard/users-list/users-list.component').then(
+        (m) => m.UsersListComponent
+      ),
+  },
+  {
+    path: 'admin/users/:id',
+    loadComponent: () =>
+      import('./dashboard/user-detail/user-detail.component').then(
+        (m) => m.UserDetailComponent
+      ),
+  },
+  {
     path: '**',
     redirectTo: 'login',
   },

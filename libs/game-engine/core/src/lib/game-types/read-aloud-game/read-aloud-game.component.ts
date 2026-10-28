@@ -167,11 +167,11 @@ export class ReadAloudGameComponent implements OnDestroy, BaseGameComponent {
   cancelRecording(): void {
     this.stopTimer();
 
-    if (this.mediaRecorder?.state !== 'inactive') {
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       // Nullify handlers before stopping to discard the chunks cleanly
-      this.mediaRecorder!.ondataavailable = null;
-      this.mediaRecorder!.onstop          = null;
-      this.mediaRecorder!.stop();
+      this.mediaRecorder.ondataavailable = null;
+      this.mediaRecorder.onstop          = null;
+      this.mediaRecorder.stop();
     }
 
     this.stopMediaStream();

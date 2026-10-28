@@ -155,6 +155,11 @@ export class DalaFacade {
     return this.repository.decisionsBySubject(subjectId, limit);
   }
 
+  /** Lista decisiones, útil para el panel docente en shadow mode. */
+  async listDecisions(status?: 'pending' | 'reviewed', page?: number, limit?: number) {
+    return this.repository.listDecisions(status, page, limit);
+  }
+
   /** Veredicto docente sobre una recomendación (aprueba/rechaza/edita). */
   async review(decisionId: string, verdict: 'approved' | 'rejected' | 'edited', reason?: string) {
     const decision = await this.repository.getDecision(decisionId);

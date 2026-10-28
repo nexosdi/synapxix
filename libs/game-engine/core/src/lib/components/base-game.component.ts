@@ -1,5 +1,4 @@
-import { OutputEmitterRef, EventEmitter, InputSignal } from '@angular/core';
-import { InteractiveContent } from '../models/history.model';
+import { OutputEmitterRef, EventEmitter } from '@angular/core';
 import { AnyGameResult } from '../models/game-result.model';
 
 /**

@@ -1,7 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@nexosdi.synapxix/prisma'; 
 import { UpdatePreferencesDto } from './dto/updated-preferences';
-
 
 @Injectable()
 export class ProfileService {
@@ -9,21 +8,26 @@ export class ProfileService {
 
   // Lectura
   async getPreferences(userId: string) {
-    return this.prisma.userProfile.findUnique({
+    const profile = await this.prisma.userProfile.findUnique({
       where: { userId },
     });
+
+    if (!profile) {
+      throw new NotFoundException(`User profile not found for userId: ${userId}`);
+    }
+
+    return profile;
   }
 
   // Escritura (Upsert: crea si no existe, actualiza si existe)
-  // profile.service.ts
-async updatePreferences(userId: string, data: UpdatePreferencesDto) {
-  return this.prisma.userProfile.upsert({
-    where: { userId },
-    update: data,
-    create: {
-      ...data,
-      userId,
-    },
-  });
-}
-}
+  async updatePreferences(userId: string, data: UpdatePreferencesDto) {
+    return this.prisma.userProfile.upsert({
+      where: { userId },
+      update: data,
+      create: {
+        ...data,
+        userId,
+      },
+    });
+  }
+}

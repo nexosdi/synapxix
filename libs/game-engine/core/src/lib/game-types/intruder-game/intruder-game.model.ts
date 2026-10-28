@@ -22,5 +22,5 @@ export type OddOneOutInteractiveContent = InteractiveContentBase<
 >;
 
 export function toOddOneOutModel(content: OddOneOutInteractiveContent): OddOneOutData {
-  return content.gameInput;
-}
+  return content?.gameInput ?? { prompt: '', options: [], locale: 'es' };
+}

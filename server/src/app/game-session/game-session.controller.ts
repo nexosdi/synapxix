@@ -15,26 +15,49 @@ export class GameSessionController {
 
   @Post('start')
   startSession(@Req() req: Request & { user: KeycloakJwtPayload }, @Body() dto: StartSessionDto) {
-    const userId = req.user.sub!;
+    const userId = req.user.sub as string;
     return this.gameSessionService.startSession(userId, dto);
   }
 
   @Post(':id/attempt')
   submitAttempt(@Req() req: Request & { user: KeycloakJwtPayload }, @Param('id') id: string, @Body() dto: SubmitAttemptDto) {
-    const userId = req.user.sub!;
+    const userId = req.user.sub as string;
     return this.gameSessionService.submitAttempt(userId, id, dto);
   }
 
   @Post(':id/complete')
   completeSession(@Req() req: Request & { user: KeycloakJwtPayload }, @Param('id') id: string) {
-    const userId = req.user.sub!;
+    const userId = req.user.sub as string;
     return this.gameSessionService.completeSession(userId, id);
+  }
+
+  @Get(':id')
+  async getSessionById(
+    @Req() req: Request & { user: KeycloakJwtPayload },
+    @Param('id') id: string
+  ) {
+    const session = await this.gameSessionService.getSessionById(id);
+
+    const requesterId = req.user.sub as string;
+    const roles = req.user.realm_access?.roles ?? [];
+    const isStaff = roles.some((role) => STAFF_ROLES.includes(role));
+
+    if (session.user_id !== requesterId && !isStaff) {
+      throw new ForbiddenException('No tienes acceso a esta sesión');
+    }
+
+    return session;
   }
 
   /** Reporte propio: qué juegos jugó quien hace la llamada y cómo le fue. */
   @Get('me/report')
   getOwnReport(@Req() req: Request & { user: KeycloakJwtPayload }) {
-    return this.gameSessionService.getUserReport(req.user.sub!);
+    return this.gameSessionService.getUserReport(req.user.sub as string);
+  }
+
+  @Get('me/difficulty')
+  getOwnDifficulty(@Req() req: Request & { user: KeycloakJwtPayload }) {
+    return this.gameSessionService.getDifficultyForUser(req.user.sub as string);
   }
 
   /**
@@ -48,7 +71,7 @@ export class GameSessionController {
     @Req() req: Request & { user: KeycloakJwtPayload },
     @Param('userId') userId: string,
   ) {
-    const requesterId = req.user.sub!;
+    const requesterId = req.user.sub as string;
     const roles = req.user.realm_access?.roles ?? [];
     const isStaff = roles.some((role) => STAFF_ROLES.includes(role));
 

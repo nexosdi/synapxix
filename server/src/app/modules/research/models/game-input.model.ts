@@ -1,5 +1,22 @@
-import{ IsString, IsNotEmpty, IsObject } from 'class-validator';
-export type GameType = 'avatar' | 'read-select' | 'listen-type' |'fill-in-the-blank' |'read-aloud' |'speak-about-photo';
+import { IsString, IsNotEmpty, IsObject } from 'class-validator';
+
+export type GameType =
+  | 'avatar'
+  | 'read-select'
+  | 'listen-type'
+  | 'fill-in-the-blanks'
+  | 'read-aloud'
+  | 'timeline-order'
+  | 'categorization'
+  | 'spotlight'
+  | 'neural-link'
+  | 'intruder'
+  | 'balance-master'
+  | 'sound-match'
+  | 'memory-match'
+  | 'word-association'
+  | 'pattern-recognition'
+  | 'speak-about-photo';
 
 export interface BaseGameInput {
     locale: string;

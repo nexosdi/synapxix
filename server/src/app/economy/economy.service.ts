@@ -10,6 +10,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { StoreItem } from '@prisma/client';
 import { calculateGameReward, calculateXP, validatePurchase } from './logic/economy.logic';
 import { EconomyRepository } from './economy.repository';
+import { NotificationsService } from '../notifications/notifications.service';
 import { ClaimRewardDto } from './dto/claim.reward.dto';
 import { ClaimRewardResponseDto } from './dto/claim-reward-response.dto';
 import { BalanceResponseDto } from './dto/balance-response.dto';
@@ -22,7 +23,10 @@ export class EconomyService {
   private readonly logger = new Logger(EconomyService.name);
   private readonly MAX_REWARD_THRESHOLD = 500;
 
-  constructor(private readonly repository: EconomyRepository) {}
+  constructor(
+    private readonly repository: EconomyRepository,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async processGameReward(
     userId: string,
@@ -54,6 +58,16 @@ export class EconomyService {
       this.logger.log(
         `Reward awarded: User ${userId} (+${creditsToAward} credits, +${xpToAward} XP)`
       );
+
+      await this.notificationsService.create(
+        {
+          userId,
+          title: 'Recompensa de juego obtenida',
+          message: `¡Felicitaciones! Has ganado ${creditsToAward} créditos y ${xpToAward} puntos de experiencia por tu última sesión de juego.`,
+        },
+        undefined,
+        true
+      ).catch(e => this.logger.error('Error enviando notificación de reward', e));
 
       return {
         status: 'success',

@@ -47,10 +47,10 @@ async function main() {
       content: 'You are a pedagogical analyst evaluating a listen-type activity',
     },
     {
-      game_type: 'fill-in-the-blank',
+      game_type: 'fill-in-the-blanks',
       category: 'SYSTEM_ANALYSIS',
-      name: 'Fill in the Blank Analysis',
-      content: 'You are a pedagogical analyst evaluating a fill-in-the-blank activity',
+      name: 'Fill in the Blanks Analysis',
+      content: 'You are a pedagogical analyst evaluating a fill-in-the-blanks activity',
     },
     {
       game_type: 'read-aloud',
@@ -63,6 +63,24 @@ async function main() {
       category: 'SYSTEM_ANALYSIS',
       name: 'Speak About Photo Analysis',
       content: 'You are a pedagogical analyst evaluating a speak-about-photo activity',
+    },
+    {
+      game_type: 'memory-match',
+      category: 'SYSTEM_ANALYSIS',
+      name: 'Memory Match Analysis',
+      content: "You are a pedagogical analyst evaluating a memory-match activity. Assess the student's working memory, attention, and processing speed based on their matching accuracy and response time.",
+    },
+    {
+      game_type: 'word-association',
+      category: 'SYSTEM_ANALYSIS',
+      name: 'Word Association Analysis',
+      content: "You are a pedagogical analyst evaluating a word-association activity. Assess the student's semantic mapping, vocabulary depth, and creative logic based on their chosen associated words and precision score.",
+    },
+    {
+      game_type: 'pattern-recognition',
+      category: 'SYSTEM_ANALYSIS',
+      name: 'Pattern Recognition Analysis',
+      content: "You are a pedagogical analyst evaluating a pattern-recognition activity. Assess the student's abstract reasoning, logical thinking, and sequential processing speed based on their selected pattern answer and response time.",
     },
   ];
 

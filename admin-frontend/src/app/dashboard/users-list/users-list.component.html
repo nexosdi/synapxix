@@ -1,0 +1,56 @@
+<div class="users-list-container">
+  <header class="users-header">
+    <h1>Gestión de Alumnos</h1>
+  </header>
+
+  <div class="table-card" *ngIf="users$ | async as paginatedData">
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Roles</th>
+          <th>Estado</th>
+          <th>Fecha Registro</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of paginatedData.data">
+          <td>{{ user.firstName }} {{ user.lastName }}</td>
+          <td class="text-muted">{{ user.email }}</td>
+          <td>
+            <span class="role-badge" *ngFor="let role of user.roles">{{ role }}</span>
+          </td>
+          <td>
+            <span class="status-badge" [class.active]="user.isActive">
+              {{ user.isActive ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td class="text-muted">{{ user.createdAt | date:'shortDate' }}</td>
+          <td>
+            <a [routerLink]="['/admin/users', user.id]" class="btn-action">
+              Ver Detalles
+            </a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="pagination">
+      <button 
+        class="btn-page" 
+        [disabled]="paginatedData.page === 1"
+        (click)="onPageChange(paginatedData.page - 1)">
+        Anterior
+      </button>
+      <span class="page-info">Página {{ paginatedData.page }} de {{ paginatedData.totalPages }}</span>
+      <button 
+        class="btn-page" 
+        [disabled]="paginatedData.page === paginatedData.totalPages"
+        (click)="onPageChange(paginatedData.page + 1)">
+        Siguiente
+      </button>
+    </div>
+  </div>
+</div>
