@@ -91,6 +91,16 @@ describe('RealHistoryDataProvider', () => {
 
       expect(result).toBeNull();
     });
+
+    it('should return a clone of HISTORY_MOCK directly without HTTP call if sessionId matches HISTORY_MOCK.id', async () => {
+      const result = await provider.getHistory(HISTORY_MOCK.id);
+
+      // Verify no HTTP request was made
+      httpMock.expectNone(`/api/game-session/${HISTORY_MOCK.id}`);
+      expect(result).toBeTruthy();
+      expect(result?.id).toBe(HISTORY_MOCK.id);
+      expect(result).not.toBe(HISTORY_MOCK); // Must be a clone
+    });
   });
 
   describe('getHistories()', () => {
