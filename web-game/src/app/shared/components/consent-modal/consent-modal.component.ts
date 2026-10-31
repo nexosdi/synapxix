@@ -174,6 +174,10 @@ export class ConsentModalComponent implements OnInit {
     const portalUrl = port
       ? `${protocol}//${hostname}:4200`
       : `${protocol}//${hostname}`;
-    window.location.href = portalUrl;
+    this.redirectTo(portalUrl);
+  }
+
+  redirectTo(url: string) {
+    window.location.href = url;
   }
 }

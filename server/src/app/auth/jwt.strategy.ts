@@ -1,8 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import jwksRsa from 'jwks-rsa';
-import { PrismaService } from '@nexosdi.synapxix/prisma';
 
 export type KeycloakJwtPayload = {
   [key: string]: unknown;
@@ -19,15 +18,20 @@ export type KeycloakJwtPayload = {
 };
 
 /**
- * Estrategia de Passport para validar tokens JWT (Bearer tokens).
- * Integrado con el Keycloak del VPS. Descarga las llaves públicas (JWKS) desde la URL
- * configurada para verificar criptográficamente que los tokens no fueron alterados.
+ * Passport strategy for validating JWT Bearer tokens.
+ * Integrated with the Keycloak instance. Downloads public keys (JWKS) from the
+ * configured URL to cryptographically verify that tokens have not been tampered with.
+ *
+ * validate() is intentionally side-effect-free (no DB writes).
+ * It runs on every authenticated request — any write here hits the DB on every
+ * request, causing lock contention and connection pool exhaustion.
+ *
+ * JIT user provisioning (ensuring app_user exists for FK constraints) is handled
+ * at the point of need in ConsentService.updateConsent(), not here.
  */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  private readonly logger = new Logger(JwtStrategy.name);
-
-  constructor(private readonly prisma: PrismaService) {
+  constructor() {
     const realmUrl = process.env.KEYCLOAK_REALM_URL || 'http://localhost:8080/realms/synapxix';
 
     super({
@@ -45,58 +49,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: KeycloakJwtPayload) {
+  validate(payload: KeycloakJwtPayload) {
     const roles = payload.realm_access?.roles || [];
-    const userId = payload.sub;
-
-    if (userId) {
-      try {
-        // Just-In-Time (JIT) provisioning:
-        // Automatically sync Keycloak authenticated users into the local `auth.app_user` table.
-        // This guarantees referential integrity for downstream entities with foreign keys (e.g. dala_consent).
-        const username =
-          payload.preferred_username ||
-          (payload.email ? payload.email.split('@')[0] : userId);
-        const email = payload.email || `${username}@synapxix.local`;
-        const firstname =
-          (payload['given_name'] as string) ||
-          (payload.name ? payload.name.split(' ')[0] : 'User');
-        const lastname =
-          (payload['family_name'] as string) ||
-          (payload.name && payload.name.split(' ').length > 1
-            ? payload.name.split(' ').slice(1).join(' ')
-            : 'Synapxix');
-        const role = roles.includes('teacher')
-          ? 'teacher'
-          : roles.includes('director')
-          ? 'director'
-          : roles.includes('student')
-          ? 'student'
-          : 'user';
-
-        await this.prisma.app_user.upsert({
-          where: { user_id: userId },
-          update: {
-            username,
-            email,
-            role,
-          },
-          create: {
-            user_id: userId,
-            username,
-            email,
-            firstname,
-            lastname,
-            role,
-          },
-        });
-      } catch (err) {
-        // Log warning on failure without blocking request authentication pipeline
-        this.logger.warn(
-          `JIT User Provisioning failed for user "${userId}": ${(err as Error).message}`
-        );
-      }
-    }
 
     return {
       ...payload,
@@ -104,5 +58,3 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     };
   }
 }
-
-
