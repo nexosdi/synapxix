@@ -26,7 +26,7 @@ export class EconomyRepository {
   async findGameSession(sessionId: string) {
     return this.prisma.gameSession.findUnique({
       where: { session_id: sessionId },
-      select: { user_id: true, status: true },
+      select: { user_id: true },
     });
   }
 

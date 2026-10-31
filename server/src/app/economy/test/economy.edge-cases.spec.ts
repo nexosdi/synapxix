@@ -61,10 +61,7 @@ describe('EconomyService — edge cases', () => {
 
     service = module.get<EconomyService>(EconomyService);
     jest.clearAllMocks();
-    mockRepository.findGameSession.mockResolvedValue({
-      user_id: 'user-1',
-      status: 'completed',
-    });
+    mockRepository.findGameSession.mockResolvedValue({ user_id: 'user-1' });
   });
 
   it('should throw BadRequestException when reward exceeds MAX_REWARD_THRESHOLD', async () => {
@@ -86,10 +83,7 @@ describe('EconomyService — edge cases', () => {
   });
 
   it('should throw ConflictException on duplicate sessionId regardless of score', async () => {
-    mockRepository.findGameSession.mockResolvedValue({
-      user_id: 'user-2',
-      status: 'completed',
-    });
+    mockRepository.findGameSession.mockResolvedValue({ user_id: 'user-2' });
     mockRepository.findTransactionBySessionId.mockResolvedValue({ id: 'existing' });
 
     const dto = { gameSessionId: 'dup-session', score: 0, victory: false };
@@ -98,10 +92,7 @@ describe('EconomyService — edge cases', () => {
   });
 
   it('should wrap unexpected repository errors in InternalServerErrorException', async () => {
-    mockRepository.findGameSession.mockResolvedValue({
-      user_id: 'user-3',
-      status: 'completed',
-    });
+    mockRepository.findGameSession.mockResolvedValue({ user_id: 'user-3' });
     mockRepository.findTransactionBySessionId.mockResolvedValue(null);
     mockRepository.createRewardTransaction.mockRejectedValue(
       new Error('DB connection lost')
@@ -113,10 +104,7 @@ describe('EconomyService — edge cases', () => {
   });
 
   it('should call repository with PARTICIPATION type for a loss', async () => {
-    mockRepository.findGameSession.mockResolvedValue({
-      user_id: 'user-4',
-      status: 'completed',
-    });
+    mockRepository.findGameSession.mockResolvedValue({ user_id: 'user-4' });
     mockRepository.findTransactionBySessionId.mockResolvedValue(null);
     mockRepository.createRewardTransaction.mockResolvedValue({
       transactionId: 'tx-loss',
@@ -133,10 +121,7 @@ describe('EconomyService — edge cases', () => {
   });
 
   it('should call repository with VICTORY type for a win', async () => {
-    mockRepository.findGameSession.mockResolvedValue({
-      user_id: 'user-5',
-      status: 'completed',
-    });
+    mockRepository.findGameSession.mockResolvedValue({ user_id: 'user-5' });
     mockRepository.findTransactionBySessionId.mockResolvedValue(null);
     mockRepository.createRewardTransaction.mockResolvedValue({
       transactionId: 'tx-win',
