@@ -17,6 +17,7 @@ describe('EconomyRepository — Integration Tests', () => {
           useValue: {
             $transaction: jest.fn(),
             economyTransaction: { findUnique: jest.fn() },
+            gameSession: { findUnique: jest.fn() },
             app_user: { findUnique: jest.fn(), update: jest.fn() },
             auditLog: { create: jest.fn() },
           },
@@ -26,6 +27,17 @@ describe('EconomyRepository — Integration Tests', () => {
 
     repository = module.get<EconomyRepository>(EconomyRepository);
     prismaService = module.get<PrismaService>(PrismaService);
+  });
+
+  it('finds a game session owner by session id', async () => {
+    const session = { user_id: 'user-1' };
+    (prismaService.gameSession.findUnique as jest.Mock).mockResolvedValue(session);
+
+    await expect(repository.findGameSession('session-1')).resolves.toBe(session);
+    expect(prismaService.gameSession.findUnique).toHaveBeenCalledWith({
+      where: { session_id: 'session-1' },
+      select: { user_id: true },
+    });
   });
 
   describe('createRewardTransaction — Atomicity', () => {

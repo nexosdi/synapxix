@@ -23,6 +23,13 @@ export class EconomyRepository {
     });
   }
 
+  async findGameSession(sessionId: string) {
+    return this.prisma.gameSession.findUnique({
+      where: { session_id: sessionId },
+      select: { user_id: true },
+    });
+  }
+
   async createRewardTransaction(
     userId: string,
     data: {
