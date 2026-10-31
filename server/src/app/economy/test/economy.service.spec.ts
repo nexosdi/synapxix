@@ -41,7 +41,10 @@ describe('EconomyService', () => {
     repository = module.get<EconomyRepository>(EconomyRepository);
 
     jest.clearAllMocks();
-    mockRepository.findGameSession.mockResolvedValue({ user_id: 'user-1' });
+    mockRepository.findGameSession.mockResolvedValue({
+      user_id: 'user-1',
+      status: 'completed',
+    });
   });
 
   it('should throw NotFoundException when the game session does not exist', async () => {
@@ -58,7 +61,10 @@ describe('EconomyService', () => {
   });
 
   it('should throw ForbiddenException when the game session belongs to another user', async () => {
-    mockRepository.findGameSession.mockResolvedValue({ user_id: 'user-2' });
+    mockRepository.findGameSession.mockResolvedValue({
+      user_id: 'user-2',
+      status: 'completed',
+    });
 
     await expect(
       service.processGameReward('user-1', {
@@ -67,6 +73,23 @@ describe('EconomyService', () => {
         victory: true,
       })
     ).rejects.toThrow(ForbiddenException);
+    expect(mockRepository.findTransactionBySessionId).not.toHaveBeenCalled();
+    expect(mockRepository.createRewardTransaction).not.toHaveBeenCalled();
+  });
+
+  it('should throw ConflictException when the game session is not completed', async () => {
+    mockRepository.findGameSession.mockResolvedValue({
+      user_id: 'user-1',
+      status: 'playing',
+    });
+
+    await expect(
+      service.processGameReward('user-1', {
+        gameSessionId: 'unfinished-session',
+        score: 500,
+        victory: true,
+      })
+    ).rejects.toThrow(ConflictException);
     expect(mockRepository.findTransactionBySessionId).not.toHaveBeenCalled();
     expect(mockRepository.createRewardTransaction).not.toHaveBeenCalled();
   });
@@ -123,7 +146,10 @@ describe('EconomyService', () => {
     const dto = { gameSessionId: 'session-123', score: 100, victory: true };
     const userId = 'user-123';
 
-    mockRepository.findGameSession.mockResolvedValue({ user_id: userId });
+    mockRepository.findGameSession.mockResolvedValue({
+      user_id: userId,
+      status: 'completed',
+    });
     mockRepository.findTransactionBySessionId.mockResolvedValue(null);
     mockRepository.createRewardTransaction.mockResolvedValue({
       transactionId: 'tx-456',

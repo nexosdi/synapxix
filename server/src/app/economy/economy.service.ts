@@ -46,6 +46,12 @@ export class EconomyService {
       );
     }
 
+    if (gameSession.status !== 'completed') {
+      throw new ConflictException(
+        'Game session must be completed before claiming rewards'
+      );
+    }
+
     const creditsToAward = calculateGameReward(dto.victory, dto.score);
 
     this.validateSecurityLimits(userId, creditsToAward);

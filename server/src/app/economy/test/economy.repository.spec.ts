@@ -30,13 +30,13 @@ describe('EconomyRepository — Integration Tests', () => {
   });
 
   it('finds a game session owner by session id', async () => {
-    const session = { user_id: 'user-1' };
+    const session = { user_id: 'user-1', status: 'completed' };
     (prismaService.gameSession.findUnique as jest.Mock).mockResolvedValue(session);
 
     await expect(repository.findGameSession('session-1')).resolves.toBe(session);
     expect(prismaService.gameSession.findUnique).toHaveBeenCalledWith({
       where: { session_id: 'session-1' },
-      select: { user_id: true },
+      select: { user_id: true, status: true },
     });
   });
 
