@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -32,6 +33,19 @@ export class EconomyService {
     userId: string,
     dto: ClaimRewardDto
   ): Promise<ClaimRewardResponseDto> {
+    const gameSession = await this.repository.findGameSession(dto.gameSessionId);
+    if (!gameSession) {
+      throw new NotFoundException(
+        `Game session not found: ${dto.gameSessionId}`
+      );
+    }
+
+    if (gameSession.user_id !== userId) {
+      throw new ForbiddenException(
+        'You cannot claim a reward for another user’s session'
+      );
+    }
+
     const creditsToAward = calculateGameReward(dto.victory, dto.score);
 
     this.validateSecurityLimits(userId, creditsToAward);

@@ -1,7 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EconomyService } from '../economy.service';
 import { EconomyRepository } from '../economy.repository';
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { NotificationsService } from '../../notifications/notifications.service';
 
@@ -10,6 +15,7 @@ describe('EconomyService', () => {
   let repository: EconomyRepository;
 
   const mockRepository = {
+    findGameSession: jest.fn(),
     findTransactionBySessionId: jest.fn(),
     createRewardTransaction: jest.fn(),
     getBalance: jest.fn(),
@@ -35,6 +41,34 @@ describe('EconomyService', () => {
     repository = module.get<EconomyRepository>(EconomyRepository);
 
     jest.clearAllMocks();
+    mockRepository.findGameSession.mockResolvedValue({ user_id: 'user-1' });
+  });
+
+  it('should throw NotFoundException when the game session does not exist', async () => {
+    mockRepository.findGameSession.mockResolvedValue(null);
+
+    await expect(
+      service.processGameReward('user-1', {
+        gameSessionId: 'missing-session',
+        score: 10,
+        victory: true,
+      })
+    ).rejects.toThrow(NotFoundException);
+    expect(mockRepository.findTransactionBySessionId).not.toHaveBeenCalled();
+  });
+
+  it('should throw ForbiddenException when the game session belongs to another user', async () => {
+    mockRepository.findGameSession.mockResolvedValue({ user_id: 'user-2' });
+
+    await expect(
+      service.processGameReward('user-1', {
+        gameSessionId: 'other-users-session',
+        score: 10,
+        victory: true,
+      })
+    ).rejects.toThrow(ForbiddenException);
+    expect(mockRepository.findTransactionBySessionId).not.toHaveBeenCalled();
+    expect(mockRepository.createRewardTransaction).not.toHaveBeenCalled();
   });
 
   it('should throw ConflictException if transaction already exists', async () => {
@@ -89,6 +123,7 @@ describe('EconomyService', () => {
     const dto = { gameSessionId: 'session-123', score: 100, victory: true };
     const userId = 'user-123';
 
+    mockRepository.findGameSession.mockResolvedValue({ user_id: userId });
     mockRepository.findTransactionBySessionId.mockResolvedValue(null);
     mockRepository.createRewardTransaction.mockResolvedValue({
       transactionId: 'tx-456',
