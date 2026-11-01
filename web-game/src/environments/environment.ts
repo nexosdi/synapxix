@@ -2,8 +2,7 @@
  * Configuración de entorno para desarrollo local.
  *
  * Apunta al stack local levantado con docker compose: el backend en el 3000 y
- * el Keycloak del perfil `keycloak`, cuyo puerto se define con KEYCLOAK_PORT
- * (8081 acá porque el 8080 suele estar ocupado).
+ * el Keycloak del perfil `keycloak`, cuyo puerto se define con KEYCLOAK_PORT.
  *
  * Para usar el Keycloak del VPS en lugar del local:
  *   url: 'https://auth.aisuite.neops.ai'
@@ -16,7 +15,7 @@ export const environment = {
   // El /api corresponde al prefijo global que define main.ts (setGlobalPrefix).
   apiUrl: '/api',
   keycloak: {
-    url: 'http://localhost:8081',
+    url: 'http://localhost:8080',
     realm: 'Synapxix',
     clientId: 'synapxix-app',
   },

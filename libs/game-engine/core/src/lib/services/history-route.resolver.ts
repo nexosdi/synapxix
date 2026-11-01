@@ -15,7 +15,13 @@ export const historyRouteResolver: ResolveFn<boolean> = async (route) => {
 
   const loaded = await historyService.loadHistory(historyId);
   if (!loaded) {
-    router.navigate(['/history', HISTORY_MOCK.id, 'map']);
+    // Prevent circular redirection loop: if the mock history itself failed to load,
+    // fallback to the home route ('/') instead of recursively targeting HISTORY_MOCK.
+    if (historyId !== HISTORY_MOCK.id) {
+      router.navigate(['/history', HISTORY_MOCK.id, 'map']);
+    } else {
+      router.navigate(['/']);
+    }
     return false;
   }
 

@@ -206,8 +206,8 @@ El realm `Synapxix` y el cliente `synapxix-app` se importan solos desde
 
 ```env
 DISABLE_AUTH=false
-KEYCLOAK_PORT=8081          # cambialo si el 8080 está libre en tu máquina
-KEYCLOAK_REALM_URL=http://localhost:8081/realms/Synapxix
+KEYCLOAK_PORT=8080          # cambialo si el 8080 está libre en tu máquina
+KEYCLOAK_REALM_URL=http://localhost:8080/realms/Synapxix
 KEYCLOAK_ADMIN=admin
 KEYCLOAK_ADMIN_PASSWORD=changeme
 KEYCLOAK_DB_NAME=keycloak

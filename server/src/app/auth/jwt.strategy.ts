@@ -11,14 +11,23 @@ export type KeycloakJwtPayload = {
   email?: string;
   name?: string;
   preferred_username?: string;
+  given_name?: string;
+  family_name?: string;
   realm_access?: { roles: string[] };
   roles?: string[];
 };
 
 /**
- * Estrategia de Passport para validar tokens JWT (Bearer tokens).
- * Integrado con el Keycloak del VPS. Descarga las llaves públicas (JWKS) desde la URL
- * configurada para verificar criptográficamente que los tokens no fueron alterados.
+ * Passport strategy for validating JWT Bearer tokens.
+ * Integrated with the Keycloak instance. Downloads public keys (JWKS) from the
+ * configured URL to cryptographically verify that tokens have not been tampered with.
+ *
+ * validate() is intentionally side-effect-free (no DB writes).
+ * It runs on every authenticated request — any write here hits the DB on every
+ * request, causing lock contention and connection pool exhaustion.
+ *
+ * JIT user provisioning (ensuring app_user exists for FK constraints) is handled
+ * at the point of need in ConsentService.updateConsent(), not here.
  */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -42,11 +51,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   validate(payload: KeycloakJwtPayload) {
     const roles = payload.realm_access?.roles || [];
+
     return {
       ...payload,
       roles,
     };
   }
 }
-
-
