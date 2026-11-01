@@ -177,7 +177,7 @@ describe('ConsentModalComponent', () => {
     });
 
     it('should enforce fail-open policy and unblock player if granting consent encounters persistent network error', fakeAsync(() => {
-      jest.spyOn(console, 'warn').mockImplementation(() => {});
+      jest.spyOn(console, 'warn').mockImplementation(() => undefined);
       mockConsentService.updateConsent.mockReturnValue(throwError(() => new Error('Server unreachable')));
 
       component.submitConsent('GRANTED');
@@ -188,7 +188,7 @@ describe('ConsentModalComponent', () => {
     }));
 
     it('should enforce fail-closed policy and remain blocked if revoking consent fails', fakeAsync(() => {
-      jest.spyOn(console, 'warn').mockImplementation(() => {});
+      jest.spyOn(console, 'warn').mockImplementation(() => undefined);
       mockConsentService.updateConsent.mockReturnValue(throwError(() => new Error('Server unreachable')));
 
       component.submitConsent('REVOKED');
@@ -208,7 +208,7 @@ describe('ConsentModalComponent', () => {
 
       const redirectSpy = jest
         .spyOn(component, 'redirectTo')
-        .mockImplementation(() => {});
+        .mockImplementation(() => undefined);
 
       component.goToMainMenu();
 
