@@ -30,166 +30,115 @@ interface PurchaseState {
     { provide: STORE_ITEMS_PROVIDER, useClass: HttpStoreItemsProvider },
   ],
   template: `
-    <div class="store">
+    <main class="store">
+      <div class="store__container">
 
-      <header class="store__header">
-        <div class="store__header-text">
-          <h1 class="store__title">Tienda de Recompensas</h1>
-          <p class="store__subtitle">Personalizá tu perfil con tus monedas ganadas.</p>
+        <!-- Header -->
+        <header class="store__header">
+          <div class="store__header-text">
+            <span class="store__header-badge">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" aria-hidden="true">
+                <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z"/>
+                <path fill-rule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"/>
+              </svg>
+              Recompensas
+            </span>
+            <h1 class="store__title">Tienda Synapxix</h1>
+            <p class="store__subtitle">Canjeá tus monedas ganadas y personalizá tu experiencia de juego.</p>
+          </div>
+
+          <app-store-balance
+            [credits]="credits()"
+            [isLoading]="isLoadingBalance()"
+          />
+        </header>
+
+        <!-- Global error alert -->
+        <div *ngIf="globalError()" class="store__alert store__alert--error" role="alert">
+          <div class="store__alert-message">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18" aria-hidden="true">
+              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+            <span>{{ globalError() }}</span>
+          </div>
+          <button type="button" class="store__alert-btn" (click)="loadData()">
+            Reintentar
+          </button>
         </div>
-        <app-store-balance
-          [credits]="credits()"
-          [isLoading]="isLoadingBalance()"
-        />
-      </header>
 
-      <div *ngIf="globalError()" class="store__alert store__alert--error" role="alert">
-        <span>⚠️ {{ globalError() }}</span>
-        <button (click)="loadData()">Reintentar</button>
-      </div>
+        <!-- Filter tabs (sin emojis) -->
+        <nav class="store__filters" role="tablist" aria-label="Filtrar catálogo de productos">
+          <button
+            *ngFor="let f of filterOptions"
+            type="button"
+            role="tab"
+            class="store__filter-btn"
+            [class.store__filter-btn--active]="activeFilter() === f.value"
+            [attr.aria-selected]="activeFilter() === f.value"
+            (click)="setFilter(f.value)"
+          >
+            {{ f.label }}
+          </button>
+        </nav>
 
-      <div class="store__filters" role="group" aria-label="Filtrar por tipo">
-        <button
-          *ngFor="let f of filterOptions"
-          class="store__filter-btn"
-          [class.store__filter-btn--active]="activeFilter() === f.value"
-          (click)="setFilter(f.value)"
+        <!-- Loading skeleton grid -->
+        <div *ngIf="isLoadingItems()" class="store__grid" aria-busy="true" aria-label="Cargando catálogo...">
+          <div *ngFor="let _ of skeletons" class="store__skeleton-card" aria-hidden="true">
+            <div class="store__skeleton-preview"></div>
+            <div class="store__skeleton-body">
+              <div class="store__skeleton-line store__skeleton-line--title"></div>
+              <div class="store__skeleton-line store__skeleton-line--desc"></div>
+            </div>
+            <div class="store__skeleton-footer">
+              <div class="store__skeleton-line store__skeleton-line--price"></div>
+              <div class="store__skeleton-line store__skeleton-line--btn"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real items grid -->
+        <div *ngIf="!isLoadingItems() && !globalError() && filteredItems().length > 0" class="store__grid">
+          <app-store-item-card
+            *ngFor="let item of filteredItems(); trackBy: trackById"
+            [item]="item"
+            [isLoading]="purchaseState().itemId === item.store_item_id"
+            [errorMessage]="purchaseState().errorByItemId[item.store_item_id] || null"
+            (purchase)="onPurchase($event)"
+          />
+        </div>
+
+        <!-- Empty state with high contrast & actionable button (sin emojis) -->
+        <div
+          *ngIf="!isLoadingItems() && !globalError() && filteredItems().length === 0"
+          class="store__empty"
+          role="region"
+          aria-label="Catálogo vacío"
         >
-          {{ f.label }}
-        </button>
-      </div>
+          <div class="store__empty-icon-wrapper" aria-hidden="true">
+            <svg class="store__empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="44" height="44">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+          </div>
+          <h2 class="store__empty-title">No hay ítems en esta categoría</h2>
+          <p class="store__empty-text">
+            No encontramos productos para la categoría seleccionada en este momento.
+          </p>
+          <button
+            *ngIf="activeFilter() !== 'all'"
+            type="button"
+            class="store__empty-action"
+            (click)="setFilter('all')"
+          >
+            Ver todos los ítems
+          </button>
+        </div>
 
-      <div *ngIf="isLoadingItems()" class="store__grid">
-        <div *ngFor="let _ of skeletons" class="store__skeleton"></div>
       </div>
-
-      <div *ngIf="!isLoadingItems() && !globalError()" class="store__grid">
-        <app-store-item-card
-          *ngFor="let item of filteredItems(); trackBy: trackById"
-          [item]="item"
-          [isLoading]="purchaseState().itemId === item.store_item_id"
-          [errorMessage]="purchaseState().errorByItemId[item.store_item_id] || null"
-          (purchase)="onPurchase($event)"
-        />
-      </div>
-
-      <div
-        *ngIf="!isLoadingItems() && !globalError() && filteredItems().length === 0"
-        class="store__empty"
-      >
-        <p>No hay ítems disponibles en esta categoría.</p>
-      </div>
-
-    </div>
+    </main>
   `,
-  styles: [`
-    .store {
-      padding: 2rem;
-      background: #f5f9ff;
-      min-height: 100vh;
-      font-family: 'Segoe UI', sans-serif;
-    }
-
-    .store__header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    .store__title {
-      margin: 0 0 4px;
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: #0a4fbf;
-    }
-    .store__subtitle {
-      margin: 0;
-      color: #4c6c9a;
-      font-size: 0.9rem;
-    }
-
-    .store__alert {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.875rem 1rem;
-      border-radius: 12px;
-      margin-bottom: 1.5rem;
-      font-size: 0.875rem;
-    }
-    .store__alert--error {
-      background: #fdeaea;
-      color: #d64545;
-      border: 1px solid #f7d4d4;
-    }
-    .store__alert button {
-      background: #d64545;
-      color: white;
-      border: none;
-      padding: 6px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.8rem;
-    }
-    .store__alert button:hover { background: #b03636; }
-
-    .store__filters {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-    }
-    .store__filter-btn {
-      padding: 7px 18px;
-      border-radius: 99px;
-      border: 2px solid #c9e0ff;
-      background: white;
-      color: #4c6c9a;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .store__filter-btn:hover { border-color: #0a4fbf; color: #0a4fbf; }
-    .store__filter-btn--active {
-      background: #0a4fbf;
-      border-color: #0a4fbf;
-      color: white;
-    }
-
-    .store__grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 1.25rem;
-    }
-
-    .store__skeleton {
-      height: 320px;
-      border-radius: 16px;
-      background: linear-gradient(90deg, #f5f9ff 25%, #c9e0ff 50%, #f5f9ff 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.4s infinite;
-    }
-    @keyframes shimmer {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-
-    .store__empty {
-      text-align: center;
-      padding: 4rem;
-      color: #8fb8e0;
-      font-style: italic;
-    }
-
-    @media (max-width: 600px) {
-      .store { padding: 1rem; }
-      .store__header { flex-direction: column; }
-    }
-  `],
+  styleUrls: ['./shop.component.css'],
 })
 export class ShopComponent implements OnInit {
   private readonly storeItemsProvider = inject(STORE_ITEMS_PROVIDER);
