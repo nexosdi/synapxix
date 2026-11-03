@@ -8,6 +8,7 @@ import { HealthController } from './health.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { DalaModule } from './modules/dala/dala.module';
+import { TeamModule } from './modules/team/team.module';
 import { LearningModule } from './learning/learning.module';
 import { EconomyModule } from './economy/economy.module';
 import { GameSessionModule } from './game-session/game-session.module';
@@ -71,6 +72,7 @@ import { PrismaModule } from '@nexosdi.synapxix/prisma';
     PrismaModule,
     AuthModule,
     DalaModule,
+    TeamModule,
     LearningModule,
     EconomyModule,
     GameSessionModule,

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "team",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["nx", "serve", "team"],
+      "port": 4400
+    },
+    {
+      "name": "web-game",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["nx", "serve", "web-game"],
+      "port": 4300
+    }
+  ]
+}

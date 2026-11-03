@@ -20,8 +20,14 @@ export class Neo4jService implements OnModuleInit, OnModuleDestroy {
       await this.driver.verifyConnectivity();
       this.logger.log('Successfully connected to Neo4j');
     } catch (error) {
-      this.logger.error(`Failed to connect to Neo4j: ${error}`);
-      throw error;
+      // Neo4j is opt-in (docker compose --profile neo4j): without it the rest of
+      // the API must still boot. Graph queries fail on use and healthcheck()
+      // reports the error. Set NEO4J_REQUIRED=true to fail fast instead.
+      if (process.env.NEO4J_REQUIRED === 'true') {
+        this.logger.error(`Failed to connect to Neo4j: ${error}`);
+        throw error;
+      }
+      this.logger.warn(`Neo4j unavailable, graph features disabled until it is reachable: ${error}`);
     }
   }
 

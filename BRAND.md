@@ -64,6 +64,34 @@ contraste" y "tono cercano".
 | Superficie destacada | `--sx-sky` |
 | Sombra | `--sx-shadow-sm` / `-md` (teñidas de azul, nunca negro plano) |
 
+### Modo inmersivo: la única excepción al lienzo claro
+
+Hay piezas que **no son interfaz de producto sino un mundo en el que se entra**:
+hoy, el onboarding *Primer Pulso*. Ahí el lienzo se invierte al **azul profundo
+llevado a su extremo** (`#041126`), porque la experiencia narra literalmente
+"entrar al núcleo del sistema" y una pantalla blanca no sostiene esa promesa.
+
+**No es glassmorphism sobre negro** — que sigue prohibido. Es el mismo azul de
+marca en su valor más oscuro, con la misma tipografía y las mismas formas.
+
+Cuándo se permite:
+
+| Sí | No |
+|---|---|
+| Experiencias autocontenidas con narrativa propia | Paneles de producto: Teacher, admin, web-game |
+| Piezas que se recorren de principio a fin | Pantallas de trabajo diario |
+| Cuando la profundidad **es** el mensaje | Cuando solo se busca "que se vea moderno" |
+
+Lo que **no** se relaja por ser oscuro:
+
+- **Contraste AA en todo texto** — se audita, no se supone. El Primer Pulso pasa 100 nodos de texto sin un solo fallo.
+- **Foco siempre visible** (borde de 3px, aquí en cian de escena).
+- **Nunca violeta ni rosa en datos.** Solo viven en la atmósfera y en la Estrella, que es narrativa declarada.
+- Nunito, formas redondeadas y el azul de marca como color rector.
+- `prefers-reduced-motion` apaga todo el 3D: la profundidad es decoración, jamás información.
+
+El isotipo va en su versión clara (`/logo-light.png`): el azul sobre azul no se lee.
+
 ### Colores de estado
 
 `--sx-success`, `--sx-warning`, `--sx-danger` (con sus variantes `-soft`) existen

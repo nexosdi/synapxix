@@ -77,12 +77,14 @@ Determinista, priorizada, versionada (`core-policy-0.1.0`). Principio: **mínima
 | Fase (directrices) | Estado |
 |---|---|
 | 1. Fundaciones — contratos, schema, event store, idempotencia | ✅ |
-| 2. Instrumentación — SDK offline + adaptadores (categorization, timeline-order, intruder) | ✅ contratos · ⏳ wiring en componentes Angular |
+| 2. Instrumentación — SDK offline + adaptadores (categorization, timeline-order, intruder) | ✅ contratos · ✅ primer wiring real: el Primer Pulso del equipo (`team/`) usa los 3 adaptadores en vivo · ⏳ wiring en los juegos de web-game |
 | 3. Estado — evidencia, estimaciones, snapshots, trazabilidad | ✅ |
 | 4. Decisiones — política, DecisionRecord, shadow mode, revisión | ✅ backend · ⏳ panel docente UI |
 | 5. Outcomes — registro, comparación esperado/observado, simulador | ✅ (simulador: 5 trayectorias en `simulator.spec.ts`) |
 
 **Pendientes conocidos:** wiring de adaptadores en los juegos reales, panel docente de revisión, procesamiento en cola (BullMQ) cuando haya volumen, consentimiento versionado con flujo de revocación/borrado, y calibración con datos de piloto (los umbrales actuales son hipótesis de diseño — spec §15.4).
+
+**Primera prueba real:** el onboarding del equipo (**Primer Pulso**, `team/` + `server/src/app/modules/team`) atraviesa el ciclo completo con los 3 instrumentos, decisión shadow revisada por la propia persona, outcome y traza. Ver [TEAM-ONBOARDING.md](TEAM-ONBOARDING.md).
 
 ## Prohibiciones vigentes (spec §11.4, §19.1)
 

@@ -536,3 +536,54 @@ model DalaSubjectMap {
   @@map("dala_subject_map")
   @@schema("auth")
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Equipo Synapxix — onboarding "Primer Pulso" (primera prueba real de D.A.L.A.).
+// Identidad por link de invitación; el member_id alimenta el mapeo seudónimo
+// de `auth.dala_subject_map` igual que cualquier usuario. Lo declarado por la
+// persona NUNCA se mezcla con la evidencia conductual: vive aquí, no en `dala`.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Miembro del equipo invitado al Primer Pulso.
+model TeamMember {
+  member_id    String    @id @default(uuid()) @db.Uuid
+  invite_code  String    @unique @db.VarChar(64)
+  name         String?   @db.VarChar(120)
+  email        String?   @db.VarChar(200)
+  role_label   String?   @db.VarChar(120) // rol en el equipo, texto libre
+  status       String    @default("invited") @db.VarChar(20) // invited | joined | completed
+  /// Preferencias DECLARADAS (ritmo, feedback, entrada, compartir). No inferidas.
+  declared_json Json?
+  /// Consentimiento por finalidad, versionado (operación, investigación, perfil, documentos con IA).
+  consent_json Json?
+  /// Arquetipo elegido para la Estrella. Vista narrativa opcional (spec: jamás motor).
+  archetype    String?   @db.VarChar(40)
+  joined_at    DateTime?
+  completed_at DateTime?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  @@index([status])
+  @@map("team_member")
+  @@schema("core")
+}
+
+/// Documentos profesionales que la persona decide compartir (CV y enlaces).
+/// Separados de los eventos D.A.L.A.: nunca entran al motor ni a la IA.
+model TeamDocument {
+  document_id  String   @id @default(uuid()) @db.Uuid
+  member_id    String   @db.Uuid
+  kind         String   @db.VarChar(20) // cv | link
+  filename     String?  @db.VarChar(200)
+  mime         String?  @db.VarChar(120)
+  size         Int?
+  data         Bytes?
+  url          String?  @db.VarChar(500)
+  /// Autorización específica con la que se entregó (versión, finalidad, fecha).
+  consent_json Json
+  created_at   DateTime @default(now())
+
+  @@index([member_id])
+  @@map("team_document")
+  @@schema("core")
+}
