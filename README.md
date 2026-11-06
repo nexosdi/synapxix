@@ -1,212 +1,348 @@
 # Synapxix
 
-Plataforma educativa cognitiva para el aprendizaje adaptativo, construida como un monorepo Nx con Angular (frontend), NestJS (backend) y PostgreSQL (base de datos).
+Adaptive cognitive learning platform built as an Nx monorepo powered by Angular (frontends), NestJS (backend API), PostgreSQL + Prisma (multi-schema relational persistence), Neo4j (adaptive knowledge graph), and Redis (caching and rate limiting).
 
 ---
 
-## Stack tecnológico
+## Overview
 
-| Capa | Tecnología | Versión |
+**Synapxix** is an interactive educational ecosystem designed to support student learning through gamified cognitive activities, ethical behavioral telemetry, and AI-assisted psychopedagogical analytics.
+
+The platform is structured around four core pillars:
+
+1. **Gamified Student Experience (`web-game` + `libs/game-engine/core`)**:
+   - Curated learning journeys (*histories/roadmaps*) composed of **16 interactive game types** spanning linguistic, logical, spatial, and auditory domains (`read-aloud`, `categorization`, `fill-in-the-blanks`, `intruder`, `timeline-order`, `memory-match`, `word-association`, `pattern-recognition`, `balance-master`, `neural-link`, `spotlight`, `sound-match`, `listen-type`, `read-select`, `speak-about-photo`, `avatar`).
+   - Dynamic execution engine (`GameRunnerComponent` + `GameFlowService`) driven by a deterministic finite state machine (`IDLE` → `LOADING` → `READY` → `PLAYING` → `ANSWERING` → `FEEDBACK` → `ADVANCING` → `COMPLETED`).
+   - Real-time pedagogical feedback streamed via **Server-Sent Events (SSE)** and tailored to student performance.
+   - **Virtual economy & progression (`economy`)**: transactional and idempotent awarding of credits and experience points (XP), cosmetic item store (avatars and banners), and user inventory management.
+   - Student dashboard displaying cognitive metrics, curriculum progress, and session history.
+
+2. **D.A.L.A.™ Adaptive Engine (`libs/dala/*` + `server/src/app/modules/dala`)**:
+   - Reference implementation of the **Dynamic Adaptive Learning Architecture (Specification v3)**.
+   - Full auditable loop: `evidence → state → decision → intervention → outcome → update`.
+   - **Privacy by design**: strict separation between real user identity (`user_id` in the `auth` schema) and pseudonymous learning subject (`subject_id` in the `dala` schema), governed by versioned informed consent (`consent`).
+   - **Construct estimation**: tracks 5 core constructs (`curricular_mastery`, `persistence`, `help_seeking`, `strategy_flexibility`, and `task_engagement`).
+   - **Shadow Mode**: pedagogical recommendations (`ASK`, `HINT`, `WITHDRAW_SUPPORT`, `REFLECT`, `VERIFY`) are recorded with full evidence traceability and require human review/approval by educators.
+
+3. **Knowledge Graph & Multi-LLM AI Analytics (`learning`, `research`, `evaluative`, `analytics`)**:
+   - **Neo4j Knowledge Graph (`learning`)**: models users, curriculum topics, prerequisites, mastery progress, learning preferences (Gardner Multiple Intelligences and Kolb Learning Styles), and pedagogical methods with vector embeddings.
+   - **Cognitive & Multimodal Evaluation (`evaluative`, `exercises`, `research`)**: computes accuracy, reaction time, cognitive load, memory retention, and attention span, combined with semantic and phonetic (audio) analysis through a multi-provider AI abstraction layer (`libs/ai-adapter`: Google Gemini, Anthropic Claude, OpenAI, and xAI Grok).
+   - **Automated Teacher Insights (`teacher-insights`)**: scheduled (cron) and on-demand generation of weekly cohort pedagogical reports.
+
+4. **Teacher & Administration Portal (`admin-frontend` + `admin`)**:
+   - Portal for teachers and school directors featuring cohort-wide cognitive analytics, individual student progression tracking, AI query assistant, D.A.L.A.™ decision review (`teacher/dala-review`), institution-level user management, and CSV report exports.
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Version |
 |---|---|---|
-| Monorepo | [Nx](https://nx.dev) | 22.x |
-| Frontend (juegos) | Angular | 20.x |
-| Frontend (admin) | Angular | 20.x |
-| Backend | NestJS | 11.x |
-| ORM | Prisma | 6.x |
-| Base de datos | PostgreSQL | 15 |
-| Autenticación | JWT + Passport | — |
-| Gráficos | Chart.js + ng2-charts | 4.x / 10.x |
-| AI | Google Generative AI | — |
-| Lenguaje | TypeScript | 5.9.x |
+| Monorepo Build System | [Nx](https://nx.dev) | 22.0.x |
+| Student Frontend (`web-game`) | Angular + TailwindCSS | 20.3.x / 3.4.x |
+| Admin & Teacher Portal (`admin-frontend`) | Angular (SSR enabled) | 20.3.x |
+| Backend API (`server`) | NestJS | 11.x |
+| Relational ORM | Prisma | 6.19.x |
+| Relational Database | PostgreSQL | 15 |
+| Graph Database | Neo4j (with APOC) | 5.26 |
+| Caching & Throttling | Redis + `cache-manager` | 7 / 5.x |
+| Identity & Access Management | Keycloak (OIDC / JWKS) + Passport JWT | 26.x |
+| Data Visualization | Chart.js + `ng2-charts` | 4.5.x / 9.0.x |
+| AI Providers | Gemini (`@google/generative-ai`), Claude (`@anthropic-ai/sdk`), OpenAI (`openai`), Grok | Multi-adapter |
+| Logging & HTTP Security | `nestjs-pino` (Pino) + `helmet` + `@nestjs/throttler` | 5.x / 8.x / 6.x |
+| Testing | Jest (unit) + Playwright (E2E) | 30.x / 1.61.x |
+| Language & Runtime | TypeScript / Node.js | ~5.9.2 / >=22.12.0 |
 
 ---
 
-## Estructura del monorepo
+## Monorepo Structure
 
-```
+```text
 synapxix/
-├── server/                     # API NestJS
+├── server/                                   # NestJS Backend API
 │   └── src/app/
-│       ├── auth/               # JWT guard + estrategia Passport
-│       ├── economy/            # Motor de economía (créditos, XP, recompensas)
-│       ├── game-session/       # Ciclo de vida de sesiones de juego
-│       ├── learning/           # Módulo de aprendizaje adaptativo
-│       └── profile/            # Perfil de usuario
+│       ├── admin/                            # Administrative management, user metrics, and CSV exports
+│       ├── analytics/                        # Global, class-level, and individual cognitive aggregations
+│       ├── auth/                             # Passport JWT strategy (Keycloak JWKS), role and teacher guards
+│       ├── consent/                          # Versioned informed consent management (D.A.L.A.)
+│       ├── core/filters/                     # Global HTTP exception filter
+│       ├── decorators/                       # Custom route decorators (@GetUser)
+│       ├── economy/                          # Virtual economy engine (credits, XP, rewards, store, purchases)
+│       ├── evaluative/                       # Transactional evaluative engine and AI SSE streaming
+│       ├── exercises/                        # Validation and scoring for all 16 exercise/game types
+│       ├── game-session/                     # Game session lifecycle, attempts, and adaptive difficulty
+│       ├── learning/                         # Neo4j knowledge graph and adaptive path recommendations
+│       ├── modules/
+│       │   ├── dala/                         # D.A.L.A.™ v1 facade, repository, and API endpoints
+│       │   └── research/                     # AI pedagogical analysis, Redis caching, prompts, and teacher-insights
+│       ├── notifications/                    # In-app user notifications
+│       ├── profile/                          # User preferences and psychopedagogical archetype calculation
+│       └── health.controller.ts              # Healthcheck endpoint (/api/health)
 │
-├── web-game/                   # SPA Angular — interfaz de juegos para alumnos
+├── web-game/                                 # Angular SPA — Interactive Student Platform
 │   └── src/
-│       ├── app/                # Raíz de la app (rutas, config)
-│       ├── components/         # Dashboard, mapa, menú, splash
-│       └── teachers-form/      # Constructor de roadmaps para docentes
+│       ├── app/                              # Root configuration, routes, Keycloak guards, and consent service
+│       ├── components/
+│       │   ├── dashboard/                    # Student dashboard (balance, cognitive metrics, progress, sessions)
+│       │   ├── shop/                         # Virtual store for cosmetic avatars and banners
+│       │   ├── map.component.ts              # Interactive learning journey map
+│       │   ├── menu.component.ts             # Main navigation shell
+│       │   └── splash.component.ts           # Welcome and entry screen
+│       └── teachers-form/                    # Roadmap builder and activity authoring forms for educators
 │
-├── admin-frontend/             # SPA Angular — panel administrativo
+├── admin-frontend/                           # Angular SPA — Teacher & Administration Portal
 │   └── src/app/
-│       ├── core/               # Servicios HTTP base (ApiService)
-│       ├── dashboard/          # Dashboard principal con gráficos
-│       ├── login/              # Pantalla de acceso
-│       └── register-preview/   # Vista previa de registro
+│       ├── core/                             # Role guards, domain models, and HTTP services (analytics, admin, dala)
+│       ├── dashboard/                        # General dashboard, AI assistant, cognitive charts, and user management
+│       ├── teacher-dashboard/                # Cohort analytics, student detail views, and D.A.L.A. decision review
+│       ├── login/ & login-preview/           # Authentication screens
+│       └── register-preview/                 # Registration views
 │
-└── libs/                       # Librerías compartidas del monorepo
-    ├── prisma/                 # Schema Prisma + migraciones + PrismaService
-    ├── game-engine/core/       # Motor de juegos (tipos, servicios, lógica)
-    ├── learning/shared/        # Tipos compartidos del módulo de aprendizaje
-    ├── baseRepository/         # Repositorio base genérico
-    └── envValidator/           # Validación de variables de entorno
+└── libs/                                     # Shared Workspace Libraries
+    ├── ai-adapter/                           # Multi-LLM abstraction for Gemini, Claude, OpenAI, and Grok
+    ├── brand/                                # Design system: CSS tokens (--sx-*), base.css, and official assets
+    ├── dala/
+    │   ├── contracts/                        # Public contracts and interfaces for the D.A.L.A.™ standard
+    │   ├── domain/                           # Pure evidence rules, construct estimators, and pedagogical policies
+    │   └── instrumentation/                  # Event emission SDK with offline queue and game adapters
+    ├── game-engine/core/                     # Game engine: GameRunner, state machine, core services, and 16 games
+    ├── learning/shared/                      # Shared DTOs and contracts for the Neo4j learning module
+    ├── prisma/                               # Multi-schema PostgreSQL definition, migrations, seeds, and PrismaService
+    └── testing/                              # Shared test factories and mocks
 ```
 
 ---
 
-## Arquitectura de base de datos
+## Database Architecture
 
-El schema usa **múltiples schemas de PostgreSQL** para separar dominios:
+### 1. PostgreSQL (Prisma Multi-Schema)
 
-| Schema | Tablas | Responsabilidad |
+The [`libs/prisma/src/schema.prisma`](libs/prisma/src/schema.prisma) file organizes relational persistence across **7 PostgreSQL schemas** to enforce domain isolation:
+
+| Schema | Tables | Responsibility |
 |---|---|---|
-| `auth` | `app_user`, `session`, `user_link`, `user_structure`, `user_profile` | Identidad y autenticación |
-| `core` | `institution`, `structure`, `game_session`, `game_attempt`, `economy_transaction` | Dominio educativo principal |
-| `knowledge` | `content`, `user_content_progress` | Contenido y progreso |
-| `psychometrics` | `dimension`, `archetype` | Perfil cognitivo |
-| `audit` | `audit_log` | Trazabilidad |
-| `communication` | `notification` | Notificaciones |
+| `auth` | `app_user`, `session`, `user_link`, `user_structure`, `user_profile`, `dala_consent`, `dala_subject_map` | Identity, teacher-student links, informed consent, and pseudonymous subject mapping |
+| `core` | `institution`, `structure`, `game_session`, `game_attempt`, `economy_transaction`, `store_item`, `user_inventory`, `purchase_transaction`, `ai_prompt`, `teacher_insight_report` | Educational domain, game sessions, virtual economy, AI prompt templates, and teacher reports |
+| `dala` | `instrument`, `behavior_event`, `evidence_observation`, `construct_estimate`, `human_state_snapshot`, `decision_record`, `outcome` | Immutable behavior event store, evidence observations, construct estimates, snapshots, and decisions |
+| `psychometrics` | `dimension`, `archetype`, `archetype_dimension_weight`, `cognitive_metric` | Psychometric dimensions, archetypes, and session-level cognitive metrics |
+| `knowledge` | `content`, `user_content_progress` | Curriculum content catalog, prerequisites, and per-student mastery progress |
+| `audit` | `audit_log` | System audit trail and operational traceability |
+| `communication` | `notification` | User notification inbox |
+
+### 2. Neo4j (Adaptive Knowledge Graph)
+
+Used by `LearningModule` to model adaptive relationships and vector embeddings (`768` dimensions, cosine similarity):
+- **Nodes**: `User`, `Topic`, `LearnPref` (Gardner / Kolb), `LearnMethod`.
+- **Relationships**: `(:User)-[:OWNS]->(:Topic)`, `(:User)-[:INTEREST_IN {weight}]->(:Topic)`, `(:User)-[:PREFERS {weight}]->(:LearnPref)`, `(:User)-[:BENEFITS_FROM {weight}]->(:LearnMethod)`, `(:Topic)-[:PREREQUISITE]->(:Topic)`, `(:User)-[:PROGRESS {status, score}]->(:Topic)`.
+
+### 3. Redis (Caching & Rate Limiting)
+
+Used for:
+- AI response caching (`AiCacheInterceptor`, key `ai-response:<sha256>`).
+- Database-backed AI prompt template caching (`AiPromptService`).
+- Per-user AI request quota enforcement (`AiUserThrottleGuard`, key `ai-throttle:<userId>`).
+- Student metric list caching (`EvaluativeService`).
 
 ---
 
-## API Endpoints
+## API Reference
 
-El servidor corre en `http://localhost:3000/api`. Todos los endpoints requieren `Authorization: Bearer <JWT>` salvo que se indique lo contrario.
+The backend server listens on `http://localhost:3000/api` by default. Except for `/api/health`, all endpoints require an `Authorization: Bearer <JWT>` header.
 
-### Auth
-| Método | Ruta | Descripción |
+### System & Health
+| Method | Route | Description |
 |---|---|---|
-| `GET` | `/api/auth/preferences` | Obtener preferencias del usuario autenticado |
+| `GET` | `/api/health` | Public server healthcheck |
+| `GET` | `/api` | Authenticated base API status |
 
-### Economy
-| Método | Ruta | Descripción |
+### Auth, Profile & Consent
+| Method | Route | Description |
 |---|---|---|
-| `POST` | `/api/economy/claim-reward` | Reclamar recompensa al finalizar un juego |
+| `GET` | `/api/auth/preferences` | Retrieve basic token profile and default preferences |
+| `GET` | `/api/preferences` | Retrieve persisted user preferences (`ProfileModule`) |
+| `PATCH` | `/api/preferences` | Update theme, language, and notification settings (`ProfileModule`) |
+| `GET` | `/api/profile/:userId/archetype` | Compute a user's psychopedagogical archetype (`ProfileModule`) |
+| `GET` | `/api/consent/current` | Query current informed consent status (`?scope=research`) |
+| `POST` | `/api/consent` | Grant or revoke versioned informed consent |
 
-**Body `claim-reward`:**
-```json
-{
-  "gameSessionId": "uuid",
-  "score": 85,
-  "victory": true
-}
-```
-
-### Game Session
-| Método | Ruta | Descripción |
+### Virtual Economy & Store (`EconomyModule`)
+| Method | Route | Description |
 |---|---|---|
-| `POST` | `/api/game-session/start` | Iniciar una sesión de juego |
-| `POST` | `/api/game-session/:id/attempt` | Registrar un intento dentro de la sesión |
-| `POST` | `/api/game-session/:id/complete` | Finalizar la sesión |
+| `GET` | `/api/economy/balance` | Get current credits and XP for the authenticated user |
+| `GET` | `/api/economy/items` | List active cosmetic items available in the store |
+| `POST` | `/api/economy/claim-reward` | Claim idempotent session completion reward (credits and XP) |
+| `POST` | `/api/economy/purchase` | Purchase a store item using virtual credits |
 
-### Learning
-| Método | Ruta | Descripción |
+### Game Sessions (`GameSessionModule`)
+| Method | Route | Description |
 |---|---|---|
-| `POST` | `/api/learning/bootstrap` | Inicializar perfil de aprendizaje |
-| `POST` | `/api/learning/users` | Crear usuario en el módulo de aprendizaje |
-| `POST` | `/api/learning/topics` | Crear tema de aprendizaje |
-| `POST` | `/api/learning/preferences` | Guardar preferencias |
-| `GET` | `/api/learning/:userId/topics` | Obtener temas de un usuario |
-| `GET` | `/api/learning/:userId/preferences` | Obtener preferencias de un usuario |
-| `GET` | `/api/learning/:userId/methods` | Obtener métodos de aprendizaje |
+| `POST` | `/api/game-session/start` | Start a new game session |
+| `POST` | `/api/game-session/:id/attempt` | Record an exercise attempt within a session |
+| `POST` | `/api/game-session/:id/complete` | Mark a game session as completed |
+| `GET` | `/api/game-session/:id` | Retrieve session details and attempts (owner or staff) |
+| `GET` | `/api/game-session/me/report` | Retrieve game history and summary for the authenticated user |
+| `GET` | `/api/game-session/me/difficulty` | Get calculated adaptive difficulty tier for the authenticated user |
+| `GET` | `/api/game-session/user/:userId/report` | Retrieve activity report for a specific student (staff only) |
+
+### Exercise Evaluation (`ExercisesModule`)
+| Method | Route | Description |
+|---|---|---|
+| `POST` | `/api/exercises/read-aloud` | Multimodal phonetic evaluation with audio upload (`multipart/form-data`) |
+| `POST` | `/api/exercises/categorization` | Evaluate categorization exercise |
+| `POST` | `/api/exercises/fill-in-the-blanks` | Evaluate fill-in-the-blanks exercise |
+| `POST` | `/api/exercises/intruder` | Evaluate intruder detection exercise |
+| `POST` | `/api/exercises/<game-type>` | Evaluation endpoints for all remaining game types (`avatar`, `balance-master`, `listen-type`, `neural-link`, `memory-match`, `word-association`, `read-select`, `sound-match`, `speak-about-photo`, `spotlight`, `timeline-order`, `pattern-recognition`) |
+
+### Evaluative Engine, AI Research & Teacher Insights (`EvaluativeModule`, `ResearchModule`, `TeacherInsightsModule`)
+| Method | Route | Description |
+|---|---|---|
+| `POST` | `/api/evaluative/evaluate` | Compute and persist cognitive metrics from session attempts |
+| `POST` | `/api/evaluative/evaluate-ai` | Evaluate performance with AI and persist standardized cognitive metrics |
+| `POST` | `/api/evaluative/evaluate-ai/stream` | SSE stream for AI pedagogical or audio evaluation |
+| `GET` | `/api/evaluative/students` | List linked students with cognitive metric summaries |
+| `GET` | `/api/evaluative/students/:id/metrics` | Retrieve historical cognitive metric series for a student |
+| `POST` | `/api/research/process` | Analyze game activity with AI (with Redis caching and per-user rate limiting) |
+| `POST` | `/api/research/process/stream` | Real-time AI game activity analysis via SSE |
+| `GET` | `/api/teacher-insights/:teacherId` | List generated weekly cohort insight reports for a teacher |
+| `POST` | `/api/teacher-insights/:teacherId/generate` | Trigger on-demand AI generation of the weekly cohort report |
+
+### Analytics, Administration & Notifications (`AnalyticsModule`, `AdminModule`, `NotificationsModule`)
+| Method | Route | Description |
+|---|---|---|
+| `GET` | `/api/analytics/global-average` | Global cognitive metric averages (`?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`) |
+| `GET` | `/api/analytics/individual-average/:userId` | Individual cognitive metric averages for a student |
+| `GET` | `/api/analytics/class-progress/:classId` | Curriculum progress average for a class (`structure_id`) |
+| `GET` | `/api/analytics/student-progress/:studentId` | Curriculum progress average for an individual student |
+| `GET` | `/api/analytics/global-motor-average` | Global average score and quick-completion rate |
+| `GET` | `/api/analytics/global-evaluative-average` | Global success rate across recorded attempts |
+| `GET` | `/api/admin/users` | Paginated and filtered student directory (`teacher` / `director`) |
+| `GET` | `/api/admin/users/:id/metrics` | Detailed cognitive metrics for a specific user |
+| `GET` | `/api/admin/institutions/:id/stats` | Aggregated statistics by institution |
+| `GET` | `/api/admin/reports/students` | Export student report in CSV format (`?format=csv&institutionId=...`) |
+| `GET` | `/api/notifications` | List notifications for the authenticated user |
+| `POST` | `/api/notifications` | Create a notification for a linked user |
+| `PATCH` | `/api/notifications/read-all` | Mark all notifications as read |
+| `PATCH` | `/api/notifications/:id/read` | Mark a specific notification as read |
+
+### D.A.L.A.™ Adaptive Engine (`DalaModule`)
+| Method | Route | Description |
+|---|---|---|
+| `POST` | `/api/dala/v1/events` | Idempotent ingestion of a single behavior event (requires active consent) |
+| `POST` | `/api/dala/v1/events/batch` | Batch ingestion of behavior events |
+| `POST` | `/api/dala/v1/subjects/resolve` | Resolve the pseudonymous `subject_id` for the authenticated user |
+| `GET` | `/api/dala/v1/subjects/:subjectId/state` | Retrieve current construct estimates for a subject |
+| `GET` | `/api/dala/v1/subjects/:subjectId/timeline` | Retrieve behavior event timeline for a subject |
+| `POST` | `/api/dala/v1/decisions` | Generate a shadow-mode pedagogical recommendation with state snapshot |
+| `GET` | `/api/dala/v1/decisions` | List recorded decisions (`?status=pending\|reviewed&page=1&limit=20`) |
+| `GET` | `/api/dala/v1/decisions/:decisionId` | Retrieve a specific decision record |
+| `POST` | `/api/dala/v1/decisions/:decisionId/review` | Record educator verdict (`approved` \| `rejected` \| `edited`) |
+| `POST` | `/api/dala/v1/outcomes` | Record observed post-intervention outcome metrics |
+| `GET` | `/api/dala/v1/traces/:decisionId` | Reconstruct full audit trace: decision → snapshot → evidence → outcomes |
+
+### Adaptive Knowledge Graph (`LearningModule`)
+| Method | Route | Description |
+|---|---|---|
+| `POST` | `/api/learning/bootstrap` | Initialize Neo4j constraints, vector indexes, and base catalogs |
+| `POST` | `/api/learning/users` | Create or update a user node in the knowledge graph |
+| `POST` | `/api/learning/topics` | Create a topic and initialize interest weight |
+| `POST` | `/api/learning/topics/feedback` | Reinforce or adjust topic interest weight |
+| `POST` | `/api/learning/preferences` | Set user learning preferences |
+| `POST` | `/api/learning/methods/init` | Initialize affinity with a learning method |
+| `POST` | `/api/learning/methods/feedback` | Adjust effectiveness weight for a learning method |
+| `GET` | `/api/learning/topics` | Get top topics for the authenticated user |
+| `GET` | `/api/learning/preferences` | Get top learning preferences for the authenticated user |
+| `GET` | `/api/learning/methods` | Get top learning methods for the authenticated user |
+| `POST` | `/api/learning/embedding/refresh` | Recompute the user's vector embedding in Neo4j |
+| `GET` | `/api/learning/:userId/graph` | Retrieve the user's topic progress and prerequisite subgraph |
+| `GET` | `/api/learning/:userId/recommended-path` | Get recommended next topics based on satisfied prerequisites |
 
 ---
 
-## Setup local
+## Local Setup
 
-### Requisitos
+### Prerequisites
 
-- Node.js 20+
-- Docker y Docker Compose
+- Node.js `>=22.12.0` (see `.nvmrc`)
+- Docker & Docker Compose
 - Git
 
-### 1. Clonar y configurar entorno
+### 1. Clone and configure environment
 
 ```bash
 git clone <repo-url>
 cd synapxix
 
-# Copiar variables de entorno y completar los valores
+# Copy environment template and fill in local credentials
 cp .env.example .env
 ```
 
-Editar `.env` con tus credenciales. Los valores de `APP_DB_*` y `DATABASE_URL` deben coincidir entre sí.
+Ensure `APP_DB_*` and `DATABASE_URL` values in `.env` match each other.
 
-### 2. Instalar dependencias
+### 2. Install dependencies
 
 ```bash
 npm install --legacy-peer-deps
 ```
 
-> `--legacy-peer-deps` es necesario por la dependencia transitiva entre `ng2-charts@10` y `@angular/cdk@22` en un proyecto Angular 20.
+### 3. Initialize the database
 
-### 3. Preparar la base de datos
-
-Atajo que levanta Postgres y Redis, genera el cliente de Prisma, aplica las
-migraciones y carga el seed de desarrollo:
+Run the setup shortcut to start PostgreSQL and Redis, generate the Prisma client, apply migrations, and seed development data:
 
 ```bash
 npm run dev:setup
 ```
 
-Si preferís los pasos sueltos:
+Or run each step individually:
 
 ```bash
-npm run db:up        # docker compose up -d postgres-app redis
-npm run db:migrate   # prisma migrate deploy
-npm run db:seed      # usuario de desarrollo + artículos de tienda
+npm run db:up             # docker compose up -d postgres-app redis
+npm run db:migrate        # prisma migrate deploy --config prisma.config.ts
+npm run db:seed           # development user + store catalog
+npm run db:seed:prompts   # AI prompt templates in PostgreSQL
 ```
 
-> El seed (`libs/prisma/src/seeds/dev.seed.ts`) crea el usuario cuyo id usa el
-> `MockJwtGuard`. Sin él, cualquier escritura falla por clave foránea cuando
-> `DISABLE_AUTH=true`.
+> The development seed (`libs/prisma/src/seeds/dev.seed.ts`) creates the default user referenced by `MockJwtGuard`. Without this record, database writes will fail on foreign key constraints when `DISABLE_AUTH=true`.
 
-### 4. Levantar los servicios
+### 4. Start the applications
 
-Cada servicio en una terminal separada:
+Run each service in a separate terminal:
 
 ```bash
-# Backend NestJS (puerto 3000)
+# NestJS Backend API (port 3000)
 npx nx serve server
 
-# Frontend de juegos (puerto 4300)
+# Student Web Game SPA (port 4300)
 npx nx serve web-game
 
-# Frontend admin (puerto 4200)
+# Teacher & Admin Portal SPA (port 4200)
 npx nx serve admin-frontend
 ```
 
-### 5. Autenticación en desarrollo
+### 5. Development Authentication Modes
 
-Hay dos modos. Elegí uno según lo que necesites probar.
+#### Fast Mode: Bypass JWT Validation (`DISABLE_AUTH`)
 
-#### Modo rápido: saltear la validación (`DISABLE_AUTH`)
-
-Alcanza para probar la API y el `admin-frontend`. En tu `.env`:
+Suitable for testing the backend API and `admin-frontend` locally (`NODE_ENV !== 'production'`). Set in `.env`:
 
 ```env
 DISABLE_AUTH=true
 ```
 
-El backend usa `MockJwtGuard`, que inyecta un usuario docente fijo. No sirve
-para el `web-game`, cuyo guard es de Keycloak y vive en el frontend.
+The backend activates `MockJwtGuard`, injecting a fixed educator user (`00000000-0000-4000-8000-000000000001`). Note that `web-game` still executes its browser-side Keycloak guard unless Keycloak is running.
 
-#### Modo completo: Keycloak local
+#### Full Mode: Local Keycloak Instance
 
-Necesario para probar el `web-game` de punta a punta.
+Required for end-to-end authentication flows in `web-game`:
 
 ```bash
-docker compose --profile keycloak up -d
+docker compose up -d postgres-keycloak keycloak
 ```
 
-El realm `Synapxix` y el cliente `synapxix-app` se importan solos desde
-`keycloak/realm-synapxix.json` en el primer arranque. Variables en `.env`:
+The `Synapxix` realm and `synapxix-app` client are automatically imported from `keycloak/realm-synapxix.json` on first startup. Configure `.env`:
 
 ```env
 DISABLE_AUTH=false
-KEYCLOAK_PORT=8080          # cambialo si el 8080 está libre en tu máquina
+KEYCLOAK_PORT=8080
 KEYCLOAK_REALM_URL=http://localhost:8080/realms/Synapxix
 KEYCLOAK_ADMIN=admin
 KEYCLOAK_ADMIN_PASSWORD=changeme
@@ -215,87 +351,80 @@ KEYCLOAK_DB_USER=keycloak_user
 KEYCLOAK_DB_PASSWORD=changeme
 ```
 
-Falta un paso manual: crear tu usuario de prueba. Entrá a la consola de admin
-en `http://localhost:8081`, elegí el realm **Synapxix** → *Users* → *Add user*,
-y asignale una contraseña en la pestaña *Credentials*. Si querés que tenga rol,
-usá *Role mapping* con `teacher` o `student`.
+To create a test user, open the Keycloak Admin Console at `http://localhost:8080`, select the **Synapxix** realm → *Users* → *Add user*, set a password under *Credentials*, and assign the `teacher` or `student` role under *Role mapping*.
 
-> Para usar el Keycloak del VPS en lugar del local, poné
-> `KEYCLOAK_REALM_URL=https://auth.aisuite.neops.ai/realms/Synapxix` y cambiá
-> `keycloak.url` en `web-game/src/environments/environment.ts`.
+> To use a remote Keycloak server instead of the local container, set `KEYCLOAK_REALM_URL=https://auth.aisuite.neops.ai/realms/Synapxix` and update `keycloak.url` in `web-game/src/environments/environment.ts`.
 
 ---
 
+## Development Workflows
 
-## Workflows de desarrollo
+### Adding a New API Endpoint
 
-### Agregar un nuevo endpoint
+1. Create the request DTO with `class-validator` decorators in `server/src/app/<module>/dto/`
+2. Implement business logic in the module's `Service` (and persistence queries in its `Repository`)
+3. Register the route and guards (`JwtAuthGuard`, `RolesGuard`, or `TeacherAccessGuard`) in the `Controller`
+4. If schema changes are required, create a migration: `npx prisma migrate dev --config prisma.config.ts --name <migration_name>`
+5. Regenerate the Prisma client: `npx prisma generate --config prisma.config.ts`
 
-1. Crear el DTO en `server/src/app/<módulo>/dto/`
-2. Agregar el método en el `Service`
-3. Registrar la ruta en el `Controller`
-4. Si hay cambio de schema → crear migración: `npx prisma migrate dev --config prisma.config.ts --name <nombre>`
-5. Regenerar el cliente: `npx prisma generate --config prisma.config.ts`
+### Resolving `package-lock.json` Conflicts
 
-### Resolver conflictos en package-lock.json
+The repository configures `.gitattributes` with `merge=ours` for `package-lock.json`. When a merge modifies dependencies:
 
-El repositorio usa `.gitattributes` con `merge=ours` para `package-lock.json`.
-Si un merge toca dependencias:
+1. Complete the git merge normally
+2. Run `npm install --legacy-peer-deps` to regenerate the merged lockfile
+3. Stage and commit the updated `package-lock.json`
 
-1. Completar el merge normalmente (el lockfile se auto-resuelve)
-2. Correr `npm install --legacy-peer-deps` para regenerar el lockfile con la mezcla correcta
-3. Commitear el lockfile actualizado
-
-### Cambiar el schema de Prisma
+### Updating the Prisma Schema
 
 ```bash
-# Editar libs/prisma/src/schema.prisma, luego:
-npx prisma migrate dev --config prisma.config.ts --name descripcion_del_cambio
+# Edit libs/prisma/src/schema.prisma, then run:
+npx prisma migrate dev --config prisma.config.ts --name change_description
 npx prisma generate --config prisma.config.ts
 ```
 
-> ⚠️ Siempre correr `prisma generate` después de cualquier cambio en el schema o después de un `git pull`. Sin esto el cliente TypeScript queda desactualizado y el server no arranca.
+> Always run `prisma generate` after editing the schema or pulling new migrations.
 
-### Crear una librería compartida
+### Generating a Shared Library
 
 ```bash
-npx nx g @nx/js:library libs/<nombre>
+npx nx g @nx/js:library libs/<name>
 ```
 
 ---
 
 ## Testing
 
-### Unit Testing
+### Unit Tests (Jest)
 
 ```bash
-# Todos los tests
+# Run all unit tests across the monorepo
 npx nx test
 
-# Test de un proyecto específico
+# Run unit tests for a specific project
 npx nx test server
 npx nx test web-game
+npx nx test admin-frontend
 
-# Con cobertura
+# Run with coverage report
 npx nx test server --coverage
 ```
 
-### E2E Testing (Playwright)
-
-El proyecto cuenta con pruebas End-to-End para verificar el flujo crítico (ej. `web-game`).
+### End-to-End Tests (Playwright)
 
 ```bash
-# Correr pruebas E2E en consola (headless)
+# Run E2E tests in headless mode
 npx nx e2e web-game
 
-# Correr pruebas E2E abriendo la interfaz visual de Playwright
+# Run E2E tests with Playwright interactive UI
 npx nx e2e web-game --ui
 ```
-> ⚠️ **Nota:** Asegúrate de tener el backend corriendo (`npx nx serve server`) en otra terminal antes de ejecutar los tests E2E, ya que el frontend del juego necesita comunicarse con la API.
+
+> Ensure the backend server (`npx nx serve server`) is running before executing E2E suites.
 
 ---
 
-## Build para producción
+## Production Build
 
 ```bash
 npx nx build server
@@ -303,76 +432,74 @@ npx nx build web-game
 npx nx build admin-frontend
 ```
 
-Los artefactos se generan en `dist/`.
+Compiled artifacts are emitted to the `dist/` directory.
 
 ---
 
-## Variables de entorno
+## Environment Variables
 
-Ver [`.env.example`](.env.example) para la lista completa. Las variables obligatorias para desarrollo son:
+See [`.env.example`](.env.example) for the full template:
 
-| Variable | Descripción |
+| Variable | Description |
 |---|---|
-| `DATABASE_URL` | Connection string de PostgreSQL para Prisma |
-| `APP_DB_NAME` | Nombre de la base de datos (usado por Docker Compose) |
-| `APP_DB_USER` | Usuario de la DB |
-| `APP_DB_PASSWORD` | Contraseña de la DB |
-| `APP_DB_PORT` | Puerto expuesto del contenedor (default: `5434`) |
-| `GOOGLE_GEN_AI_KEY` | API key de Google AI Studio (para módulo de IA) |
-| `KEYCLOAK_REALM_URL` | URL pública del realm de Keycloak para validación JWT |
+| `DATABASE_URL` | PostgreSQL connection string used by Prisma |
+| `APP_DB_NAME` / `USER` / `PASSWORD` / `PORT` | Application PostgreSQL credentials and host port (default: `5434`) |
+| `DISABLE_AUTH` | When `true` in non-production environments, enables `MockJwtGuard` on the backend |
+| `KEYCLOAK_REALM_URL` | Public Keycloak realm URL used to validate JWT `iss` claims |
+| `KEYCLOAK_JWKS_URL` | (Optional) Internal JWKS endpoint URL for Docker network resolution |
+| `GOOGLE_GEN_AI_KEY` | Google AI Studio API key (default Gemini provider) |
+| `AI_PROVIDER` / `AI_MODEL` | (Optional) AI provider (`gemini`, `claude`, `openai`, `grok`) and model override |
+| `AI_RATE_LIMIT_PER_USER` | Max AI requests per user per minute (default: `10`) |
+| `AI_MAX_RETRIES` / `AI_RETRY_BASE_DELAY_MS` | Exponential backoff retry settings for AI provider calls |
+| `REDIS_HOST` / `PORT` / `PASSWORD` | Redis connection settings for AI cache, prompt cache, and throttling |
+| `NEO4J_URI` / `USERNAME` / `PASSWORD` | Neo4j connection settings for `LearningModule` |
 
 ---
 
-## Puertos por defecto
+## Default Ports
 
-| Servicio | Puerto |
+| Service | Port |
 |---|---|
-| NestJS API | `3000` |
-| web-game (Angular) | `4300` |
-| admin-frontend (Angular) | `4200` |
-| PostgreSQL app | `5434` |
-| Keycloak (opcional) | `8080` |
-| Neo4j HTTP (opcional) | `7474` |
-| Neo4j Bolt (opcional) | `7687` |
+| NestJS API (`server`) | `3000` |
+| `web-game` (Angular) | `4300` |
+| `admin-frontend` (Angular) | `4200` |
+| PostgreSQL App (`postgres-app`) | `5434` |
+| PostgreSQL Keycloak (`postgres-keycloak`) | `5432` |
+| Redis (`redis`) | `6379` |
+| Keycloak (`keycloak`) | `8080` |
+| Neo4j HTTP / Bolt (`neo4j`) | `7474` / `7687` |
 
 ---
 
 ## CORS
 
-El backend tiene CORS configurado para `http://localhost:4300` (web-game). Si necesitás agregar otro origen durante desarrollo, modificar `server/src/main.ts`:
-
-```typescript
-app.enableCors({
-  origin: ['http://localhost:4300', 'http://localhost:4200'],
-  // ...
-});
-```
+CORS is configured in `server/src/main.ts` using the `CORS_ORIGIN` environment variable (comma-separated list), defaulting to `http://localhost:4200`, `http://localhost:4300`, and `http://localhost:4201`.
 
 ---
 
-## Identidad visual
+## Brand & Design System
 
-La interfaz sigue el Manual de Marca de Synapxix. Las reglas de uso están en
-**[BRAND.md](BRAND.md)**: leelo antes de escribir estilos.
+All UI components adhere to the Synapxix Brand Guidelines documented in **[BRAND.md](BRAND.md)**.
 
-Regla corta: **ningún color, tipografía o radio se escribe a mano.** Todo sale de
-los tokens en [`libs/brand/src/tokens.css`](libs/brand/src/tokens.css).
+Core rule: **never hardcode literal hex colors, font families, or border radii in component stylesheets.** Always consume the design tokens defined in [`libs/brand/src/tokens.css`](libs/brand/src/tokens.css):
 
 ```css
-/* mal */            /* bien */
-color: #1e90ff;      color: var(--sx-blue);
-border-radius: 4px;  border-radius: var(--sx-radius-sm);
+/* Incorrect */           /* Correct */
+color: #1e90ff;           color: var(--sx-blue);
+border-radius: 4px;       border-radius: var(--sx-radius-sm);
 ```
 
-En `web-game` y `libs` también existen las utilidades de Tailwind equivalentes
-(`bg-synapxix`, `text-blue-deep`, `rounded-sx-lg`).
+Equivalent Tailwind utilities (`bg-synapxix`, `text-blue-deep`, `rounded-sx-lg`, `rounded-sx-pill`) are also available across `web-game` and shared libraries.
 
-## Convenciones del proyecto
+---
 
-- **Marca**: ver [BRAND.md](BRAND.md). Sin colores ni fuentes hardcodeadas.
-- **Commits**: Conventional Commits (`feat:`, `fix:`, `chore:`, etc.)
-- **Idioma del código**: inglés (identificadores, comentarios, mensajes de error)
-- **Idioma de UI**: español (labels, textos visibles al usuario)
-- **Tipado**: TypeScript estricto — no usar `any`. Usar `unknown` + type guards o `Record<string, unknown>`
-- **Schemas Prisma**: cada cambio requiere migración, no editar tablas directamente en la DB
-- **Ramas**: una rama por feature, PR obligatoria para mergear a `main`
+## Project Conventions
+
+- **Brand System**: Follow [BRAND.md](BRAND.md). Use CSS tokens or Tailwind theme classes instead of hardcoded values.
+- **D.A.L.A.™ Architecture**: Follow [docs/DALA.md](docs/DALA.md). External modules must never write directly to the `dala` database schema; all interactions go through `DalaFacade`.
+- **Commits**: Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`).
+- **Code Language**: English for all identifiers, types, comments, and technical documentation.
+- **UI Copy**: Spanish for user-facing interface strings.
+- **Typing**: Strict TypeScript — avoid `any`; prefer explicit interfaces or `unknown` with type guards.
+- **Prisma Migrations**: Every change to `schema.prisma` must include its corresponding migration under `libs/prisma/src/migrations/`.
+- **Branching**: Feature branches with pull requests required into `main`.
