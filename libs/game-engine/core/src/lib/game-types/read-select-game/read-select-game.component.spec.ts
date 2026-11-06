@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ReadSelectGameComponent } from './read-select-game.component';
 import { ComponentRef } from '@angular/core';
+import { ReadSelectGameComponent } from './read-select-game.component';
 import { ReadSelectInteractiveContent } from './read-select-game.model';
 
 describe('ReadSelectGameComponent', () => {
@@ -12,14 +12,15 @@ describe('ReadSelectGameComponent', () => {
     id: 'test-2',
     gameType: 'read-select',
     gameInput: {
-      prompt: 'Test read select',
-      locale: 'es-AR',
+      prompt: 'Select the correct options',
+      locale: 'en',
       minCorrectToPass: 2,
       timeLimitSec: 60,
       options: [
-        { text: 'Correct1', isReal: true },
-        { text: 'Correct2', isReal: true },
-        { text: 'Incorrect1', isReal: false }
+        { text: 'Correct 1', isReal: true },
+        { text: 'Correct 2', isReal: true },
+        { text: 'Incorrect 1', isReal: false },
+        { text: 'Incorrect 2', isReal: false }
       ]
     }
   };
@@ -40,7 +41,7 @@ describe('ReadSelectGameComponent', () => {
 
   it('should create and initialize options', () => {
     expect(component).toBeTruthy();
-    expect(component.options().length).toBe(3);
+    expect(component.options().length).toBe(4);
     expect(component.foundWords().size).toBe(0);
     expect(component.wrongWords().size).toBe(0);
   });
@@ -80,10 +81,10 @@ describe('ReadSelectGameComponent', () => {
 
     const correctOptions = component.options().filter(o => o.isReal);
     
-    // We expect minCorrectToPass to be 2 (default calculation in toReadSelectGameModel)
     expect(component.viewModel().minCorrectToPass).toBe(2);
 
     component.onOptionClick(correctOptions[0]);
+    expect(component.answerSubmitted.emit).not.toHaveBeenCalled();
     expect(component.isFinished()).toBe(false);
 
     component.onOptionClick(correctOptions[1]);
@@ -91,9 +92,10 @@ describe('ReadSelectGameComponent', () => {
     expect(component.isFinished()).toBe(true);
     expect(component.answerSubmitted.emit).toHaveBeenCalledWith(
       expect.objectContaining({
-        gameType: 'read-select',
         isCorrect: true,
-        score: 100
+        gameType: 'read-select',
+        score: 100,
+        answer: { selectedOptionId: 'Correct 1,Correct 2' }
       })
     );
   });
