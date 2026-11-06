@@ -1,13 +1,31 @@
-# See h
-ttps://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
-# compiled output
-dist
-tmp
-out-tsc
+# Compiled output & build artifacts
+dist/
+tmp/
+out-tsc/
+artifacts/
+coverage/
 
-# dependencies
-node_modules
+# Dependencies
+node_modules/
+
+# Nx & Angular cache
+.nx/
+.angular/
+.cache/
+
+# Environment variables & local secrets
+.env
+.env.local
+.env.*.local
+auth0.config.ts
+
+# Local databases & Docker volumes
+data/
+pgdata/
+postgres/
+.docker/
 
 # IDEs and editors
 /.idea
@@ -17,69 +35,30 @@ node_modules
 *.launch
 .settings/
 *.sublime-workspace
-
-# IDE - VSCode
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# misc
-/.sass-cache
-/connect.lock
-/coverage
-/libpeerconnection.log
-npm-debug.log
-yarn-error.log
-testem.log
-/typings
-
-# System Files
-.DS_Store
-Thumbs.db
-
-.env
-
-.nx/cache
-.nx/workspace-data
+# AI & local agent tooling directories
+.agents/
+.ai/
+.atl/
+.aws/
+.codex/
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
+.gga
 
-.angular
-
-# Environment variables with secrets
-.env
-.env.local
-.env.*.local
-auth0.config.ts
-auth0.config.ts
-data/
-pgdata/
-.docker/
-
-# Dependencias
-node_modules/
-dist/
-artifacts/
-
-.env
-.env.local
-
-# Archivos de sistema y logs
+# System files & logs
+.DS_Store
+Thumbs.db
+/.sass-cache
+/connect.lock
+/libpeerconnection.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.DS_Store
-.gga
-
-# NestJS / Nx
-.nx/
-.cache/
-data/
-postgres/
-data/
-.env
-.atl/.skill-registry.cache.json
-.gitignore
-.atl/skill-registry.md
+testem.log
+/typings
